@@ -10,9 +10,8 @@ n_group = '20'
 data_folder = '../data'
 out_trained_models = '../trained_models'
 #TODO to be specified the dataset path
-#train_set = data_folder + '/sentences.train'
-#eval_set = data_folder + '/sentences.eval'
-#test_set = data_folder + '/sentences_test'
+train_set = data_folder + '/train_stories.csv'
+#test_set = data_folder + '/test_stories.csv'
 
 # token used for the language model
 bos = '<bos>'  # begin of sentence token

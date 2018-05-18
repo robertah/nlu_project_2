@@ -66,7 +66,7 @@ class CNN_ngrams():
         self.model.add(keras.layers.Dropout(rate=0.25))
 
         """Fourth block"""
-        self.model.add(keras.layers.Convolution2D(filters=256,
+        self.model.add(keras.layers.Convolution2D(filters=100,
                                                   strides=stride_size,
                                                   kernel_size=(n_gram_size, n_gram_size),
                                                   padding="same"))
@@ -78,7 +78,7 @@ class CNN_ngrams():
 
         """Fifth block -> dense layers + out layer"""
         self.model.add(keras.layers.Flatten())
-        self.model.add(keras.layers.Dense(units=128,
+        self.model.add(keras.layers.Dense(units=150,
                                           kernel_regularizer=keras.regularizers.l2(1e-6)))
         self.model.add(keras.layers.LeakyReLU(alpha=0.1))
         self.model.add(keras.layers.Dropout(rate=0.5))
