@@ -21,7 +21,7 @@ def count_words(df):
     for col in sen_cols:
         for i, row in df.iterrows():
             words.update(list(row[col]))
-    print("Found words", len(words), "in dataset:")
+    print("Found", len(words), "words in dataset:")
     print(words)
 
     return words
