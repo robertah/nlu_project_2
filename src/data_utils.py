@@ -3,12 +3,12 @@ import pickle
 from collections import Counter
 
 
-def generate_vocabulary(df):
+def count_words(df):
     """
-    Generate vocabulary and save it as pickle
+    Count words in sentences columns in the given dataframe
+
     :param df: dataframe containing train / val / test data
-    :param voc_size: vocabulary size specified in config file (None, if do not want to limit vocabulary)
-    :return:
+    :return: counter of words
     """
 
     # initialize counter
@@ -21,6 +21,24 @@ def generate_vocabulary(df):
     for col in sen_cols:
         for i, row in df.iterrows():
             words.update(list(row[col]))
+    print("Found words", len(words), "in dataset:")
+    print(words)
+
+    return words
+
+
+def generate_vocabulary(df):
+    """
+    Generate vocabulary and save it as pickle
+
+    :param df: dataframe containing train / val / test data
+    :param voc_size: vocabulary size specified in config file (None, if do not want to limit vocabulary)
+    :return:
+    """
+
+    print("Generating vocabulary...")
+
+    words = count_words(df)
 
     # create vocabulary
     if vocabulary_size is not None:
@@ -50,8 +68,12 @@ def generate_vocabulary(df):
 def load_vocabulary():
     """
     Load existing vocabulary
+
     :return: vocabulary
     """
+
+    print("Loading vocabulary... ")
+
     try:
         with open(vocabulary_pkl, 'rb') as handle:
             vocabulary = pickle.load(handle)
@@ -66,7 +88,7 @@ def get_words_from_indexes(indexes, vocabulary):
     """
     Get words from indexes in the vocabulary
 
-    :param indexes: indexes of words in vocabulary
+    :param indexes: list of indexes of words in vocabulary
     :param vocabulary: vocabulary
     :return: words corresponding to given indexes
     """
@@ -83,7 +105,7 @@ def get_indexes_from_words(words, vocabulary):
     """
     Get indexes from words in the vocabulary
 
-    :param words: words in vocabulary
+    :param words: list of words in vocabulary
     :param vocabulary: vocabulary
     :return: indexes corresponding to given words
     """
@@ -96,6 +118,7 @@ def get_indexes_from_words(words, vocabulary):
 def wrap_sentence(sentence, vocabulary):
     """
     Wrap sentence according to vocabulary and sentence length
+
     :param sentence: raw sentence
     :param vocabulary: vocabulary built from train set
     :return: wrapped sentence with indexes

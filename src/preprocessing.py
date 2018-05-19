@@ -1,6 +1,5 @@
 from config import *
 import pandas as pd
-from string import punctuation
 from nltk.tokenize import RegexpTokenizer
 from nltk.corpus import stopwords
 from nltk.stem import SnowballStemmer
@@ -42,7 +41,7 @@ def _tokenize(dataframe, stop_words=True, stem=True):
     sen_cols = [s for s in df if s.startswith('sen')]
 
     # tokenize sentences
-    tokenizer = RegexpTokenizer('\w+|\$[\d\.]+|\S+')
+    tokenizer = RegexpTokenizer(r'\w+')
     for col in sen_cols:
         df[col] = df[col].str.lower()
         df[col] = df[col].apply(tokenizer.tokenize)
@@ -50,7 +49,7 @@ def _tokenize(dataframe, stop_words=True, stem=True):
     # remove stop words and punctuation
     if stop_words:
         download('stopwords')
-        stop = set(stopwords.words('english') + list(punctuation))
+        stop = set(stopwords.words('english'))
         for col in sen_cols:
             df[col] = df[col].apply(lambda x: [y for y in x if y not in stop])
 
@@ -65,37 +64,40 @@ def _tokenize(dataframe, stop_words=True, stem=True):
 
 def preprocess(dataset):
     """
-    Preprocess raw train / val / testa data files
+    Preprocess raw train / val / test data files
 
     :param dataset: path to dataset
-    :return: dataset with processed sentences
+    :return: original dataset and dataset with processed sentences
     """
 
     assert dataset == train_set or dataset == val_set or dataset == test_set
 
+    print("Preprocessing...")
+
     # load data from csv
-    data = _load_data(dataset)
+    data_original = _load_data(dataset)
 
     # tokenize sentences in dataframe
-    data = _tokenize(data)
+    data_processed = _tokenize(data_original)
 
     # generate vocabulary if training, otherwise load existing vocabulary
     if dataset == train_set:
-        vocabulary = generate_vocabulary(data)
+        vocabulary = generate_vocabulary(data_processed)
     else:
         vocabulary = load_vocabulary()
 
     # filter columns by those containing sentences
-    sen_cols = [s for s in data if s.startswith('sen')]
+    sen_cols = [s for s in data_processed if s.startswith('sen')]
     for col in sen_cols:
-        for i, row in data.iterrows():
+        for i, row in data_processed.iterrows():
             # process sentences according to built vocabulary
             row[col] = wrap_sentence(list(row[col]), vocabulary)
 
-    return data
+    return data_original, data_processed
 
 
 # just trying if works
 if __name__ == '__main__':
-    data = preprocess(train_set)
-    print(data)
+    data_orig, data_proc = preprocess(train_set)
+    print(data_orig)
+    print(data_proc)
