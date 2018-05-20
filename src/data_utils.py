@@ -111,7 +111,6 @@ def get_indexes_from_words(words, vocabulary):
     """
     # retrieve indexes corresponding to words
     indexes = [vocabulary[x] for x in words]
-
     return indexes
 
 

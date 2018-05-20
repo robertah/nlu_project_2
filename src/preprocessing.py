@@ -1,7 +1,9 @@
 from config import *
+import numpy as np
 import pandas as pd
 from nltk.tokenize import RegexpTokenizer
 from nltk.corpus import stopwords
+from nltk.stem.wordnet import WordNetLemmatizer
 from nltk.stem import SnowballStemmer
 from nltk import download
 from data_utils import wrap_sentence, generate_vocabulary, load_vocabulary
@@ -25,7 +27,7 @@ def _load_data(dataset):
     return pd.read_csv(dataset, index_col='id', names=names, skiprows=1)
 
 
-def _tokenize(dataframe, stop_words=True, stem=True):
+def _tokenize(dataframe, stop_words=True, lemmatize=False, stem=True):
     """
     Tokenize sentences in the given dataframe
 
@@ -40,18 +42,25 @@ def _tokenize(dataframe, stop_words=True, stem=True):
     # select columns containing sentences
     sen_cols = [s for s in df if s.startswith('sen')]
 
-    # tokenize sentences
+    # tokenize sentences and remove punctuation
     tokenizer = RegexpTokenizer(r'\w+')
     for col in sen_cols:
         df[col] = df[col].str.lower()
         df[col] = df[col].apply(tokenizer.tokenize)
 
-    # remove stop words and punctuation
+    # remove stop words
     if stop_words:
         download('stopwords')
         stop = set(stopwords.words('english'))
         for col in sen_cols:
             df[col] = df[col].apply(lambda x: [y for y in x if y not in stop])
+
+    # lemmatize words  TODO need to add pos tagger to make it work
+    if lemmatize:
+        download('wordnet')
+        lemmatizer = WordNetLemmatizer()
+        for col in sen_cols:
+            df[col] = df[col].apply(lambda x: [lemmatizer.lemmatize(y) for y in x])
 
     # stem words
     if stem:
@@ -91,13 +100,58 @@ def preprocess(dataset):
     for col in sen_cols:
         for i, row in data_processed.iterrows():
             # process sentences according to built vocabulary
-            row[col] = wrap_sentence(list(row[col]), vocabulary)
+            # row[col] = wrap_sentence(list(row[col]), vocabulary)
+            data_processed.set_value(i, col, wrap_sentence(list(row[col]), vocabulary))
 
     return data_original, data_processed
 
 
-# just trying if works
+def get_story_matrices(df):
+    """
+    Get numerical matrices for story beginning and ending given the dataframe.
+
+    :param df: dataframe containing train / val / test data
+    :return: story beginning and ending (if val / test data, in the ending the correct sentence is the first one)
+    """
+
+    # filter by sentences columns
+    story_df = df.loc[:, df.columns.str.startswith('sen')]
+
+    # convert dataframe values into numpy array
+    story_values = story_df.values
+
+    # get story array's size
+    n_stories, n_sentences = story_values.shape
+
+    # create story matrix
+    story = np.empty([n_stories, sentence_len * n_sentences], dtype=int)
+    for i, row in enumerate(story_values):
+        story[i] = np.concatenate(row)
+
+    story = np.reshape(story, (n_stories, -1, sentence_len))
+
+    # if val or test data, the ending matrix has to contain the correct sentence at first index
+    if n_sentences != 5:
+        for i, row in df.iterrows():
+            # if the answer is the second sentence, swap the two answers
+            if row['ans'] == 2:
+                pos = df.index.get_loc(i)
+                story[pos, n_sentences - 1, :], story[pos, n_sentences - 2, :] = \
+                    story[pos, n_sentences - 2, :], story[pos, n_sentences - 1, :]
+
+    # get beginning and ending matrices
+    beginning = story[:, :4, :]
+    ending = story[:, 4:, :]
+
+    return beginning, ending
+
+
+# just trying if it works
 if __name__ == '__main__':
     data_orig, data_proc = preprocess(train_set)
-    print(data_orig)
-    print(data_proc)
+    x_begin, x_end = get_story_matrices(data_proc)
+    print(x_begin)
+    print(x_end)
+    n_stories, *_ = x_begin.shape
+    x_begin = np.reshape(x_begin, (n_stories, -1))
+    print(x_begin.shape)
