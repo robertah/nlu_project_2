@@ -9,8 +9,7 @@ from nltk.stem.wordnet import WordNetLemmatizer
 from nltk.stem import SnowballStemmer
 from nltk import download
 from data_utils import wrap_sentence, generate_vocabulary, load_vocabulary
-nltk.download('punkt')
-nltk.download('averaged_perceptron_tagger')
+
 
 
 def load_data(dataset):
@@ -117,6 +116,10 @@ def pos_tagging_text(sentence):
 
 
 def pos_tag_dataset(dataset):
+
+    nltk.download('punkt')
+    nltk.download('averaged_perceptron_tagger')
+
     # load data from csv
     data_original = load_data(dataset)
 
@@ -189,15 +192,17 @@ if __name__ == '__main__':
     # n_stories, *_ = x_begin.shape
     # x_begin = np.reshape(x_begin, (n_stories, -1))
     # print(x_begin.shape)
-
+    #
     # data_orig, data_proc, pos_text = preprocess(train_set, pos_tagging=True)
     # print(data_orig)
     # print(data_proc)
     # print(pos_text)
-    dataset=train_set
-    pos_tag_dataset(dataset)
+    # dataset=train_set
+    # pos_tag_dataset(dataset)
 
     # sentences = _load_data(train_set)
     # print(sentences)
     # pos_text = pos_tagging_text(sentences)
     # print(pos_text)
+
+    load_data("").as_matrix(columns=None)[source]

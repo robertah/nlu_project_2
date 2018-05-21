@@ -2,11 +2,14 @@ from config import *
 from preprocessing import load_data
 import nltk
 import pandas as pd
-nltk.download('vader_lexicon')
+
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
 
 def sentiment_analysis(dataset):
+
+    nltk.download('vader_lexicon')
+
     # load data from csv
     data_original = load_data(dataset)
 
