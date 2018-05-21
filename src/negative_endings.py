@@ -10,6 +10,7 @@ import os
 from random import randint
 from random import shuffle
 import data_utils as data_utils
+from ast import literal_eval as make_tuple
 
 class Negative_endings:
 
@@ -503,9 +504,37 @@ def main():
                                thr_new_adv = 0.2)
     neg_end.load_vocabulary()
 
-    neg_end.dataset_into_character_sentences(x_begin)
-    neg_end.pos_tagger_dataset()
+    #neg_end.dataset_into_character_sentences(x_begin)
+    #prep.pos_tag_dataset(train_set)
+    all_stories_pos_tagged = prep.open_csv_asmatrix(train_pos_begin)
     
+    story_number = 0
+    for story in all_stories_pos_tagged:
+        all_stories_pos_tagged[story_number] = make_tuple(story)
+        story_number = story_number+1
+    #all_stories_pos_tagged = make_tuple(all_stories_pos_tagged)
+    print(all_stories_pos_tagged[0][0])
+    print(all_stories_pos_tagged[0][1])
+    print(all_stories_pos_tagged[0][2])
+    print(all_stories_pos_tagged[1][0])
+    print(all_stories_pos_tagged[1][1])
+    print(all_stories_pos_tagged[1][2])
+
+
+
+    print("SEE HERE")
+    print(all_stories_pos_tagged[0][1][0])
+    print(all_stories_pos_tagged[0][1][1])
+    #print(all_stories_pos_tagged.size)
+    #print(all_stories_pos_tagged)
+    
+    print("Transforming to list")
+    #sentence_to_list = all_stories_pos_tagged[0][0].tolist()
+    #print(sentence_to_list[0])
+    #all_stories_pos_tagged.tolist()
+    #print(all_stories_pos_tagged[0][1][0])
+    """neg_end.pos_tagger_dataset()
+
     neg_end.filter_corpus_tags()
     print("Story original")
     print(neg_end.all_stories_pos_tagged[0])
@@ -516,4 +545,5 @@ def main():
                            Backward_approach = False, #Replace 5th sentence with one random of the context
                            batch_size = 10,
                            shuffle_batch = True)
+    """
 main()

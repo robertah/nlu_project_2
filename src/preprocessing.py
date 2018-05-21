@@ -201,8 +201,12 @@ def get_story_matrices(df):
 
 
 def open_csv_asmatrix(datafile):
-    file_csv = pd.read_csv(datafile)
+    file_csv = pd.read_csv(datafile,usecols=['sen1', 'sen2', 'sen3', 'sen4'])
     file = file_csv.as_matrix(columns=None)
+    story_number = 0
+    for story in file:
+        file[story_number] = make_tuple(story)
+        story_number = story_number+1
     return file
 
 
