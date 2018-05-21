@@ -27,7 +27,7 @@ def _load_data(dataset):
     return pd.read_csv(dataset, index_col='id', names=names, skiprows=1)
 
 
-def _tokenize(dataframe, stop_words=True, lemmatize=False, stem=True):
+def _tokenize(dataframe, stop_words=True, lemmatize=False, stem=False):
     """
     Tokenize sentences in the given dataframe
 
