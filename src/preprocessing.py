@@ -13,7 +13,7 @@ nltk.download('punkt')
 nltk.download('averaged_perceptron_tagger')
 
 
-def _load_data(dataset):
+def load_data(dataset):
     """
     Build the dataframe from the given dataset
 
@@ -31,7 +31,7 @@ def _load_data(dataset):
     return pd.read_csv(dataset, index_col='id', names=names, skiprows=1)
 
 
-def _tokenize(dataframe, stop_words=True, lemmatize=False, stem=False):
+def tokenize(dataframe, stop_words=True, lemmatize=False, stem=False):
     """
     Tokenize sentences in the given dataframe
 
@@ -88,10 +88,10 @@ def preprocess(dataset, pos_tagging=False):
     print("Preprocessing...")
 
     # load data from csv
-    data_original = _load_data(dataset)
+    data_original = load_data(dataset)
 
     # tokenize sentences in dataframe
-    data_processed = _tokenize(data_original)
+    data_processed = tokenize(data_original)
 
     # generate vocabulary if training, otherwise load existing vocabulary
     if dataset == train_set:
@@ -118,7 +118,7 @@ def pos_tagging_text(sentence):
 
 def pos_tag_dataset(dataset):
     # load data from csv
-    data_original = _load_data(dataset)
+    data_original = load_data(dataset)
 
     pos_begin = pd.DataFrame(columns=['sen1', 'sen2', 'sen3', 'sen4'])
     pos_begin.index.name = 'id'

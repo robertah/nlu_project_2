@@ -1,5 +1,5 @@
 from config import *
-from preprocessing import _load_data
+from preprocessing import load_data
 import nltk
 import pandas as pd
 nltk.download('vader_lexicon')
@@ -8,7 +8,7 @@ from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
 def sentiment_analysis(dataset):
     # load data from csv
-    data_original = _load_data(dataset)
+    data_original = load_data(dataset)
 
     #Only go through the first 10 entries of dataset - Remove for entire dataset
     data_original = data_original.head(10)

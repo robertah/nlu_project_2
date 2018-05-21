@@ -57,6 +57,7 @@ def generate_vocabulary(df):
     # if vocabulary size is fixed add unk
     if vocabulary_size is not None:
         vocabulary.update({unk: len(vocabulary)})
+
     #print("Vocabulary generated: \n", vocabulary)
     with open(vocabulary_pkl, 'wb') as output:
         pickle.dump(vocabulary, output, pickle.HIGHEST_PROTOCOL)
