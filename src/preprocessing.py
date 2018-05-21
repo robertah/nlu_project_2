@@ -124,38 +124,29 @@ def pos_tag_dataset(dataset):
     # load data from csv
     data_original = load_data(dataset)
 
-    # Check first 10 rows
-    data_original = data_original.head(10)
-
-    pos_begin = pd.DataFrame(columns=['sen1', 'sen2', 'sen3', 'sen4'])
-    pos_begin.index.name = 'id'
-    pos_end = pd.DataFrame(columns=['sen5'])
-    pos_end.index.name = 'id'
+    # Creates dataframes with pos-tagged sentences
+    pos_begin = pd.DataFrame(columns=['id', 'sen1', 'sen2', 'sen3', 'sen4'])
+    pos_end = pd.DataFrame(columns=['id', 'sen5'])
     for index, row in data_original.iterrows():
-        pos_begin.loc[index] = [pos_tagging_text(row['sen1']), pos_tagging_text(row['sen2']),
-                               pos_tagging_text(row['sen3']), pos_tagging_text(row['sen4'])]
-        pos_end.loc[index] = [pos_tagging_text(row['sen5'])]
+        pos_begin.loc[index] = [index,
+                                np.asarray(pos_tagging_text(row['sen1']), object),
+                                np.asarray(pos_tagging_text(row['sen2']), object),
+                                np.asarray(pos_tagging_text(row['sen3']), object),
+                                np.asarray(pos_tagging_text(row['sen4']), object)]
+        pos_end.loc[index] = [index, pos_tagging_text(row['sen5'])]
 
-    #saving models in two data files
-    cur_dir = os.path.splitext(dataset)[0]
-    path_begin = cur_dir + "_pos_begin.csv"
-    path_end = cur_dir + "_pos_end.csv"
+    pos_begin = np.asarray(pos_begin)
+    pos_end = np.asarray(pos_end)
 
-    # Saving as pkl file
-    # with open(train_pos_begin, 'wb') as output:
-    #     pickle.dump(pos_begin, output, pickle.HIGHEST_PROTOCOL)
-    #     print("Train_pos_begin saved as pkl")
-    #
-    # with open(train_pos_end, 'wb') as output:
-    #     pickle.dump(pos_end, output, pickle.HIGHEST_PROTOCOL)
-    #     print("Train_pos_end saved as pkl")
+    # Saving models in two data files
+    cur_dir = os.path.splitext(train_set)[0]
+    path_begin = cur_dir + "_pos_begin"
+    path_end = cur_dir + "_pos_end"
 
-    # Saving as csv dataframe
-    pos_begin.to_csv(path_or_buf= path_begin, columns=['sen1', 'sen2', 'sen3', 'sen4'])
-    pos_end.to_csv(path_or_buf=path_end, columns=['sen5'])
-    print("Model saved to {}".format(path_begin))
-    print("Model saved to {}".format(path_end))
-    print(pos_begin)
+    np.save(path_begin, pos_begin)
+    np.save(path_end, pos_end)
+
+    # To load dataset, then do np.load(train_pos_begin)
 
     return None
 
@@ -201,12 +192,8 @@ def get_story_matrices(df):
 
 
 def open_csv_asmatrix(datafile):
-    file_csv = pd.read_csv(datafile,usecols=['sen1', 'sen2', 'sen3', 'sen4'])
-    file = file_csv.as_matrix(columns=None)
-    story_number = 0
-    for story in file:
-        file[story_number] = make_tuple(story)
-        story_number = story_number+1
+    file_csv = pd.read_csv(datafile)
+    file = np.asarray(file_csv)
     return file
 
 
