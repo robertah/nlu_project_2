@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import nltk
 import os
+import pickle
 from nltk.tokenize import RegexpTokenizer
 from nltk.corpus import stopwords
 from nltk.stem.wordnet import WordNetLemmatizer
@@ -123,6 +124,9 @@ def pos_tag_dataset(dataset):
     # load data from csv
     data_original = load_data(dataset)
 
+    # Check first 10 rows
+    data_original = data_original.head(10)
+
     pos_begin = pd.DataFrame(columns=['sen1', 'sen2', 'sen3', 'sen4'])
     pos_begin.index.name = 'id'
     pos_end = pd.DataFrame(columns=['sen5'])
@@ -136,10 +140,23 @@ def pos_tag_dataset(dataset):
     cur_dir = os.path.splitext(dataset)[0]
     path_begin = cur_dir + "_pos_begin.csv"
     path_end = cur_dir + "_pos_end.csv"
+
+    # Saving as pkl file
+    # with open(train_pos_begin, 'wb') as output:
+    #     pickle.dump(pos_begin, output, pickle.HIGHEST_PROTOCOL)
+    #     print("Train_pos_begin saved as pkl")
+    #
+    # with open(train_pos_end, 'wb') as output:
+    #     pickle.dump(pos_end, output, pickle.HIGHEST_PROTOCOL)
+    #     print("Train_pos_end saved as pkl")
+
+    # Saving as csv dataframe
     pos_begin.to_csv(path_or_buf= path_begin, columns=['sen1', 'sen2', 'sen3', 'sen4'])
     pos_end.to_csv(path_or_buf=path_end, columns=['sen5'])
     print("Model saved to {}".format(path_begin))
     print("Model saved to {}".format(path_end))
+    print(pos_begin)
+
     return None
 
 
@@ -183,6 +200,13 @@ def get_story_matrices(df):
     return beginning, ending
 
 
+def open_csv_asmatrix(datafile):
+    file_csv = pd.read_csv(datafile)
+    file = file_csv.as_matrix(columns=None)
+    return file
+
+
+
 # just trying if works
 if __name__ == '__main__':
     # data_orig, data_proc = preprocess(train_set)
@@ -192,11 +216,11 @@ if __name__ == '__main__':
     # n_stories, *_ = x_begin.shape
     # x_begin = np.reshape(x_begin, (n_stories, -1))
     # print(x_begin.shape)
-    #
-    # data_orig, data_proc, pos_text = preprocess(train_set, pos_tagging=True)
-    # print(data_orig)
-    # print(data_proc)
-    # print(pos_text)
+
+    # To convert csv dataframe to matrix
+    matrix = open_csv_asmatrix(train_pos_begin)
+
+
     # dataset=train_set
     # pos_tag_dataset(dataset)
 
@@ -204,5 +228,3 @@ if __name__ == '__main__':
     # print(sentences)
     # pos_text = pos_tagging_text(sentences)
     # print(pos_text)
-
-    load_data("").as_matrix(columns=None)[source]
