@@ -108,6 +108,6 @@ venv.bak/
 # data
 data/
 
-# pickle
-src/vocabulary.pkl
+# pickle files
+src/*.pkl
 
