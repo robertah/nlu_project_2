@@ -3,17 +3,17 @@ import numpy as np
 import pandas as pd
 import nltk
 import os
+import pickle
 from nltk.tokenize import RegexpTokenizer
 from nltk.corpus import stopwords
 from nltk.stem.wordnet import WordNetLemmatizer
 from nltk.stem import SnowballStemmer
 from nltk import download
 from data_utils import wrap_sentence, generate_vocabulary, load_vocabulary
-nltk.download('punkt')
-nltk.download('averaged_perceptron_tagger')
 
 
-def _load_data(dataset):
+
+def load_data(dataset):
     """
     Build the dataframe from the given dataset
 
@@ -31,7 +31,7 @@ def _load_data(dataset):
     return pd.read_csv(dataset, index_col='id', names=names, skiprows=1)
 
 
-def _tokenize(dataframe, stop_words=True, lemmatize=False, stem=False):
+def tokenize(dataframe, stop_words=True, lemmatize=False, stem=False):
     """
     Tokenize sentences in the given dataframe
 
@@ -88,10 +88,10 @@ def preprocess(dataset, pos_tagging=False):
     print("Preprocessing...")
 
     # load data from csv
-    data_original = _load_data(dataset)
+    data_original = load_data(dataset)
 
     # tokenize sentences in dataframe
-    data_processed = _tokenize(data_original)
+    data_processed = tokenize(data_original)
 
     # generate vocabulary if training, otherwise load existing vocabulary
     if dataset == train_set:
@@ -117,8 +117,15 @@ def pos_tagging_text(sentence):
 
 
 def pos_tag_dataset(dataset):
+
+    nltk.download('punkt')
+    nltk.download('averaged_perceptron_tagger')
+
     # load data from csv
-    data_original = _load_data(dataset)
+    data_original = load_data(dataset)
+
+    # Check first 10 rows
+    data_original = data_original.head(10)
 
     pos_begin = pd.DataFrame(columns=['sen1', 'sen2', 'sen3', 'sen4'])
     pos_begin.index.name = 'id'
@@ -133,10 +140,23 @@ def pos_tag_dataset(dataset):
     cur_dir = os.path.splitext(dataset)[0]
     path_begin = cur_dir + "_pos_begin.csv"
     path_end = cur_dir + "_pos_end.csv"
+
+    # Saving as pkl file
+    # with open(train_pos_begin, 'wb') as output:
+    #     pickle.dump(pos_begin, output, pickle.HIGHEST_PROTOCOL)
+    #     print("Train_pos_begin saved as pkl")
+    #
+    # with open(train_pos_end, 'wb') as output:
+    #     pickle.dump(pos_end, output, pickle.HIGHEST_PROTOCOL)
+    #     print("Train_pos_end saved as pkl")
+
+    # Saving as csv dataframe
     pos_begin.to_csv(path_or_buf= path_begin, columns=['sen1', 'sen2', 'sen3', 'sen4'])
     pos_end.to_csv(path_or_buf=path_end, columns=['sen5'])
     print("Model saved to {}".format(path_begin))
     print("Model saved to {}".format(path_end))
+    print(pos_begin)
+
     return None
 
 
@@ -180,6 +200,13 @@ def get_story_matrices(df):
     return beginning, ending
 
 
+def open_csv_asmatrix(datafile):
+    file_csv = pd.read_csv(datafile)
+    file = file_csv.as_matrix(columns=None)
+    return file
+
+
+
 # just trying if works
 if __name__ == '__main__':
     # data_orig, data_proc = preprocess(train_set)
@@ -190,12 +217,12 @@ if __name__ == '__main__':
     # x_begin = np.reshape(x_begin, (n_stories, -1))
     # print(x_begin.shape)
 
-    # data_orig, data_proc, pos_text = preprocess(train_set, pos_tagging=True)
-    # print(data_orig)
-    # print(data_proc)
-    # print(pos_text)
-    dataset=train_set
-    pos_tag_dataset(dataset)
+    # To convert csv dataframe to matrix
+    matrix = open_csv_asmatrix(train_pos_begin)
+
+
+    # dataset=train_set
+    # pos_tag_dataset(dataset)
 
     # sentences = _load_data(train_set)
     # print(sentences)

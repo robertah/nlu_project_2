@@ -20,7 +20,11 @@ pad = '<pad>'  # padding token
 unk = '<unk>'  # unknown token
 
 # TODO to be specified
-vocabulary_pkl = 'vocabulary.pkl'
+vocabulary_pkl = data_folder + '/vocabulary.pkl'
+# train_pos_begin = data_folder + '/train_pos_begin.pkl'
+# train_pos_end = data_folder + '/train_pos_end.pkl'
+train_pos_begin = data_folder + '/train_stories_pos_begin.csv'
+train_pos_end = data_folder + '/train_stories_pos_end.csv'
 
 vocabulary_size = 20000  # None for not limited vocabulary size
 sentence_len = 15  # None for not limited sentence length
