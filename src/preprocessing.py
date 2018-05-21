@@ -2,6 +2,7 @@ from config import *
 import numpy as np
 import pandas as pd
 import nltk
+import os
 from nltk.tokenize import RegexpTokenizer
 from nltk.corpus import stopwords
 from nltk.stem.wordnet import WordNetLemmatizer
@@ -89,9 +90,6 @@ def preprocess(dataset, pos_tagging=False):
     # load data from csv
     data_original = _load_data(dataset)
 
-    #Quick check of first 10 rows - TODO Remove
-    data_original = data_original.head(10)
-
     # tokenize sentences in dataframe
     data_processed = _tokenize(data_original)
 
@@ -109,19 +107,6 @@ def preprocess(dataset, pos_tagging=False):
             # row[col] = wrap_sentence(list(row[col]), vocabulary)
             data_processed.set_value(i, col, wrap_sentence(list(row[col]), vocabulary))
 
-    if pos_tagging:
-        pos_text = pd.DataFrame(columns=['sen1', 'sen2', 'sen3', 'sen4', 'sen5'])
-        if dataset == train_set:
-            for index, row in data_original.iterrows():
-                pos_text.loc[index] = [pos_tagging_text(row['sen1']), pos_tagging_text(row['sen2']),
-                                       pos_tagging_text(row['sen3']), pos_tagging_text(row['sen4']),
-                                       pos_tagging_text(row['sen5'])]
-        else:
-            for index, row in data_original.iterrows():
-                pos_text.loc[index] = [pos_tagging_text(row['sen1']), pos_tagging_text(row['sen2']),
-                                       pos_tagging_text(row['sen3']), pos_tagging_text(row['sen4'])]
-        return data_original, data_processed, pos_text
-
     else:
         return data_original, data_processed
 
@@ -129,6 +114,30 @@ def preprocess(dataset, pos_tagging=False):
 def pos_tagging_text(sentence):
     tokens = nltk.word_tokenize(sentence)
     return nltk.pos_tag(tokens)
+
+
+def pos_tag_dataset(dataset):
+    # load data from csv
+    data_original = _load_data(dataset)
+
+    pos_begin = pd.DataFrame(columns=['sen1', 'sen2', 'sen3', 'sen4'])
+    pos_begin.index.name = 'id'
+    pos_end = pd.DataFrame(columns=['sen5'])
+    pos_end.index.name = 'id'
+    for index, row in data_original.iterrows():
+        pos_begin.loc[index] = [pos_tagging_text(row['sen1']), pos_tagging_text(row['sen2']),
+                               pos_tagging_text(row['sen3']), pos_tagging_text(row['sen4'])]
+        pos_end.loc[index] = [pos_tagging_text(row['sen5'])]
+
+    #saving models in two data files
+    cur_dir = os.path.splitext(dataset)[0]
+    path_begin = cur_dir + "_pos_begin.csv"
+    path_end = cur_dir + "_pos_end.csv"
+    pos_begin.to_csv(path_or_buf= path_begin, columns=['sen1', 'sen2', 'sen3', 'sen4'])
+    pos_end.to_csv(path_or_buf=path_end, columns=['sen5'])
+    print("Model saved to {}".format(path_begin))
+    print("Model saved to {}".format(path_end))
+    return None
 
 
 def get_story_matrices(df):
@@ -181,10 +190,13 @@ if __name__ == '__main__':
     # x_begin = np.reshape(x_begin, (n_stories, -1))
     # print(x_begin.shape)
 
-    data_orig, data_proc, pos_text = preprocess(train_set, pos_tagging=True)
-    print(data_orig)
-    print(data_proc)
-    print(pos_text)
+    # data_orig, data_proc, pos_text = preprocess(train_set, pos_tagging=True)
+    # print(data_orig)
+    # print(data_proc)
+    # print(pos_text)
+    dataset=train_set
+    pos_tag_dataset(dataset)
+
     # sentences = _load_data(train_set)
     # print(sentences)
     # pos_text = pos_tagging_text(sentences)
