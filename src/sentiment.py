@@ -15,7 +15,7 @@ def sentiment_analysis(dataset):
 
     sid = SentimentIntensityAnalyzer()
 
-    sentiment_score = pd.DataFrame(columns=['Compound', 'Negative', 'Neutral', 'Positive'])
+    sentiment_score = pd.DataFrame(columns=['compound', 'neg', 'neu', 'pos'])
 
     #iterate through dataframe for sentiment analysis
     for index, row in data_original.iterrows():
