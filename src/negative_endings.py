@@ -9,8 +9,9 @@ import numpy as np
 import os
 from random import randint
 from random import shuffle
+import data_utils as data_utils
 
-class negative_endings:
+class Negative_endings:
 
     """For reference on basic augmentation in negative endings and get inspiration from
        please see the paper An RNN-based Binary Classifier for the Story Cloze Test
@@ -41,6 +42,8 @@ class negative_endings:
 
     """******************USER FUNCTIONS: THESE FUNCTIONS ARE THE ONE TO USE FOR TRAINING*****************"""
 
+    def backward_negative_ending():
+        return
 
     def augment_data_batch(self, full_training_story, is_tagged_story = False,
                            out_tagged_story = False, #Output a pos_tagged story if True
@@ -121,6 +124,8 @@ class negative_endings:
             batch_aug_stories = batch_aug_stories[shuffled_idx]
             ver_aug_stories = ver_aug_stories[shuffled_idx]
 
+        print(batch_aug_stories)
+        print(ver_aug_stories)
         return batch_aug_stories, ver_aug_stories
 
 
@@ -159,15 +164,20 @@ class negative_endings:
         """
 
         index=0
-    
-        for word_tag in sentence:
+        #max_changes = 2
+        #changes  = 0
+
+        print("Word in sentence: ", sentence[0])
+        for tagged_word in sentence:
+
+            
 
             if "VB" in tagged_word[1] and tagged_word[0]!=pad: #Verbs
             
                 p = random.uniform(0, 1)
 
                 if p > self.thr_sample_new_verb:
-                    sentence[index][0] = sample_from_verbs()  
+                    sentence[index][0] = sample_from_verbs()
 
             if "NN" in tagged_word[1] and tagged_word[0]!=pad: #Nouns
             
@@ -251,14 +261,35 @@ class negative_endings:
         
         self.dict_corpus_nouns = list(Counter(all_corpus_nouns))
         self.total_corpus_nouns = len(self.dict_corpus_nouns)
+        print("")
+        print("")
+        print("")
+        print("NOUNS TO SAMPLE FROM ")
+        print("")
+        print("")
+        print("")
         print(self.dict_corpus_nouns)
 
         self.dict_corpus_pronouns = list(Counter(all_corpus_pronouns))
         self.total_corpus_pronouns = len(self.dict_corpus_pronouns)
+        print("")
+        print("")
+        print("")
+        print("PRONOUNS TO SAMPLE FROM ")
+        print("")
+        print("")
+        print("")
         print(self.dict_corpus_pronouns)
 
         self.dict_corpus_verbs = list(Counter(all_corpus_verbs))
         self.total_corpus_verbs = len(self.dict_corpus_verbs)
+        print("")
+        print("")
+        print("")
+        print("VERBS TO SAMPLE FROM ")
+        print("")
+        print("")
+        print("")
         print(self.dict_corpus_verbs)
 
         self.dict_corpus_advs = list(Counter(all_corpus_advs))
@@ -342,9 +373,9 @@ class negative_endings:
             if story_number % 10000 == 0:
                 print("Filtering: ",story_number)
 
-        print("All corpus nouns")
-        print(all_story_nouns)
-        print(all_corpus_pronouns)
+        #print("All corpus nouns")
+        #print(all_corpus_nouns)
+        #print(all_corpus_pronouns)
         self.define_vocab_tags(all_corpus_nouns = all_corpus_nouns, 
                                all_corpus_pronouns = all_corpus_pronouns,
                                all_corpus_verbs = all_corpus_verbs,
@@ -423,17 +454,14 @@ class negative_endings:
 
     def load_vocabulary(self):
         
-        with open(vocabulary_pkl, 'rb') as v:
-            self.vocabulary = pickle.load(v)
-        
-        #print(self.vocabulary)
-        self.vocabulary_list = list(self.vocabulary)
+        self.vocabulary = data_utils.load_vocabulary()
+        print("Vocabulary saved into negative ending object")
 
 
     def get_sentences_from_indices(self, sentence_vocab_indices):
 
 
-        sentence = train_utils.words_mapper_from_vocab_indices(sentence_vocab_indices, self.vocabulary_list)
+        sentence = data_utils.get_words_from_indexes(indexes = sentence_vocab_indices, vocabulary = self.vocabulary)
         #print(sentence)
         
         return sentence
@@ -470,11 +498,22 @@ def main():
     x_begin = x_begin.tolist()
     x_end = x_end.tolist()
 
-    neg_end = negative_endings(0.5, 0.5, 0.5,0.5,0.5)
+    neg_end = Negative_endings(thr_new_noun = 0.2, thr_new_pronoun = 0.2, 
+                               thr_new_verb = 0.2, thr_new_adj = 0.2, 
+                               thr_new_adv = 0.2)
     neg_end.load_vocabulary()
 
     neg_end.dataset_into_character_sentences(x_begin)
     neg_end.pos_tagger_dataset()
+    
     neg_end.filter_corpus_tags()
-
+    print("Story original")
+    print(neg_end.all_stories_pos_tagged[0])
+    neg_end.augment_data_batch(neg_end.all_stories_pos_tagged[0], is_tagged_story = True,
+                           out_tagged_story = True, #Output a pos_tagged story if True
+                           words_substitution_approach = True, #Replace probbilstically tagged words in the 5th sentence with same tagged words from the entire corpus
+                           Random_approach = False, #Replace 5th sentence with a random one from the corpus endings
+                           Backward_approach = False, #Replace 5th sentence with one random of the context
+                           batch_size = 10,
+                           shuffle_batch = True)
 main()
