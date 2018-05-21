@@ -15,8 +15,8 @@ class CNN_ngrams():
         """
         self.train_generator = train_generator
         self.validation_generator = validation_generator
-        self.n_gram_size = 2
-        self.stride_size = 5
+        self.n_gram_size = 5
+        self.stride_size = 1
 
         """Loading trained model for predicting"""
         if path:
