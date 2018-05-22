@@ -127,6 +127,9 @@ def pos_tag_dataset(dataset):
     # Creates dataframes with pos-tagged sentences
     pos_begin = pd.DataFrame(columns=['id', 'sen1', 'sen2', 'sen3', 'sen4'])
     pos_end = pd.DataFrame(columns=['id', 'sen5'])
+
+    story_number = 0
+    total_stories = len(pos_begin)
     for index, row in data_original.iterrows():
         pos_begin.loc[index] = [index,
                                 np.asarray(pos_tagging_text(row['sen1']), object),
@@ -134,10 +137,15 @@ def pos_tag_dataset(dataset):
                                 np.asarray(pos_tagging_text(row['sen3']), object),
                                 np.asarray(pos_tagging_text(row['sen4']), object)]
         pos_end.loc[index] = [index, pos_tagging_text(row['sen5'])]
+        story_number = story_number + 1
+        
+        if story_number%1000 == 0:
+            print("Processed ",story_number, "/",total_stories)
 
     pos_begin = np.asarray(pos_begin)
     pos_end = np.asarray(pos_end)
 
+    print("Saving pos tagged corpus..")
     # Saving models in two data files
     cur_dir = os.path.splitext(train_set)[0]
     path_begin = cur_dir + "_pos_begin"
@@ -145,6 +153,7 @@ def pos_tag_dataset(dataset):
 
     np.save(path_begin, pos_begin)
     np.save(path_end, pos_end)
+    print("Saved the pos tagged corpus successfully !")
 
     # To load dataset, then do np.load(train_pos_begin)
 
@@ -192,8 +201,10 @@ def get_story_matrices(df):
 
 
 def open_csv_asmatrix(datafile):
+    print("Loading ", datafile)
     file_csv = pd.read_csv(datafile)
     file = np.asarray(file_csv)
+    print("Loaded ",datafile, " successfully!")
     return file
 
 
