@@ -51,7 +51,8 @@ class Negative_endings:
     def random_negative_ending(full_training_story, # The story can be both pos tagged and not pos tagged
                                full_train_dataset,
                                batch_size = 2,
-                               merge_sentences = False):
+                               merge_sentences = False,
+                               shuffle_batch = True):
         """INPUT:
                  full_training_story : matrix of 5 story sentences
                  merge_sentences : boolean, if True the output will be a unique array of story words
@@ -73,9 +74,9 @@ class Negative_endings:
         #Create new stories with different endings and add them to the training batch
         if batch_size == 2:
 
-            new_story = list(full_training_story)
+            new_story = deepcopy(pos_tagged_story)
             #Not guaranteed to take the same sentence from the train dataset, but highly improbable
-            new_story[-1] = full_train_dataset[randint(0, len(full_train_dataset)-1)][-1];
+            new_story[-1] = deepcopy(full_train_dataset[randint(0, len(full_train_dataset)-1)][-1]);
             
             if merge_sentences:    
                 batch_aug_stories.append(self.join_story_from_sentences(new_story))
@@ -84,8 +85,8 @@ class Negative_endings:
 
         else:
             for i in range(batch_size-1):
-                new_story = list(full_training_story)
-                new_story[-1] = full_train_dataset[randint(0, len(full_train_dataset)-1)][-1];
+                new_story = deepcopy(pos_tagged_story)
+                new_story[-1] = deepcopy(full_train_dataset[randint(0, len(full_train_dataset)-1)][-1]);
                 
                 if merge_sentences: 
                     batch_aug_stories.append(self.join_story_from_sentences(new_story))
@@ -93,13 +94,11 @@ class Negative_endings:
                     batch_aug_stories.append(new_story)       
         
         if shuffle_batch:
-            #Shuffle data preserving order stories - verifier
-            shuffled_idx = shuffle(np.arange(batch_size))
-            batch_aug_stories = batch_aug_stories[shuffled_idx]
-            ver_aug_stories = ver_aug_stories[shuffled_idx]
 
-        print(batch_aug_stories)
-        print(ver_aug_stories)
+            batch_aug_stories, ver_aug_stories = self.shuffle_story_verifier(batch_size = batch_size, 
+                                                                             batch_aug_stories = batch_aug_stories, ver_aug_stories = ver_aug_stories)
+        #print(batch_aug_stories)
+        #print(ver_aug_stories)
 
         return batch_aug_stories, ver_aug_stories
 
@@ -107,7 +106,8 @@ class Negative_endings:
     #Replace 5th sentence with one random of the context
     def backward_negative_ending(full_training_story, # The story can be both pos tagged and not pos tagged
                                  batch_size = 2,
-                                 merge_sentences = False):
+                                 merge_sentences = False,
+                                 shuffle_batch = True):
         """INPUT:
                  full_training_story : matrix of 5 story sentences
                  merge_sentences : boolean, if True the output will be a unique array of story words
@@ -129,8 +129,8 @@ class Negative_endings:
         #Create new stories with different endings and add them to the training batch
         if batch_size == 2:
 
-            new_story = list(full_training_story)
-            new_story[-1] = full_training_story[randint(0, len(full_training_story)-2)];
+            new_story = deepcopy(pos_tagged_story)
+            new_story[-1] = deepcopy(full_training_story[randint(0, len(full_training_story)-2)]);
             
             if merge_sentences:    
                 batch_aug_stories.append(self.join_story_from_sentences(new_story))
@@ -138,9 +138,10 @@ class Negative_endings:
                 batch_aug_stories.append(new_story)               
 
         else:
+
             for i in range(batch_size-1):
-                new_story = list(full_training_story)
-                new_story[-1] = full_training_story[randint(0, len(full_training_story)-2)];
+                new_story = deepcopy(pos_tagged_story)
+                new_story[-1] = deepcopy(full_training_story[randint(0, len(full_training_story)-2)]);
                 
                 if merge_sentences: 
                     batch_aug_stories.append(self.join_story_from_sentences(new_story))
@@ -148,27 +149,27 @@ class Negative_endings:
                     batch_aug_stories.append(new_story)       
         
         if shuffle_batch:
-            #Shuffle data preserving order stories - verifier
-            shuffled_idx = np.arange(batch_size)
-            shuffle(shuffled_idx)
 
-            batch_aug_stories = batch_aug_stories[shuffled_idx]
-            ver_aug_stories = ver_aug_stories[shuffled_idx]
+            batch_aug_stories, ver_aug_stories = self.shuffle_story_verifier(batch_size = batch_size, 
+                                                                             batch_aug_stories = batch_aug_stories, ver_aug_stories = ver_aug_stories)
+        
 
-        print(batch_aug_stories)
-        print(ver_aug_stories)
+        #print(batch_aug_stories)
+        #print(ver_aug_stories)
 
         return batch_aug_stories, ver_aug_stories
 
 
-    def words_substitution_approach(self, full_training_story, is_tagged_story = True,
+    def words_substitution_approach(self, training_story, #Can be full story or just id & final sentence [[id,final_sentence],[id2,....]..] 
+                                    is_w2v = False, #If the story is w2v already and tags are in a numerical form as well
                                     out_tagged_story = True, #Output a pos_tagged story if True
                                     batch_size = 2,
+                                    merge_sentences = False,
                                     shuffle_batch = False):
     
         """
         INPUT:
-        training_sentence: single full story (matrix of 5 sentence arrays)
+        training_sentence: single full story (matrix of 5 sentence arrays) or EVEN JUST THE ENDING + ID STORY
         batch_size: desired story endings augmentation (future input to the model)
                     e.g batch_size = 10 -> original training story + 9 constructed stories
 
@@ -194,11 +195,11 @@ class Negative_endings:
         A stories batch is just returned
         """
 
-        if not is_tagged_story:
+        """if not is_tagged_story:
             pos_tagged_story = self.pos_tagger_story(story = full_training_story)
         else:
-            pos_tagged_story = full_training_story
-
+            pos_tagged_story = full_training_story"""
+        pos_tagged_story = training_story
 
         batch_aug_stories = []
 
@@ -209,41 +210,37 @@ class Negative_endings:
 
         ver_aug_stories = np.zeros(batch_size)
         ver_aug_stories[0] = 1
-        print("BATCH SIZE IS ", batch_size)
 
-        print("ORIGINAL POS TAGGED STORY ENDING IS: ", pos_tagged_story[-1])                
+        #print("ORIGINAL POS TAGGED STORY ENDING IS: ", pos_tagged_story[-1])                
 
         if batch_size == 2:
 
-            print("BATCH")
-            changed_story_ending = self.change_sentence(pos_tagged_story[-1])
-            new_story = list(pos_tagged_story)
+            new_story = deepcopy(pos_tagged_story)
+            changed_story_ending = self.change_sentence(new_story[-1])
             new_story[-1] = changed_story_ending
                
-            batch_aug_stories.append(self.join_story_from_sentences(new_story))
-                
+            if merge_sentences: 
+                batch_aug_stories.append(self.join_story_from_sentences(new_story))
+                print(len(batch_aug_stories[0]))
+            else:
+                batch_aug_stories.append(new_story)                
         else:
             for i in range(batch_size-1):
-                new_story = list(np.copy(list(pos_tagged_story)))
-                #new_story = tuple(pos_tagged_story)
-                new_story = deepcopy(pos_tagged_story)
-                #print("BEFORE ORIGINAL POS TAGGED STORY ENDING IS: ", pos_tagged_story[-1])                
 
-                #print("ORIGINAL POS TAGGED STORY ENDING IS: ", pos_tagged_story[-1])                
-                #print("ORIGINAL STORY ENDING IS: ", new_story[-1])
+                new_story = deepcopy(pos_tagged_story)
                 changed_story_ending = self.change_sentence(new_story[-1])
-                #new_story = list(original_story)
                 new_story[-1] = changed_story_ending
-                print("NEW STORY LEN ",len(new_story))
-                batch_aug_stories.append(self.join_story_from_sentences(new_story))
-        
+                if merge_sentences: 
+                    batch_aug_stories.append(self.join_story_from_sentences(new_story))
+                    #print(len(batch_aug_stories[0]))
+                else:
+                    batch_aug_stories.append(new_story)
+
         if shuffle_batch:
-            #Shuffle data preserving order stories - verifier
-            shuffled_idx = np.arange(batch_size)
-            shuffle(shuffled_idx)
-            print(shuffled_idx)
-            batch_aug_stories = batch_aug_stories[shuffled_idx]
-            ver_aug_stories = ver_aug_stories[shuffled_idx]
+
+            batch_aug_stories, ver_aug_stories = self.shuffle_story_verifier(batch_size = batch_size, 
+                                                                             batch_aug_stories = batch_aug_stories, ver_aug_stories = ver_aug_stories)
+
 
         #print(batch_aug_stories)
         #print(ver_aug_stories)
@@ -263,6 +260,13 @@ class Negative_endings:
 
 
 
+    def shuffle_story_verifier(self, batch_size, batch_aug_stories, ver_aug_stories ):
+        shuffled_idx = np.arange(batch_size)
+        shuffle(shuffled_idx)
+        #print(shuffled_idx)
+        batch_aug_stories = np.asarray(batch_aug_stories)[shuffled_idx]
+        ver_aug_stories = np.asarray(ver_aug_stories)[shuffled_idx]
+        return batch_aug_stories, ver_aug_stories
 
 
 
@@ -273,8 +277,10 @@ class Negative_endings:
         #NB not the best and efficient way to do that -> please change if u have more efficient algorithm
         joined_story = []
         for sentence in story_sentences:
-            joined_story.append(sentence)
-
+            for word_tag in sentence:
+                joined_story.append(word_tag)
+            #joined_story.append(sentence)
+        #print("JOINED STORY: ",joined_story)
         return joined_story
 
 
@@ -358,8 +364,8 @@ class Negative_endings:
             index = 0
             iterations = iterations+1
 
-        print("Sentence changed into: ", sentence)
-        print("Iterations needed: ", iterations)
+        #print("Sentence changed into: ", sentence)
+        #print("Iterations needed: ", iterations)
 
         return sentence
 
@@ -369,15 +375,15 @@ class Negative_endings:
             of the dataset
         """
 
-        return self.dict_corpus_nouns[randint(0,self.total_corpus_nouns)]
+        return self.dict_corpus_nouns[randint(0,self.total_corpus_nouns-1)]
     
     def sample_from_pronouns(self):
         """
             Output: sample a pronoun from the all the pronouns
             of the dataset
         """
-
-        return self.dict_corpus_pronouns[randint(0,self.total_corpus_pronouns)]
+        #print("TOTAL PRONOUNS ",self.total_corpus_pronouns)
+        return self.dict_corpus_pronouns[randint(0,self.total_corpus_pronouns-1)]
 
 
     def sample_from_verbs(self):
@@ -386,7 +392,7 @@ class Negative_endings:
             of the dataset
         """
 
-        return self.dict_corpus_verbs[randint(0,self.total_corpus_verbs)]
+        return self.dict_corpus_verbs[randint(0,self.total_corpus_verbs-1)]
 
 
     def sample_from_adverbs(self):
@@ -395,7 +401,7 @@ class Negative_endings:
             of the dataset
         """
 
-        return self.dict_corpus_advs[randint(0,self.total_corpus_advs)]
+        return self.dict_corpus_advs[randint(0,self.total_corpus_advs-1)]
 
     def sample_from_adjectives(self):
         """
@@ -403,70 +409,83 @@ class Negative_endings:
             of the dataset
         """
 
-        return self.dict_corpus_adjs[randint(0,self.total_corpus_adjs)]
+        return self.dict_corpus_adjs[randint(0,self.total_corpus_adjs-1)]
 
 
 
     """******************GROUPING TAGS PER TYPE TO FORM SETS TO SAMPLE FROM*****************"""
 
+    def check_for_unknown_words(self, list_of_words):
+
+        new_list_of_words = []
+        vocabulary = self.vocabulary
+        nb_words = len(list_of_words)
+
+        for i in range(0, nb_words):
+            if list_of_words[i] in vocabulary:
+                new_list_of_words.append(list_of_words[i])
+            else:
+                new_list_of_words.append(unk)
+
+        return new_list_of_words
+
     def define_vocab_tags(self, all_corpus_nouns, all_corpus_pronouns, all_corpus_verbs,
                                all_corpus_advs, all_corpus_adjs):
         
-        self.dict_corpus_nouns = list(Counter(all_corpus_nouns))
+        self.dict_corpus_nouns = list(Counter(self.check_for_unknown_words(list_of_words=all_corpus_nouns)))
         self.total_corpus_nouns = len(self.dict_corpus_nouns)
-        print("")
+        """print("")
         print("")
         print("")
         print("NOUNS TO SAMPLE FROM ")
         print("")
         print("")
         print("")
-        print(self.dict_corpus_nouns)
+        print(self.dict_corpus_nouns)"""
 
-        self.dict_corpus_pronouns = list(Counter(all_corpus_pronouns))
+        self.dict_corpus_pronouns = list(Counter(self.check_for_unknown_words(list_of_words = all_corpus_pronouns)))
         self.total_corpus_pronouns = len(self.dict_corpus_pronouns)
-        print("")
+        """print("")
         print("")
         print("")
         print("PRONOUNS TO SAMPLE FROM ")
         print("")
         print("")
         print("")
-        print(self.dict_corpus_pronouns)
+        print(self.dict_corpus_pronouns)"""
 
-        self.dict_corpus_verbs = list(Counter(all_corpus_verbs))
+        self.dict_corpus_verbs = list(Counter(self.check_for_unknown_words(list_of_words = all_corpus_verbs)))
         self.total_corpus_verbs = len(self.dict_corpus_verbs)
-        print("")
+        """print("")
         print("")
         print("")
         print("VERBS TO SAMPLE FROM ")
         print("")
         print("")
         print("")
-        print(self.dict_corpus_verbs)
+        print(self.dict_corpus_verbs)"""
 
-        self.dict_corpus_advs = list(Counter(all_corpus_advs))
+        self.dict_corpus_advs = list(Counter(self.check_for_unknown_words(list_of_words = all_corpus_advs)))
         self.total_corpus_advs = len(self.dict_corpus_advs)
-        print("")
+        """print("")
         print("")
         print("")
         print("ADVERBS TO SAMPLE FROM ")
         print("")
         print("")
         print("")
-        print(self.dict_corpus_advs)
-        
-        self.dict_corpus_adjs = list(Counter(all_corpus_adjs))
+        print(self.dict_corpus_advs)"""
+
+        self.dict_corpus_adjs = list(Counter(self.check_for_unknown_words(list_of_words = all_corpus_adjs)))
         self.total_corpus_adjs = len(self.dict_corpus_adjs)
-        print("")
+        """print("")
         print("")
         print("")
         print("ADJECTIVES TO SAMPLE FROM ")
         print("")
         print("")
         print("")
-        print(self.dict_corpus_adjs)
-
+        print(self.dict_corpus_adjs)"""
 
 
     def filter_story_tags(self, tagged_story):
@@ -491,9 +510,7 @@ class Negative_endings:
 
             for tagged_word in tagged_sent:
 
-                #print("tagged word ", tagged_word)
-                #print("tagged_word[0] ", tagged_word[0])
-                #print("tagged_word[1] ", tagged_word[1])
+
                 if "NN" in tagged_word[1] and tagged_word[0]!=pad: #Nouns
                     all_nouns.append(tagged_word[0])
                 if "PRP" in tagged_word[1] and tagged_word[0]!=pad: #Nouns
@@ -532,10 +549,9 @@ class Negative_endings:
 
         story_number = 0
 
-        for tagged_story in self.all_stories_pos_tagged:
+        for tagged_story in self.all_stories_context_pos_tagged:
             all_story_nouns, all_story_pronouns, all_story_verbs, all_story_advs, all_story_adjs = self.filter_story_tags(tagged_story = tagged_story)
-            #print("ALL STORY NOUNS:")
-            #print(all_story_nouns)
+
             all_corpus_nouns.extend(all_story_nouns)
             all_corpus_pronouns.extend(all_story_pronouns)
             all_corpus_verbs.extend(all_story_verbs)
@@ -546,9 +562,7 @@ class Negative_endings:
             if story_number % 10000 == 0:
                 print("Filtering: ",story_number)
 
-        #print("All corpus nouns")
-        #print(all_corpus_nouns)
-        #print(all_corpus_pronouns)
+
         self.define_vocab_tags(all_corpus_nouns = all_corpus_nouns, 
                                all_corpus_pronouns = all_corpus_pronouns,
                                all_corpus_verbs = all_corpus_verbs,
@@ -582,7 +596,7 @@ class Negative_endings:
 
         #TODO to be completed Nini doing that ?
         outfile = open(os.path.join(data_folder,"tagged_corpus.txt"))
-        for tagged_story in self.all_stories_pos_tagged:
+        for tagged_story in self.all_stories_context_pos_tagged:
             outfile.write(self.save_pos_tagged_story(tagged_story = tagged_story)+"\n")
 
     
@@ -606,17 +620,17 @@ class Negative_endings:
 
     def pos_tagger_dataset(self):
 
-        all_stories_pos_tagged = []
+        all_stories_context_pos_tagged = []
         story_number = 0
         for story in self.all_stories:
 
-            all_stories_pos_tagged.append(self.pos_tagger_story(story = story))
+            all_stories_context_pos_tagged.append(self.pos_tagger_story(story = story))
             story_number = story_number + 1
             if story_number % 1000 == 0:
                 print(story_number)
-        #print(all_stories_pos_tagged)
+        #print(all_stories_context_pos_tagged)
         print("Done -> Dataset into pos tagged dataset")
-        self.all_stories_pos_tagged = all_stories_pos_tagged
+        self.all_stories_context_pos_tagged = all_stories_context_pos_tagged
 
 
 
@@ -661,7 +675,7 @@ class Negative_endings:
         self.all_stories = all_stories
         #print(all_stories)
     
-    def delete_id_from_corpus(self, corpus):
+    def delete_id_from_corpus(self, corpus, endings = False):
 
         story_number = 0
         all_stories_no_id = []
@@ -671,8 +685,10 @@ class Negative_endings:
             new_story = corpus[story_number][1:sentence_in_stories] # delete ids stories
             story_number = story_number + 1
             all_stories_no_id.append(new_story)
-
-        self.all_stories_pos_tagged = all_stories_no_id
+        if not endings:
+            self.all_stories_context_pos_tagged = all_stories_no_id
+        else:
+            self.all_stories_endings_pos_tagged = all_stories_no_id
 
         return all_stories_no_id
 
@@ -688,52 +704,22 @@ def main():
                                thr_new_verb = 0.8, thr_new_adj = 0.8, 
                                thr_new_adv = 0.8)
     neg_end.load_vocabulary()
-    #neg_end.dataset_into_character_sentences(x_begin)
     
     print("Loading pos tagged corpus (context) from ",train_pos_begin)
-    #prep.pos_tag_dataset(train_set)
-    all_stories_pos_tagged = np.load(train_pos_begin)
-    #all_stories_pos_tagged = prep.open_csv_asmatrix(train_pos_begin)
-    
-    #story_number = 0
-    #for story in all_stories_pos_tagged:
-    #    all_stories_pos_tagged[story_number] = make_tuple(story)
-    #    story_number = story_number+1
+    all_stories_context_pos_tagged = np.load(train_pos_begin)
 
-    all_stories_pos_tagged = neg_end.delete_id_from_corpus(corpus = all_stories_pos_tagged)
-    
-    """
-    print("LOADED MATRIX OF CORPUS, DETAILS:")
-    print(len(all_stories_pos_tagged))
-    print(len(all_stories_pos_tagged[0]))
-    print(all_stories_pos_tagged[0])
-    print(all_stories_pos_tagged[0][1])
-    print(all_stories_pos_tagged[0][1][0])
-    print(all_stories_pos_tagged[0][1][0][0])
-    """
-
-
-
-    
-    #for story in all_stories_pos_tagged:
-    #    all_stories_pos_tagged[story_number] = all_stories_pos_tagged[story_number][1:4] # delete(all_stories_pos_tagged, 0, 0)
-    #    story_number = story_number + 1
-    #all_stories_pos_tagged[story_number] = all_stories_pos_tagged[0][1:-1]
-
-    #print(all_stories_pos_tagged.size)
-    #print(all_stories_pos_tagged)
-    
-    #sentence_to_list = all_stories_pos_tagged[0][0].tolist()
-    #print(sentence_to_list[0])
-    #all_stories_pos_tagged.tolist()
-    #print(all_stories_pos_tagged[0][1][0])
-    #neg_end.pos_tagger_dataset()
-
+    all_stories_context_pos_tagged = neg_end.delete_id_from_corpus(corpus = all_stories_context_pos_tagged, endings = False)
+    all_stories_endings_pos_tagged = neg_end.delete_id_from_corpus(corpus = all_stories_context_pos_tagged, endings = True)
     neg_end.filter_corpus_tags()
-    #print("Story original")
-    #print(neg_end.all_stories_pos_tagged[0])
-    neg_end.words_substitution_approach(neg_end.all_stories_pos_tagged[1], is_tagged_story = True,
-                           out_tagged_story = True, #Output a pos_tagged story if True
-                           batch_size = 10)
+
+    all_stories = len(all_stories_endings_pos_tagged)
+    for i in range(0,40000):
+        neg_end.words_substitution_approach(neg_end.all_stories_endings_pos_tagged[i], is_w2v = False,
+                               out_tagged_story = True, #Output a pos_tagged story if True
+                               batch_size = 3,
+                               shuffle_batch = True,
+                               merge_sentences = True)
+        if i%10000 ==0:
+            print("Negative ending(s) created for :",i, "/",all_stories)
     
 main()
