@@ -1,4 +1,5 @@
 from config import *
+import numpy as np
 import pickle
 from collections import Counter
 
@@ -143,3 +144,70 @@ def wrap_sentence(sentence, vocabulary):
     wrapped_sentence_w_index = get_indexes_from_words(wrapped_sentence, vocabulary)
 
     return wrapped_sentence_w_index
+
+
+def generate_vocab_pos(pos_data):
+    """
+    Generate a pos_vocabulary file and save it in pkl form
+    :param pos_data:
+    :return:
+    """
+
+    matrix = np.load(pos_data)
+
+    # numrows = matrix.shape[0]
+    numsen = matrix.shape[1]
+
+    # TODO Delete for full dataset
+    numrows = 1000
+
+    list_pos = list()
+
+    for item in matrix[0:numrows, 1:numsen]:
+        for sentence in item[0:numrows]:
+            list_pos = list_pos + sentence[:, 1].tolist()
+    # print(list(set(list_pos)))
+
+    #creating dictionary with pos_tags, using negative numbers
+    pos_dic = dict(enumerate(list(set(list_pos))))
+    pos_dictionary = {v: -(k+1) for k, v in pos_dic.items()}
+
+    print(pos_dictionary)
+
+    with open(pos_vocabulary_pkl , 'wb') as output:
+        pickle.dump(pos_dictionary, output, pickle.HIGHEST_PROTOCOL)
+        print("Pos vocabulary saved as pkl")
+
+    return pos_dictionary
+
+
+def merge_vocab(vocab1, vocab2):
+    """
+    Merges two dictionaries in pkl format and saves as new dictionary
+    :param vocab1, vocab2: dictionaries to merge in pkl format
+    :return: merged dictionary
+    """
+
+    with open(vocab1, 'rb') as f:
+        data1 = pickle.load(f)
+
+    with open(vocab2, 'rb') as f:
+        data2 = pickle.load(f)
+
+    data1.update(data2)
+
+    with open(full_vocabulary_pkl , 'wb') as output:
+        pickle.dump(data1, output, pickle.HIGHEST_PROTOCOL)
+        print("Full vocabulary saved as pkl")
+
+    return data1
+
+
+if __name__ == '__main__':
+
+    generate_vocab_pos(train_pos_begin)
+    merge_vocab(vocabulary_pkl, pos_vocabulary_pkl)
+
+    with open(full_vocabulary_pkl, 'rb') as f:
+        data = pickle.load(f)
+    print(data)
