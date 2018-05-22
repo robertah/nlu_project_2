@@ -4,7 +4,6 @@ import data_utils
 import negative_endings as neg_end
 
 
-
 def batch_iter(data, batch_size, num_epochs, shuffle=False, testing=False):
     """
     Generates a batch generator for the dataset.

@@ -22,12 +22,14 @@ unk = '<unk>'  # unknown token
 
 # TODO to be specified
 vocabulary_pkl = data_folder + '/vocabulary.pkl'
-# train_pos_begin = data_folder + '/train_pos_begin.pkl'
-# train_pos_end = data_folder + '/train_pos_end.pkl'
-pos_tags_pkl = data_folder + '/tags_vocabulary.pkl'
-train_pos_begin = data_folder + '/train_stories_pos_begin.npy'
-train_pos_end = data_folder + '/train_stories_pos_end.npy'
+pos_vocabulary_pkl = data_folder + '/pos_vocabulary.pkl'
+full_vocabulary_pkl = data_folder + '/full_vocabulary.pkl'
+train_pos_begin = data_folder + '/train_pos_begin.npy'
+train_pos_end = data_folder + '/train_pos_end.npy'
 
 
 vocabulary_size = 20000  # None for not limited vocabulary size
 sentence_len = 15  # None for not limited sentence length
+embedding_dim = 150
+num_steps = 10 #used for the lstm embedding layer (# of steps/words in each sample)
+hidden_size = 100
