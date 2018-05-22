@@ -3,7 +3,6 @@ import random
 import data_utils
 
 
-
 def batch_iter(data, batch_size, num_epochs, shuffle=False, testing=False):
     """
     Generates a batch generator for a dataset.
