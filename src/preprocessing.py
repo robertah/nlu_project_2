@@ -2,17 +2,18 @@ from config import *
 import numpy as np
 import pandas as pd
 import nltk
+import os
+import pickle
 from nltk.tokenize import RegexpTokenizer
 from nltk.corpus import stopwords
 from nltk.stem.wordnet import WordNetLemmatizer
 from nltk.stem import SnowballStemmer
 from nltk import download
 from data_utils import wrap_sentence, generate_vocabulary, load_vocabulary
-nltk.download('punkt')
-nltk.download('averaged_perceptron_tagger')
 
 
-def _load_data(dataset):
+
+def load_data(dataset):
     """
     Build the dataframe from the given dataset
 
@@ -30,7 +31,7 @@ def _load_data(dataset):
     return pd.read_csv(dataset, index_col='id', names=names, skiprows=1)
 
 
-def _tokenize(dataframe, stop_words=True, lemmatize=False, stem=True):
+def tokenize(dataframe, stop_words=True, lemmatize=False, stem=False):
     """
     Tokenize sentences in the given dataframe
 
@@ -87,13 +88,10 @@ def preprocess(dataset, pos_tagging=False):
     print("Preprocessing...")
 
     # load data from csv
-    data_original = _load_data(dataset)
-
-    #Quick check of first 10 rows - TODO Remove
-    data_original = data_original.head(10)
+    data_original = load_data(dataset)
 
     # tokenize sentences in dataframe
-    data_processed = _tokenize(data_original)
+    data_processed = tokenize(data_original)
 
     # generate vocabulary if training, otherwise load existing vocabulary
     if dataset == train_set:
@@ -109,19 +107,6 @@ def preprocess(dataset, pos_tagging=False):
             # row[col] = wrap_sentence(list(row[col]), vocabulary)
             data_processed.set_value(i, col, wrap_sentence(list(row[col]), vocabulary))
 
-    if pos_tagging:
-        pos_text = pd.DataFrame(columns=['sen1', 'sen2', 'sen3', 'sen4', 'sen5'])
-        if dataset == train_set:
-            for index, row in data_original.iterrows():
-                pos_text.loc[index] = [pos_tagging_text(row['sen1']), pos_tagging_text(row['sen2']),
-                                       pos_tagging_text(row['sen3']), pos_tagging_text(row['sen4']),
-                                       pos_tagging_text(row['sen5'])]
-        else:
-            for index, row in data_original.iterrows():
-                pos_text.loc[index] = [pos_tagging_text(row['sen1']), pos_tagging_text(row['sen2']),
-                                       pos_tagging_text(row['sen3']), pos_tagging_text(row['sen4'])]
-        return data_original, data_processed, pos_text
-
     else:
         return data_original, data_processed
 
@@ -129,6 +114,41 @@ def preprocess(dataset, pos_tagging=False):
 def pos_tagging_text(sentence):
     tokens = nltk.word_tokenize(sentence)
     return nltk.pos_tag(tokens)
+
+
+def pos_tag_dataset(dataset):
+
+    nltk.download('punkt')
+    nltk.download('averaged_perceptron_tagger')
+
+    # load data from csv
+    data_original = load_data(dataset)
+
+    # Creates dataframes with pos-tagged sentences
+    pos_begin = pd.DataFrame(columns=['id', 'sen1', 'sen2', 'sen3', 'sen4'])
+    pos_end = pd.DataFrame(columns=['id', 'sen5'])
+    for index, row in data_original.iterrows():
+        pos_begin.loc[index] = [index,
+                                np.asarray(pos_tagging_text(row['sen1']), object),
+                                np.asarray(pos_tagging_text(row['sen2']), object),
+                                np.asarray(pos_tagging_text(row['sen3']), object),
+                                np.asarray(pos_tagging_text(row['sen4']), object)]
+        pos_end.loc[index] = [index, pos_tagging_text(row['sen5'])]
+
+    pos_begin = np.asarray(pos_begin)
+    pos_end = np.asarray(pos_end)
+
+    # Saving models in two data files
+    cur_dir = os.path.splitext(train_set)[0]
+    path_begin = cur_dir + "_pos_begin"
+    path_end = cur_dir + "_pos_end"
+
+    np.save(path_begin, pos_begin)
+    np.save(path_end, pos_end)
+
+    # To load dataset, then do np.load(train_pos_begin)
+
+    return None
 
 
 def get_story_matrices(df):
@@ -171,6 +191,13 @@ def get_story_matrices(df):
     return beginning, ending
 
 
+def open_csv_asmatrix(datafile):
+    file_csv = pd.read_csv(datafile)
+    file = np.asarray(file_csv)
+    return file
+
+
+
 # just trying if works
 if __name__ == '__main__':
     # data_orig, data_proc = preprocess(train_set)
@@ -181,10 +208,13 @@ if __name__ == '__main__':
     # x_begin = np.reshape(x_begin, (n_stories, -1))
     # print(x_begin.shape)
 
-    data_orig, data_proc, pos_text = preprocess(train_set, pos_tagging=True)
-    print(data_orig)
-    print(data_proc)
-    print(pos_text)
+    # To convert csv dataframe to matrix
+    matrix = open_csv_asmatrix(train_pos_begin)
+
+
+    # dataset=train_set
+    # pos_tag_dataset(dataset)
+
     # sentences = _load_data(train_set)
     # print(sentences)
     # pos_text = pos_tagging_text(sentences)

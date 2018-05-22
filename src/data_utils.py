@@ -22,7 +22,7 @@ def count_words(df):
         for i, row in df.iterrows():
             words.update(list(row[col]))
     print("Found", len(words), "words in dataset:")
-    print(words)
+    #print(words)
 
     return words
 
@@ -57,7 +57,8 @@ def generate_vocabulary(df):
     # if vocabulary size is fixed add unk
     if vocabulary_size is not None:
         vocabulary.update({unk: len(vocabulary)})
-    print("Vocabulary generated: \n", vocabulary)
+
+    #print("Vocabulary generated: \n", vocabulary)
     with open(vocabulary_pkl, 'wb') as output:
         pickle.dump(vocabulary, output, pickle.HIGHEST_PROTOCOL)
         print("Vocabulary saved as pkl")

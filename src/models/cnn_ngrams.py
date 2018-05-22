@@ -15,8 +15,8 @@ class CNN_ngrams():
         """
         self.train_generator = train_generator
         self.validation_generator = validation_generator
-        self.n_gram_size = 2
-        self.stride_size = 5
+        self.n_gram_size = 10
+        self.stride_size = 1
 
         """Loading trained model for predicting"""
         if path:
@@ -34,7 +34,7 @@ class CNN_ngrams():
            First block"""
         self.model.add(keras.layers.Convolution2D(filters=100,
                                                   strides=stride_size,
-                                                  kernel_size=(n_gram_size, n_gram_size),
+                                                  kernel_size=(n_gram_size, 2),
                                                   padding="same",
                                                   input_shape=train_generator.input_dim()))
         self.model.add(keras.layers.MaxPooling2D(pool_size=(n_gram_size, n_gram_size),
@@ -46,7 +46,7 @@ class CNN_ngrams():
         """Second block"""
         self.model.add(keras.layers.Convolution2D(filters=100,
                                                   strides=stride_size,
-                                                  kernel_size=(n_gram_size, n_gram_size),
+                                                  kernel_size=(n_gram_size, 2),
                                                   padding="same"))
         self.model.add(keras.layers.LeakyReLU(alpha=0.1))
         self.model.add(keras.layers.MaxPooling2D(pool_size=(n_gram_size, n_gram_size),
