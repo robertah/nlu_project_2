@@ -117,6 +117,14 @@ def pos_tagging_text(sentence):
 
 
 def pos_tag_dataset(dataset):
+    """
+    Saves two files containing an array of size #stories/rows by 5 (story id, sen1 to sen4) for the former
+    and an array of size #stories/rows by 2 (story id, sen5).
+    Each column (not id) is a tockenized and pos-tagged sentence of the form (ie: [[Kelly, RB], [studied, VBN], [.,.]])
+
+    :param dataset: dataframe containing train / val / test data
+    :return: none
+    """
 
     nltk.download('punkt')
     nltk.download('averaged_perceptron_tagger')
@@ -218,10 +226,6 @@ if __name__ == '__main__':
     # n_stories, *_ = x_begin.shape
     # x_begin = np.reshape(x_begin, (n_stories, -1))
     # print(x_begin.shape)
-
-    # To convert csv dataframe to matrix
-    matrix = open_csv_asmatrix(train_pos_begin)
-
 
     # dataset=train_set
     # pos_tag_dataset(dataset)
