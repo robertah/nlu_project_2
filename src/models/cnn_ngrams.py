@@ -1,7 +1,7 @@
 import os
 import keras
 from keras.models import load_model
-from ../config import *
+#from ... import config
 
 class CNN_ngrams():
     """CNN model implementing a classifier using leaky ReLU and dropouts.

@@ -221,7 +221,7 @@ class Negative_endings:
                
             if merge_sentences: 
                 batch_aug_stories.append(self.join_story_from_sentences(new_story))
-                print(len(batch_aug_stories[0]))
+                #print(len(batch_aug_stories[0]))
             else:
                 batch_aug_stories.append(new_story)                
         else:
@@ -691,35 +691,3 @@ class Negative_endings:
             self.all_stories_endings_pos_tagged = all_stories_no_id
 
         return all_stories_no_id
-
-def main():
-    """
-    d_orig, d_prep = prep.preprocess(train_set)
-    x_begin, x_end = prep.get_story_matrices(d_prep)
-    
-    x_begin = x_begin.tolist()
-    x_end = x_end.tolist()
-    """
-    neg_end = Negative_endings(thr_new_noun = 0.8, thr_new_pronoun = 0.8, 
-                               thr_new_verb = 0.8, thr_new_adj = 0.8, 
-                               thr_new_adv = 0.8)
-    neg_end.load_vocabulary()
-    
-    print("Loading pos tagged corpus (context) from ",train_pos_begin)
-    all_stories_context_pos_tagged = np.load(train_pos_begin)
-
-    all_stories_context_pos_tagged = neg_end.delete_id_from_corpus(corpus = all_stories_context_pos_tagged, endings = False)
-    all_stories_endings_pos_tagged = neg_end.delete_id_from_corpus(corpus = all_stories_context_pos_tagged, endings = True)
-    neg_end.filter_corpus_tags()
-
-    all_stories = len(all_stories_endings_pos_tagged)
-    for i in range(0,40000):
-        neg_end.words_substitution_approach(neg_end.all_stories_endings_pos_tagged[i], is_w2v = False,
-                               out_tagged_story = True, #Output a pos_tagged story if True
-                               batch_size = 3,
-                               shuffle_batch = True,
-                               merge_sentences = True)
-        if i%10000 ==0:
-            print("Negative ending(s) created for :",i, "/",all_stories)
-    
-main()

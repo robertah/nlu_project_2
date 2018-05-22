@@ -8,6 +8,7 @@ n_group = '20'
 # path to data folder and data sets
 data_folder = '../data'
 out_trained_models = '../trained_models'
+
 # TODO to be specified the dataset path
 train_set = data_folder + '/train_stories.csv'
 val_set = data_folder + '/cloze_test_val__spring2016 - cloze_test_ALL_val.csv'
