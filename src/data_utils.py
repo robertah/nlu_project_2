@@ -1,7 +1,25 @@
 from config import *
+import pandas as pd
 import numpy as np
 import pickle
 from collections import Counter
+
+def load_data(dataset):
+    """
+    Build the dataframe from the given dataset
+
+    :param dataset: path to csv data file (train, val or test data)
+    :return: dataframe corresponding to the dataset
+    """
+
+    assert dataset == train_set or dataset == val_set or dataset == test_set
+
+    if dataset == train_set:
+        names = ['id', 'title', 'sen1', 'sen2', 'sen3', 'sen4', 'sen5']
+    else:
+        names = ['id', 'sen1', 'sen2', 'sen3', 'sen4', 'sen5_1', 'sen5_2', 'ans']
+
+    return pd.read_csv(dataset, index_col='id', names=names, skiprows=1)
 
 
 def count_words(df):
@@ -22,7 +40,7 @@ def count_words(df):
     for col in sen_cols:
         for i, row in df.iterrows():
             words.update(list(row[col]))
-    print("Found", len(words), "words in dataset:")
+    print("Found", len(words), "words in dataset.")
     #print(words)
 
     return words
@@ -111,39 +129,139 @@ def get_indexes_from_words(words, vocabulary):
     :param vocabulary: vocabulary
     :return: indexes corresponding to given words
     """
+
     # retrieve indexes corresponding to words
     indexes = [vocabulary[x] for x in words]
     return indexes
 
 
-def wrap_sentence(sentence, vocabulary):
+def read_sentences(df):
     """
-    Wrap sentence according to vocabulary and sentence length
+    Get array of sentences from the given dataframe
 
-    :param sentence: raw sentence
-    :param vocabulary: vocabulary built from train set
-    :return: wrapped sentence with indexes
+    :param df: dataframe containing train / val / test data
+    :return: numpy array with sentences
     """
 
-    wrapped_sentence = []
+    # filter by sentences columns
+    story_df = df.loc[:, df.columns.str.startswith('sen')]
+
+    # get sentences
+    sentences = story_df.values
+
+    return sentences
+
+
+def read_stories(df):
+    """
+    Get array of stories from the given dataframe
+
+    :param df: dataframe containing train / val / test data
+    :return: numpy array with stories
+    """
+
+    # read sentences from dataframe
+    sentences = read_sentences(df)
+
+    # get number of stories
+    n_stories, *_ = sentences.shape
+
+    # gather sentences together for each story
+    stories = []
+    for i, s in enumerate(sentences):
+        story = []
+        for ss in s:
+            story.extend(ss)
+        stories.append(story)
+
+    # convert list of stories to numpy array
+    stories = np.asarray(stories)
+
+    return stories
+
+
+def check_for_unk(sentence, vocabulary):
+    """
+    Check for unk in sentence given the vocabulary
+
+    :param sentence: raw sentence as list of words
+    :param vocabulary: vocabulary generated during training
+    :return: sentence where missing words are replaced by unk
+    """
+
+    new_sentence = []
 
     # replace words not in vocabulary with unk
     for word in sentence:
-        wrapped_sentence.append(word if word in vocabulary.keys() else unk)
+        new_sentence.append(word if word in vocabulary.keys() else unk)
 
-    # if sentence length is fixed
-    if sentence_len is not None:
-        # pad sentence if it is too short
-        while len(wrapped_sentence) <= sentence_len:
-            wrapped_sentence.append(pad)
+    return new_sentence
+
+
+def pad_sentences(sentences):
+    """
+    Pad sentences according to sentence_len
+
+    :param sentences: list of sentences
+    :return: array of padded sentences
+    """
+
+    padded_sentences = []
+
+    # len_sentences = np.asarray([len(s) for s in sentences])
+    # print('max:', np.max(len_sentences))
+
+    for sentence in sentences:
+
         # trim the sentence if it is too long
-        if len(wrapped_sentence) > sentence_len:
-            wrapped_sentence = wrapped_sentence[:sentence_len]
+        if len(sentence) > sentence_len:
+            padded_sentence = sentence[:sentence_len]
 
-    # get word indexes from vocabulary
-    wrapped_sentence_w_index = get_indexes_from_words(wrapped_sentence, vocabulary)
+        # pad the sentence if it is too short
+        else:
+            padded_sentence = sentence
 
-    return wrapped_sentence_w_index
+            while len(padded_sentence) < sentence_len:
+                padded_sentence.append(pad)
+
+        padded_sentences.append(padded_sentence)
+
+    padded_sentences = np.asarray(padded_sentences)
+
+    return padded_sentences
+
+
+def pad_stories(stories):
+    """
+    Pad stories according to story_len
+
+    :param stories: list of stories
+    :return: array of padded stories
+    """
+
+    padded_stories = []
+
+    # len_stories = np.asarray([len(s) for s in stories])
+    # print('max:', np.max(len_stories))
+
+    for story in stories:
+
+        # trim the story if it is too long
+        if len(story) > story_len:
+            padded_story = story[:story_len]
+
+        # pad the story if it is too short
+        else:
+            padded_story = story
+
+            while len(padded_story) < story_len:
+                padded_story.append(pad)
+
+        padded_stories.append(padded_story)
+
+    padded_stories = np.asarray(padded_stories)
+
+    return padded_stories
 
 
 def generate_vocab_pos(pos_data):
