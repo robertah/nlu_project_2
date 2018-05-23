@@ -40,8 +40,14 @@ num_steps = 10 #used for the lstm embedding layer (# of steps/words in each samp
 hidden_size = 100
 
 #Add other tags if you want negative endings to probabilistically sample from them
+#Remeber to add the corresponding sampling probability in the correct order
 tags_to_sample_from = ["VB", "VBD", "VBG", "VBN", "VBP", "VBZ", #verbs
-                 "NN", "NNP", "NNPS", "NNS", #nouns
-                 "PRP", #pronouns
-                 "RB", "RBR", "RBS", # adverbs
-                 "JJ", "JJR", "JJS"] # adjectives
+                       "NN", "NNP", "NNPS", "NNS", #nouns
+                       "PRP", #pronouns
+                       "RB", "RBR", "RBS", # adverbs
+                       "JJ", "JJR", "JJS"] # adjectives
+probs_tags_to_sample_from = [0.8, 0.8, 0.8, 0.8, 0.8, 0.8, #verbs
+                             0.8, 0.8, 0.8, 0.8, #nouns
+                             0.8, #pronouns
+                             0.8, 0.8, 0.8, # adverbs
+                             0.8, 0.8, 0.8] # adjectives

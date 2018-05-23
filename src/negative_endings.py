@@ -19,25 +19,22 @@ class Negative_endings:
        please see the paper An RNN-based Binary Classifier for the Story Cloze Test
        """
 
-    def __init__(self, thr_new_noun, thr_new_pronoun, thr_new_verb, thr_new_adj, thr_new_adv):
+    def __init__(self):
 
-        self.set_sample_probabilities(thr_sample_new_noun = thr_new_noun, thr_sample_new_pronoun = thr_new_pronoun,
-                                      thr_sample_new_verb = thr_new_verb, 
-                                 thr_sample_new_adj = thr_new_adj, thr_sample_new_adv = thr_new_adv)
+        print("Negative endings object created..")
+        self.set_sample_probabilities()
 
-
-    
-    def set_sample_probabilities(self, thr_sample_new_noun, thr_sample_new_pronoun, thr_sample_new_verb, thr_sample_new_adj, thr_sample_new_adv):
-        """
-            Sample probabilites thresholds for different logical part of the sentence
-            NB: keep the thr_sample_new_noun high (0.9) -> nouns are very important in semantics
-        """
-        self.thr_sample_new_verb = thr_sample_new_verb
-        self.thr_sample_new_adj = thr_sample_new_adj
-        self.thr_sample_new_noun = thr_sample_new_noun
-        self.thr_sample_new_pronoun = thr_sample_new_pronoun
-        self.thr_sample_new_adv = thr_sample_new_adv
-
+    def set_sample_probabilities(self):
+        
+        self.sampling_probs_tags = Counter(tags_to_sample_from)
+        
+        prob_idx = 0
+        for tag in tags_to_sample_from:
+            self.sampling_probs_tags[tag] = probs_tags_to_sample_from[prob_idx]
+            prob_idx = prob_idx + 1
+        
+        if prob_idx < len(list(self.sampling_probs_tags)):
+            print("IMPORTANT WARNING: some sampling probability thresholds have not been assigned, they are left to 0")
 
     """******************USER FUNCTIONS: THESE FUNCTIONS ARE THE ONE TO USE FOR TRAINING*****************"""
 
@@ -269,7 +266,7 @@ class Negative_endings:
 
                     p = random.uniform(0, 1)
 
-                    if p > self.thr_sample_new_verb:
+                    if p > self.sampling_probs_tags[tagged_word[1]]:
                         new_word = list(sentence[index])
                         new_word[0] = self.sample_from_vocab(tagged_word[1])
                         sentence[index] = tuple(new_word)

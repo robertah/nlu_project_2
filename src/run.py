@@ -70,12 +70,10 @@ def get_submission_filename():
     return submission_path_filename
 
 def initialize_negative_endings():
-    neg_end = data_aug.Negative_endings(thr_new_noun = 0.8, thr_new_pronoun = 0.8, 
-                                        thr_new_verb = 0.8, thr_new_adj = 0.8, 
-                                        thr_new_adv = 0.8)
+    neg_end = data_aug.Negative_endings()
     neg_end.load_vocabulary()
     context_pos_tagged, endings_pos_tagged = neg_end.load_corpus_no_ids()    
-    #Preserve here in case the vocabulary change, do not reload the filtered tags
+    #Preserve here in case the vocabulary change, do not save filters and reload them
     neg_end.filter_corpus_tags()
 
     all_stories = len(endings_pos_tagged)
