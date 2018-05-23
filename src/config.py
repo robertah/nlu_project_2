@@ -27,9 +27,15 @@ full_vocabulary_pkl = data_folder + '/full_vocabulary.pkl'
 train_pos_begin = data_folder + '/train_pos_begin.npy'
 train_pos_end = data_folder + '/train_pos_end.npy'
 
+word_embedding = data_folder + '/word_embedding'
+
 
 vocabulary_size = 20000  # None for not limited vocabulary size
-sentence_len = 15  # None for not limited sentence length
+sentence_len = 10  # None for not limited sentence length     max len 12 in train, 11 in val
+# story_len = 80  # in the train set the max story len is 74
+story_len = 45      #### 43
+
 embedding_dim = 150
 num_steps = 10 #used for the lstm embedding layer (# of steps/words in each sample)
 hidden_size = 100
+
