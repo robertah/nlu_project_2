@@ -155,10 +155,11 @@ def generate_vocab_pos(pos_data):
 
     matrix = np.load(pos_data)
 
-    numrows = matrix.shape[0]
+    # numrows = matrix.shape[0]
     numsen = matrix.shape[1]
 
-
+    # TODO Delete for full dataset
+    numrows = 1000
 
     list_pos = list()
 
