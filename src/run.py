@@ -79,7 +79,6 @@ def initialize_negative_endings():
     neg_end.filter_corpus_tags()
 
     all_stories = len(endings_pos_tagged)
-    print(context_pos_tagged[0])
     for i in range(0,5):
         neg_end.words_substitution_approach(endings_pos_tagged[i], is_w2v = False,
                                             out_tagged_story = False, #Output a pos_tagged story if True

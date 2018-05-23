@@ -39,3 +39,9 @@ embedding_dim = 150
 num_steps = 10 #used for the lstm embedding layer (# of steps/words in each sample)
 hidden_size = 100
 
+#Add other tags if you want negative endings to probabilistically sample from them
+tags_to_sample_from = ["VB", "VBD", "VBG", "VBN", "VBP", "VBZ", #verbs
+                 "NN", "NNP", "NNPS", "NNS", #nouns
+                 "PRP", #pronouns
+                 "RB", "RBR", "RBS", # adverbs
+                 "JJ", "JJR", "JJS"] # adjectives
