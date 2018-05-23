@@ -69,6 +69,26 @@ def get_submission_filename():
 
     return submission_path_filename
 
+def initialize_negative_endings():
+    neg_end = data_aug.Negative_endings(thr_new_noun = 0.8, thr_new_pronoun = 0.8, 
+                                        thr_new_verb = 0.8, thr_new_adj = 0.8, 
+                                        thr_new_adv = 0.8)
+    neg_end.load_vocabulary()
+    context_pos_tagged, endings_pos_tagged = neg_end.load_corpus_no_ids()    
+    #Preserve here in case the vocabulary change, do not reload the filtered tags
+    neg_end.filter_corpus_tags()
+
+    all_stories = len(endings_pos_tagged)
+    print(context_pos_tagged[0])
+    for i in range(0,5):
+        neg_end.words_substitution_approach(endings_pos_tagged[i], is_w2v = False,
+                                            out_tagged_story = False, #Output a pos_tagged story if True
+                                            batch_size = 4,
+                                            shuffle_batch = True)
+        if i%10000 ==0:
+            print("Negative ending(s) created for :",i, "/",all_stories)
+
+    return neg_end, context_pos_tagged, endings_pos_tagged
 
 """********************************************** USER ACTIONS from parser ************************************************************"""
 
@@ -104,30 +124,14 @@ if __name__ == "__main__":
         """Create a field with your model (see the default one to be customized) and put the procedure to follow to train it"""
         if args.model == "cnn_ngrams":
 
+            print("Initializing negative endings")
+            neg_end, context_pos_tagged, endings_pos_tagged = initialize_negative_endings()
             print("cnn grams training invoked")
-            
+            #train_utils.batch_iter_train_cnn(data = context_pos_tagged, neg_aug_obj = neg_end,
+            #             is_w2v, merge_sentences, 
+            #             batch_size = 2, num_epochs = 5000, shuffle=True, testing=False):
             #The things below are just a trial !
-            neg_end = data_aug.Negative_endings(thr_new_noun = 0.8, thr_new_pronoun = 0.8, 
-                               thr_new_verb = 0.8, thr_new_adj = 0.8, 
-                               thr_new_adv = 0.8)
-            neg_end.load_vocabulary()
-    
-            print("Loading pos tagged corpus (context) from ",train_pos_begin)
-            all_stories_context_pos_tagged = np.load(train_pos_begin)
 
-            all_stories_context_pos_tagged = neg_end.delete_id_from_corpus(corpus = all_stories_context_pos_tagged, endings = False)
-            all_stories_endings_pos_tagged = neg_end.delete_id_from_corpus(corpus = all_stories_context_pos_tagged, endings = True)
-            neg_end.filter_corpus_tags()
-
-            all_stories = len(all_stories_endings_pos_tagged)
-            for i in range(0,80000):
-                neg_end.words_substitution_approach(neg_end.all_stories_endings_pos_tagged[i], is_w2v = False,
-                                                    out_tagged_story = True, #Output a pos_tagged story if True
-                                                    batch_size = 2,
-                                                    shuffle_batch = True,
-                                                    merge_sentences = True)
-                if i%10000 ==0:
-                    print("Negative ending(s) created for :",i, "/",all_stories)
             
 
             #train_generator = train_utils() # TODO

@@ -23,9 +23,9 @@ def batches_pos_neg_endings(neg_aug_obj, data, total_stories, is_w2v, merge_sent
         """
     aug_data = []
     ver_aug_data = []
-    for i in range(0, total_stories):
+    for story_idx in range(0, total_stories):
         
-        batch_aug_stories, ver_aug_stories = neg_aug_obj.words_substitution_approach(training_story = data[i], #Can be full story or just id & final sentence [[id,final_sentence],[id2,....]..] 
+        batch_aug_stories, ver_aug_stories = neg_aug_obj.words_substitution_approach(training_story = data[story_idx], #Can be full story or just id & final sentence [[id,final_sentence],[id2,....]..] 
                                                                                      is_w2v = is_w2v, #If the story is w2v already and tags are in a numerical form as well
                                                                                      batch_size = batch_size,
                                                                                      merge_sentences = merge_sentences,
