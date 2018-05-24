@@ -24,8 +24,8 @@ unk = '<unk>'  # unknown token
 vocabulary_pkl = data_folder + '/vocabulary.pkl'
 pos_vocabulary_pkl = data_folder + '/pos_vocabulary.pkl'
 full_vocabulary_pkl = data_folder + '/full_vocabulary.pkl'
-train_pos_begin = data_folder + '/train_stories_pos_begin.npy'
-train_pos_end = data_folder + '/train_stories_pos_end.npy'
+train_pos_begin = data_folder + '/train_pos_begin.npy'
+train_pos_end = data_folder + '/train_pos_end.npy'
 
 word_embedding = data_folder + '/word_embedding'
 
