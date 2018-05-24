@@ -76,15 +76,6 @@ def initialize_negative_endings():
     #Preserve here in case the vocabulary change, do not save filters and reload them
     neg_end.filter_corpus_tags()
 
-    all_stories = len(endings_pos_tagged)
-    for i in range(0,5):
-        neg_end.words_substitution_approach(endings_pos_tagged[i], is_w2v = False,
-                                            out_tagged_story = False, #Output a pos_tagged story if True
-                                            batch_size = 4,
-                                            shuffle_batch = True)
-        if i%10000 ==0:
-            print("Negative ending(s) created for :",i, "/",all_stories)
-
     return neg_end, context_pos_tagged, endings_pos_tagged
 
 """********************************************** USER ACTIONS from parser ************************************************************"""
@@ -121,12 +112,17 @@ if __name__ == "__main__":
         """Create a field with your model (see the default one to be customized) and put the procedure to follow to train it"""
         if args.model == "cnn_ngrams":
 
-            print("Initializing negative endings")
+            print("CNN grams training invoked")
+            
+            print("Initializing negative endings..")
             neg_end, context_pos_tagged, endings_pos_tagged = initialize_negative_endings()
-            print("cnn grams training invoked")
-            #train_utils.batch_iter_train_cnn(data = context_pos_tagged, neg_aug_obj = neg_end,
-            #             is_w2v, merge_sentences, 
-            #             batch_size = 2, num_epochs = 5000, shuffle=True, testing=False):
+            
+            train_data_generator = train_utils.batch_iter_train_cnn(data = context_pos_tagged, neg_aug_obj = neg_end,
+                                             is_w2v = False, batch_size = 2, num_epochs = 5000, 
+                                             shuffle=True)
+            for batch in train_data_generator:
+                stories_train, verif_train = zip*(batch)
+                print(stories_train)
             #The things below are just a trial !
 
             

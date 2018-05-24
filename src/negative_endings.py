@@ -30,12 +30,13 @@ class Negative_endings:
         
         prob_idx = 0
         for tag in tags_to_sample_from:
-            self.sampling_probs_tags[tag] = probs_tags_to_sample_from[prob_idx]
-            prob_idx = prob_idx + 1
+            if prob_idx < len(probs_tags_to_sample_from):
+                self.sampling_probs_tags[tag] = probs_tags_to_sample_from[prob_idx]
+                prob_idx = prob_idx + 1
         
         if prob_idx < len(list(self.sampling_probs_tags)):
-            print("IMPORTANT WARNING: some sampling probability thresholds have not been assigned, they are left to 0")
 
+            print("\n\nIMPORTANT WARNING: some sampling probability thresholds have not been assigned, they are left to 0\n\n")
     """******************USER FUNCTIONS: THESE FUNCTIONS ARE THE ONE TO USE FOR TRAINING*****************"""
 
 
