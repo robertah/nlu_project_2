@@ -141,7 +141,7 @@ def count_words(sentences):
 
     # add sentences to counter
     for s in sentences:
-            words.update(s)
+        words.update(s)
 
     print("Found", len(words), "words in dataset.")
 
@@ -389,15 +389,14 @@ def filter_words(dataset):
     """
 
     # get number of sentences
-    n_sentences, *_ = dataset.shape
+    n_stories, *_ = dataset.shape
 
     # filter pos-tag dataset by words
-    filtered_words = np.empty(n_sentences, dtype=list)
+    filtered_words = np.empty(dataset.shape, dtype=list)
     for i, sentence in np.ndenumerate(dataset):
         filtered_words[i] = [word[0] for word in sentence]
 
     return filtered_words
-
 
 
 def generate_vocab_pos(pos_data):

@@ -8,7 +8,7 @@ def pos_tagging_text(sentence):
     return nltk.pos_tag(tokens)
 
 
-def pos_tag_dataset(dataset, seperate=False):
+def pos_tag_dataset(dataset, separate=False):
     """
     Saves two files containing pos-tagged sentences:
     1) array of size #stories/rows by 5 (story id, sen1 to sen4)
@@ -16,7 +16,7 @@ def pos_tag_dataset(dataset, seperate=False):
     Each column (not id) is a tockenized and pos-tagged sentence of the form (ie: [[Kelly, RB], [studied, VBN], [.,.]])
 
     :param dataset: dataframe containing train / val / test data
-    :param seperate: save beginning sentences as one entry per array row or as 4 seperate sentences/entries in array
+    :param separate: save beginning sentences as one entry per array row or as 4 seperate sentences/entries in array
     :return: pos tagged beginning and ending matrices
     """
 
@@ -50,7 +50,7 @@ def pos_tag_dataset(dataset, seperate=False):
                                   np.asarray(pos_tagging_text(row.iloc[5]))]
 
     # Dealing with story beginning: either group pos tags as one array or seperate per sentence
-    if seperate:
+    if separate:
         pos_begin = pd.DataFrame(columns=['id', 'sen1', 'sen2', 'sen3', 'sen4'])
         for index, row in data_original.iterrows():
             pos_begin.loc[index] = [index,
@@ -122,8 +122,8 @@ def preprocess(pos_begin, pos_end, test=False, pad='ending', punct=True, stop_wo
     """
 
     # remove id from datasets
-    pos_begin = pos_begin[:, 1]
-    pos_end = pos_end[:, 1]
+    pos_begin = np.delete(pos_begin, 0, axis=1)
+    pos_end = np.delete(pos_end, 0, axis=1)
 
     # get number of stories
     n_stories = len(pos_begin)
@@ -134,7 +134,10 @@ def preprocess(pos_begin, pos_end, test=False, pad='ending', punct=True, stop_wo
 
     # generate vocabulary if training
     if not test:
-        filtered = filter_words(begin_processed) + filter_words(end_processed)
+        n_stories, n_beginnings = begin_processed.shape
+        filtered_begin = np.reshape(filter_words(begin_processed), (n_stories * n_beginnings))
+        filtered_end = filter_words(end_processed)
+        filtered = np.append(filtered_begin, filtered_end)
         vocabulary = generate_vocabulary(filtered)
     # load vocabulary if testing
     else:
@@ -150,8 +153,9 @@ def preprocess(pos_begin, pos_end, test=False, pad='ending', punct=True, stop_wo
 
     # map words to vocabulary indexes
     for i in range(n_stories):
-        begin_processed[i] = [get_indexes_from_words(sen, vocabulary) for sen in begin_processed[i]]
-        end_processed[i] = [get_indexes_from_words(sen, vocabulary) for sen in end_processed[i]]
+        begin_processed[i] = [[get_indexes_from_words(sen, vocabulary) for sen in story] for story in
+                              begin_processed[i]]
+        end_processed[i] = [[get_indexes_from_words(sen, vocabulary) for sen in story] for story in end_processed[i]]
 
     return begin_processed, end_processed
 
@@ -174,16 +178,16 @@ if __name__ == '__main__':
     # context, end,  preprocess(train_set, pad=None)
 
     dataset=val_set
-    pos_begin, pos_end = pos_tag_dataset(dataset, seperate=True)
-    # print(pos_begin.shape)
-    # print("###############")
-    # print(pos_end.shape)
+    pos_begin, pos_end = pos_tag_dataset(dataset, separate=True)
     # pos_begin = np.load(data_folder + '/train_stories_pos_begin.npy')  # (88161, 2)
     # pos_end = np.load(data_folder + '/train_stories_pos_end.npy')  # (88161, 2)
     pos_begin_processed, pos_end_processed = preprocess(pos_begin, pos_end, test=True, pad='ending', punct=True,
                                                         stop_words=True, lemm=True)
+    print(pos_begin_processed)
+    print(pos_end_processed)
     beg, end = filter_words(pos_begin_processed), filter_words(pos_end_processed)
-
+    print(beg.shape)
+    print(end.shape)
 
     # ----------
 
