@@ -22,7 +22,7 @@ def full_stories_together(contexts, endings):
         for ending in endings:
             original_context = deepcopy(context)
             full_stories_batch.append(original_context + ending)
-
+    print("Full stories in input: ", full_stories_batch)
     return full_stories_batch
 
 #For this function the datast needs to be pos tagged
