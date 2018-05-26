@@ -125,10 +125,10 @@ class Negative_endings:
 
     def words_substitution_approach(self, 
                                     ending_story, #Ending of the story
-                                    is_w2v = True, #If the story is vocablary index already and tags are in a numerical form as well
                                     out_tagged_story = False, #Output a pos_tagged story if True
                                     batch_size = 2,
-                                    shuffle_batch = True):
+                                    shuffle_batch = True,
+                                    debug = False): #If the changed endings should be displayed in charachter words
         
         """
         INPUT:
@@ -137,7 +137,7 @@ class Negative_endings:
 
         OUTPUT:
        
-        1) 3d array batch_aug_stories -> [batch_size, len(ending_story), 2] or [batch_size, len(ending_story)]  
+        1) 3d array batch_aug_endings -> [batch_size, len(ending_story), 2] or [batch_size, len(ending_story)]  
         2) 1d array ver_aug_stories -> [batch_size]
         
         Remark batch_aug_stories: original ending_story + (batch_size-1) ending_stories which differ AT LEAST with some grammatical component.
@@ -167,7 +167,7 @@ class Negative_endings:
 
             new_ending = deepcopy(ending_story)
             #print("Original ending: ", new_ending[-1])
-            changed_story_ending = self.change_sentence(sentence = new_ending[-1], is_w2v = is_w2v)
+            changed_story_ending = self.change_sentence(sentence = new_ending[-1])
             new_ending[-1] = changed_story_ending
             #print("Changed ending: ", new_ending[-1])
             
@@ -180,7 +180,8 @@ class Negative_endings:
 
             batch_aug_endings, ver_aug_stories = self.shuffle_story_verifier(batch_size = batch_size, 
                                                                              batch_aug_endings = batch_aug_endings, ver_aug_stories = ver_aug_stories)
-
+        if debug:
+            self.display_sentences(endings = batch_aug_endings, verifier = ver_aug_stories, tagged_story = out_tagged_story)
 
         #print(batch_aug_endings)
         #print(ver_aug_stories)
@@ -197,6 +198,20 @@ class Negative_endings:
     """******************************END USER FUNCTIONS**************************"""
 
 
+    def display_sentences(endings, verifier, tagged_story):
+        
+        for ending in endings:
+            sentence = []
+            vocabulary_list = list(self.vocabulary)
+            print("CHECK WHERE the tags are: ", self.vocabulary)
+            if tagged_story:
+                for word in ending:
+                    sentence.append(vocabulary_list[word[0]])
+            else:
+                for word in ending:
+                    sentence.append(vocabulary_list[word])
+            print(sentence)
+        print(verifier)
 
     def shuffle_story_verifier(self, batch_size, batch_aug_endings, ver_aug_stories ):
         shuffled_idx = np.arange(batch_size)
@@ -309,7 +324,7 @@ class Negative_endings:
         all_tags = list(self.sampling_tags)
         for tag in all_tags:
             self.sampling_tags[self.vocabulary[tag]] = self.sampling_tags.pop(tag)
-        print("Done with translations")
+        print("Done -> numerical translations")
 
     def define_vocab_tags(self):
         
@@ -369,11 +384,11 @@ class Negative_endings:
         print("Filtering endings..")
         self.filter(corpus = self.all_stories_endings_pos_tagged)
 
+        print("Done -> filtered corpus by tags")
 
         self.define_vocab_tags()
         self.tag_and_words_vocab_to_numerical_form()
 
-        print("Done -> filtered corpus by tags")
 
 
     """******************FROM CORPUS TO POS TAGGED CORPUS & SAVE TO FILE*****************"""
