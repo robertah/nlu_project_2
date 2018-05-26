@@ -107,23 +107,29 @@
 #     else:
 #         return beginnings, endings, get_answers(data_original)
 
-def get_context_ending(data):
-    """
+# def get_context_ending(data):
+#     """
+#
+#     :param data:
+#     :return:
+#     """
+#
+#     n_stories, n_sentences = data.shape
+#
+#     b, e = data[:, :4], data[:, 4:]
+#
+#     # squeeze endings matrix if it contains only one sentence
+#     if n_sentences == 5:
+#         e = [s[0] for s in e]
+#         # e = np.asarray(e)
+#         e = np.reshape(e, n_stories)
+#
+#     print(e)
+#
+#     return b, e
 
-    :param data:
-    :return:
-    """
-
-    n_stories, n_sentences = data.shape
-
-    b, e = data[:, :4], data[:, 4:]
-
-    # squeeze endings matrix if it contains only one sentence
-    if n_sentences == 5:
-        e = [s[0] for s in e]
-        # e = np.asarray(e)
-        e = np.reshape(e, n_stories)
-
-    print(e)
-
-    return b, e
+from nltk.data import load
+tagdict = load('help/tagsets/upenn_tagset.pickle').keys()
+# print(dict.fromkeys(tagdict.keys()))
+pos_vocabulary = dict([(list(tagdict)[i], -(i+1)) for i in range(len(tagdict))])
+print(pos_vocabulary)

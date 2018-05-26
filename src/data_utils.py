@@ -6,6 +6,7 @@ from collections import Counter
 from nltk.corpus import stopwords, wordnet
 from nltk.stem import WordNetLemmatizer
 from nltk import download
+from nltk.data import load
 from string import punctuation
 
 
@@ -178,6 +179,14 @@ def generate_vocabulary(data):
     if vocabulary_size is not None:
         vocabulary.update({unk: len(vocabulary)})
 
+    # load tags from nltk
+    tagdict = load('help/tagsets/upenn_tagset.pickle').keys()
+
+    # create dictionary for pos tags
+    pos_vocabulary = dict([(list(tagdict)[i], -(i+1)) for i in range(len(tagdict))])
+
+    vocabulary.update(pos_vocabulary)
+
     with open(vocabulary_pkl, 'wb') as output:
         pickle.dump(vocabulary, output, pickle.HIGHEST_PROTOCOL)
         print("Vocabulary saved as pkl")
@@ -202,6 +211,24 @@ def load_vocabulary():
         print("Vocabulary not found.")
 
     return vocabulary
+
+
+def load_pos_vocabulary():
+    """
+    Load vocabulary for pos tagging
+
+    :return: pos tagging vocabulary
+    """
+
+    print("Loading pos tag vocabulary... ")
+
+    # load tags from nltk
+    tagdict = load('help/tagsets/upenn_tagset.pickle').keys()
+
+    # create dictionary
+    pos_vocabulary = dict([(list(tagdict)[i], -(i+1)) for i in range(len(tagdict))])
+
+    return pos_vocabulary
 
 
 def check_for_unk(data, vocabulary):
@@ -256,19 +283,19 @@ def get_indexes_from_words(words, vocabulary):
 
     :param words: list of words in vocabulary
     :param vocabulary: vocabulary
+    :param pos_vocabulary: pos tags vocabulary
     :return: indexes corresponding to given words
     """
 
     # retrieve indexes corresponding to words
-
     if isinstance(words, list):
         if isinstance(words[0], tuple):
-            indexes = [(vocabulary[x[0]], x[1]) for x in words]
+            indexes = [(vocabulary[x[0]], vocabulary[x[1]]) for x in words]
         else:
             indexes = [vocabulary[x] for x in words]
     else:
         if isinstance(words, tuple):
-            indexes = (vocabulary[words[0]], words[1])
+            indexes = (vocabulary[words[0]], vocabulary[words[1]])
         else:
             indexes = vocabulary[words]
 
@@ -283,6 +310,8 @@ def pad_endings(beginnings, endings):
     :param endings: story endings containing the last sentence
     :return: padded endings
     """
+
+    print("Padding endings...")
 
     assert len(beginnings) == len(endings)
 
@@ -368,9 +397,6 @@ def filter_words(dataset):
         filtered_words[i] = [word[0] for word in sentence]
 
     return filtered_words
-
-
-
 
 
 

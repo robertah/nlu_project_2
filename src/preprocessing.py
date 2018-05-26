@@ -37,10 +37,10 @@ def pos_tag_dataset(dataset, seperate=False):
     total_stories = len(data_original)
 
     # Dealing with sentence endings: if not training set, then there are two ending sentences
-    if dataset==train_set:
+    if dataset == train_set:
         pos_end = pd.DataFrame(columns=['id', 'sen5'])
         for index, row in data_original.iterrows():
-            print(row.iloc[0])
+            # print(row.iloc[0])
             pos_end.loc[index] = [index, np.asarray(pos_tagging_text(row.iloc[4]))]
 
     else:
@@ -63,6 +63,9 @@ def pos_tag_dataset(dataset, seperate=False):
 
             if story_number % 1000 == 0:
                 print("Processed ", story_number, "/", total_stories)
+
+        pos_begin = np.asarray(pos_begin)
+        pos_end = np.asarray(pos_end)
 
         print("Saving pos tagged corpus..")
         # Saving models in two data files
@@ -89,7 +92,7 @@ def pos_tag_dataset(dataset, seperate=False):
 
         print("Saving pos tagged corpus..")
         # Saving models in two data files
-        cur_dir = os.path.splitext(dataset)[0] #TODO Remove if unused
+        cur_dir = os.path.splitext(dataset)[0]  # TODO Remove if unused
         # cur_dir = data_folder + dataset
         path_begin = cur_dir + "_pos_begin_together"
         path_end = cur_dir + "_pos_end_together"
@@ -104,7 +107,7 @@ def pos_tag_dataset(dataset, seperate=False):
     return pos_begin, pos_end
 
 
-def preprocess(pos_begin, pos_end, pad='ending', punct=True, stop_words=True, lemm=True, test=False):
+def preprocess(pos_begin, pos_end, test=False, pad='ending', punct=True, stop_words=True, lemm=True):
     """
     Preprocess pos-tagged data
 
@@ -142,7 +145,7 @@ def preprocess(pos_begin, pos_end, pad='ending', punct=True, stop_words=True, le
     end_processed = check_for_unk(end_processed, vocabulary)
 
     # pad ending if needed
-    if pad=='ending':
+    if pad == 'ending':
         begin_processed, end_processed = pad_endings(begin_processed, end_processed)
 
     # map words to vocabulary indexes
@@ -151,7 +154,6 @@ def preprocess(pos_begin, pos_end, pad='ending', punct=True, stop_words=True, le
         end_processed[i] = [get_indexes_from_words(sen, vocabulary) for sen in end_processed[i]]
 
     return begin_processed, end_processed
-
 
 
 def combine_matrix_cols(array):
@@ -171,18 +173,16 @@ def open_csv_asmatrix(datafile):
 if __name__ == '__main__':
     # context, end,  preprocess(train_set, pad=None)
 
-    # dataset=train_set
-    # pos_begin, pos_end = pos_tag_dataset(dataset, seperate=False) OR
-    # pos_begin = np.load(data_folder + '/train_stories_pos_begin_together.npy')  # (88161, 2)
-    # pos_end = np.load(data_folder + '/train_stories_pos_end_together.npy')  # (88161, 2)
-    # pos_begin_processed, pos_end_processed = preprocess(pos_begin, pos_end)
-    # print(pos_begin_processed)
-    # print(pos_end_processed)
-    # beg, end = filter_words(pos_begin_processed), filter_words(pos_end_processed)
-    # print(beg)
-    # print(end)
-
-
+    dataset=val_set
+    pos_begin, pos_end = pos_tag_dataset(dataset, seperate=True)
+    # print(pos_begin.shape)
+    # print("###############")
+    # print(pos_end.shape)
+    # pos_begin = np.load(data_folder + '/train_stories_pos_begin.npy')  # (88161, 2)
+    # pos_end = np.load(data_folder + '/train_stories_pos_end.npy')  # (88161, 2)
+    pos_begin_processed, pos_end_processed = preprocess(pos_begin, pos_end, test=True, pad='ending', punct=True,
+                                                        stop_words=True, lemm=True)
+    beg, end = filter_words(pos_begin_processed), filter_words(pos_end_processed)
 
 
     # ----------
@@ -248,13 +248,10 @@ if __name__ == '__main__':
     # for index, row in data_original.iterrows():
     #     print(row.iloc[0])
 
-
-    beg, end = pos_tag_dataset(val_set, seperate=True)
-    print(beg.shape)
-
+    # beg, end = pos_tag_dataset(val_set, seperate=True)
+    # print(beg.shape)
 
     # data_original = load_data(train_set)
     # data_original = data_original.head(10)
     # data_original.drop(columns=[c for c in data_original.columns if 'title' in c], inplace=True)
     # print(data_original.columns)
-
