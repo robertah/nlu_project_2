@@ -388,9 +388,6 @@ def filter_words(dataset):
     :return: array of sentences
     """
 
-    # get number of sentences
-    n_stories, *_ = dataset.shape
-
     # filter pos-tag dataset by words
     filtered_words = np.empty(dataset.shape, dtype=list)
     for i, sentence in np.ndenumerate(dataset):
