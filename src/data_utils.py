@@ -34,7 +34,7 @@ def get_answers(dataset):
     """
     Get answers from validation or test dataset
 
-    :param df: dataframe containing val / test data
+    :param dataset: dataframe containing val / test data
     :return: answers array
     """
 
@@ -56,7 +56,7 @@ def word_cleaning(pos_tag_data, punct, stop_words, lemm):
     :param pos_tag_data: train / val / test dataset with pos-tagged words
     :param punct: True to remove punctuation from sentences
     :param stop_words: True to remove stop words from sentences
-    :param lemm: True to lemmitize words in sentences
+    :param lemm: True to lemmatize words in sentences
     :return: processed dataset with words processed according to parameters above
     """
 
@@ -94,7 +94,7 @@ def lemmatize(word_pos):
     Lemmatize words with Word Net Lemmatizer
 
     :param word_pos: tuple containing word and its pos-tag
-    :return: tuple with lemmitized word and its pos-tag
+    :return: tuple with lemmatized word and its pos-tag
     """
 
     lemmatizer = WordNetLemmatizer()
@@ -153,8 +153,7 @@ def generate_vocabulary(data):
     Generate vocabulary and save it as pickle
 
     :param data: array containing train / val / test data
-    :param voc_size: vocabulary size specified in config file
-    :return:
+    :return: vocabulary with words and pos tags
     """
 
     print("Generating vocabulary...")
@@ -283,7 +282,6 @@ def get_indexes_from_words(words, vocabulary):
 
     :param words: list of words in vocabulary
     :param vocabulary: vocabulary
-    :param pos_vocabulary: pos tags vocabulary
     :return: indexes corresponding to given words
     """
 
@@ -384,7 +382,7 @@ def filter_words(dataset):
     """
     Get sentences from pos-tagged dataset
 
-    :param dataset: dataset contaning lists of tuples (word, pos-tag)
+    :param dataset: dataset containing lists of tuples (word, pos-tag)
     :return: array of sentences
     """
 
