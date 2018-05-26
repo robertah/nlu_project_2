@@ -117,18 +117,19 @@ if __name__ == "__main__":
             print("Initializing negative endings..")
             neg_end, context_pos_tagged, endings_pos_tagged = initialize_negative_endings()
             
-            train_data_generator = train_utils.batch_iter_train_cnn(data = context_pos_tagged, neg_aug_obj = neg_end,
-                                             is_w2v = False, batch_size = 2, num_epochs = 5000, 
-                                             shuffle=True)
-            for batch in train_data_generator:
-                stories_train, verif_train = zip*(batch)
-                print(stories_train)
-            #The things below are just a trial !
-
+            #Construct data generators
             
+            #train_generator = train_utils.batch_iter_train_cnn(contexts = context_pos_tagged, endings = endings_pos_tagged, neg_end_obj = neg_end,
+            #                                                    is_w2v = False, batch_size = 4, num_epochs = 5000, shuffle=True)
+            #validation_data_generator = ..... Wait preprocessing pipeline
+            
+            #Initialize model
+            #model = cnn_ngrams.CNN_ngrams(train_generator = train_generator, validation_generator = validation_generator)
+            #model.train()
 
-            #train_generator = train_utils() # TODO
-            #validation_generator = train_utils() # TODO
+            #for batch in train_data_generator:
+            #    stories_train, verif_train = zip*(batch)
+            #    print(stories_train)
 
 
 
