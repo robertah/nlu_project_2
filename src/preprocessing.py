@@ -153,7 +153,7 @@ def pos_tag_dataset(dataset, seperate=False):
 
         print("Saving pos tagged corpus..")
         # Saving models in two data files
-        cur_dir = os.path.splitext(train_set)[0]
+        cur_dir = os.path.splitext(dataset)[0]
         path_begin = cur_dir + "_pos_begin"
         path_end = cur_dir + "_pos_end"
 
@@ -184,7 +184,7 @@ def pos_tag_dataset(dataset, seperate=False):
 
         print("Saving pos tagged corpus..")
         # Saving models in two data files
-        cur_dir = os.path.splitext(train_set)[0]
+        cur_dir = os.path.splitext(dataset)[0]
         path_begin = cur_dir + "_pos_begin_together"
         path_end = cur_dir + "_pos_end_together"
 
