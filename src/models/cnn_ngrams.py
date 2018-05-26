@@ -1,22 +1,26 @@
 import os
 import keras
 from keras.models import load_model
-#from ... import config
+from .. import config
 
 class CNN_ngrams():
     """CNN model implementing a classifier using leaky ReLU and dropouts.
        INPUT -> sentence + pos tags as follows [(I,Sbj),(am,Verb),(bored,Adj)]
        """
 
-    def __init__(self, train_generator, validation_generator = [], path=None):
+    def __init__(self, train_generator, validation_generator = [], path=None,
+                 batch_size = 2):
         """Initialise the model.
 
         If `path` is given, the model is loaded from memory instead of compiled.
         """
         self.train_generator = train_generator
         self.validation_generator = validation_generator
-        self.n_gram_size = 10
+        self.embedding_dimensions_words = 100 #as in w2v
+        self.embedding_dimensions_tags = 100
+        self.n_gram_size = 5
         self.stride_size = 1
+
 
         """Loading trained model for predicting"""
         if path:
@@ -29,59 +33,66 @@ class CNN_ngrams():
 
         """Model creation"""
         self.model = keras.models.Sequential()
-        
+
+        """Embedding layer"""        
+        #input_dim: int > 0. Size of the vocabulary, i.e. maximum integer index + 1.
+        #output_dim: int >= 0. Dimension of the dense embedding.
+        #TODO: undecided wether is voc_words + voc_tags size and if input dim = (vocabulary_size, 2)
+        self.model.add(Embedding(input_dim = (vocabulary_size, vocabulary_size_tags), output_dim = (self.embedding_dimensions_words, self.embedding_dimensions_tags), input_length = story_len))
+
         """Blocks of layers
            First block"""
-        self.model.add(keras.layers.Convolution2D(filters=100,
+        self.model.add(keras.layers.Convolution2D(filters=25,
                                                   strides=stride_size,
                                                   kernel_size=(n_gram_size, 2),
                                                   padding="same",
-                                                  input_shape=train_generator.input_dim()))
+                                                  input_shape= (self.story_len, 2, self.embedding_dimensions) #2 because of pos tagging
         self.model.add(keras.layers.MaxPooling2D(pool_size=(n_gram_size, n_gram_size),
                                                  strides=stride_size,
                                                  padding="same"))
         self.model.add(keras.layers.LeakyReLU(alpha=0.1))
-        self.model.add(keras.layers.Dropout(rate=0.25))
+        #self.model.add(keras.layers.Dropout(rate=0.25))
 
         """Second block"""
-        self.model.add(keras.layers.Convolution2D(filters=100,
+        self.model.add(keras.layers.Convolution2D(filters=50,
                                                   strides=stride_size,
                                                   kernel_size=(n_gram_size, 2),
                                                   padding="same"))
-        self.model.add(keras.layers.LeakyReLU(alpha=0.1))
         self.model.add(keras.layers.MaxPooling2D(pool_size=(n_gram_size, n_gram_size),
                                                  strides=stride_size,
                                                  padding="same"))
-        self.model.add(keras.layers.Dropout(rate=0.25))
+        self.model.add(keras.layers.LeakyReLU(alpha=0.1))
+        #self.model.add(keras.layers.Dropout(rate=0.25))
 
         """Third block"""
         self.model.add(keras.layers.Convolution2D(filters=100,
                                                   strides=stride_size,
                                                   kernel_size=(n_gram_size, n_gram_size),
                                                   padding="same"))
-        self.model.add(keras.layers.LeakyReLU(alpha=0.1))
         self.model.add(keras.layers.MaxPooling2D(pool_size=(n_gram_size, n_gram_size),
                                                  strides=stride_size,
                                                  padding="same"))
-        self.model.add(keras.layers.Dropout(rate=0.25))
+        self.model.add(keras.layers.LeakyReLU(alpha=0.1))
+
+        #self.model.add(keras.layers.Dropout(rate=0.25))
 
         """Fourth block"""
         self.model.add(keras.layers.Convolution2D(filters=100,
                                                   strides=stride_size,
                                                   kernel_size=(n_gram_size, n_gram_size),
                                                   padding="same"))
-        self.model.add(keras.layers.LeakyReLU(alpha=0.1))
         self.model.add(keras.layers.MaxPooling2D(pool_size=(n_gram_size, n_gram_size),
                                                  strides=stride_size,
                                                  padding="same"))
-        self.model.add(keras.layers.Dropout(rate=0.25))
+        self.model.add(keras.layers.LeakyReLU(alpha=0.1))
+        #self.model.add(keras.layers.Dropout(rate=0.25))
 
         """Fifth block -> dense layers + out layer"""
         self.model.add(keras.layers.Flatten())
         self.model.add(keras.layers.Dense(units=150,
                                           kernel_regularizer=keras.regularizers.l2(1e-6)))
         self.model.add(keras.layers.LeakyReLU(alpha=0.1))
-        self.model.add(keras.layers.Dropout(rate=0.5))
+        #self.model.add(keras.layers.Dropout(rate=0.5))
 
         self.model.add(keras.layers.Dense(units=2,
                                           kernel_regularizer=keras.regularizers.l2(1e-6),
@@ -96,7 +107,7 @@ class CNN_ngrams():
 
 
 
-    def train(self, epochs=100):
+    def train(self):
         """Train the model.
 
         Args:
@@ -131,13 +142,13 @@ class CNN_ngrams():
         
         steps = len(self.train_generator.dataset())
         #TODO train generator + validation generator to be implemented once preprocessing is ready
-        self.model.fit_generator(self.train_generator.generate_patch(),
+        self.model.fit_generator(self.train_generator,
                                  steps_per_epoch=steps,
                                  verbose=True,
                                  epochs=epochs,
                                  callbacks=[lr_callback, stop_callback, tensorboard_callback,
                                             checkpoint_callback],
-                                 validation_data=self.validation_generator.generate_patch(),
+                                 validation_data=self.validation_generator,
                                  validation_steps=100)
 
     def save(self, path):
