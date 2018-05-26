@@ -98,7 +98,7 @@ def preprocess(pos_begin, pos_end, pad='ending', punct=True, stop_words=True, le
     :param pad: 'ending' to pad the endings or None
     :param punct: True to remove punctuation from sentences
     :param stop_words: True to remove stop words from sentences
-    :param lemm: True to lemmitize words in sentences
+    :param lemm: True to lemmatize words in sentences
     :param test: False if train data, True if val / test data
     :return: processed pos-tagged beginning and ending data
     """
