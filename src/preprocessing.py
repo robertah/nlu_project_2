@@ -10,12 +10,14 @@ def pos_tagging_text(sentence):
 
 def pos_tag_dataset(dataset, seperate=False):
     """
-    Saves two files containing pos-tagged sentences.
-    Arrays of size #stories/rows by 5 (story id, sen1 to sen4) and of size #stories/rows by 2 (story id, sen5).
+    Saves two files containing pos-tagged sentences:
+    1) array of size #stories/rows by 5 (story id, sen1 to sen4)
+    2) array of size #stories/rows by 2/3 (story id, sen5, sen6 if exists).
     Each column (not id) is a tockenized and pos-tagged sentence of the form (ie: [[Kelly, RB], [studied, VBN], [.,.]])
 
     :param dataset: dataframe containing train / val / test data
-    :return: none
+    :param seperate: save beginning sentences as one entry per array row or as 4 seperate sentences/entries in array
+    :return: pos tagged beginning and ending matrices
     """
 
     nltk.download('punkt')
@@ -24,23 +26,39 @@ def pos_tag_dataset(dataset, seperate=False):
     # load data from csv
     data_original = load_data(dataset)
 
-    # Creates dataframes with pos-tagged sentences
-    pos_end = pd.DataFrame(columns=['id', 'sen5'])
+    # # TODO Remove
+    # data_original = data_original.head(10)
 
+    # Removing story title if exists, to have the first sentence as the first column
+    data_original.drop(columns=[c for c in data_original.columns if 'title' in c], inplace=True)
+
+    # Counter to know how many sentences have been processed
     story_number = 0
-    total_stories = len(pos_end)
+    total_stories = len(data_original)
 
+    # Dealing with sentence endings: if not training set, then there are two ending sentences
+    if dataset==train_set:
+        pos_end = pd.DataFrame(columns=['id', 'sen5'])
+        for index, row in data_original.iterrows():
+            print(row.iloc[0])
+            pos_end.loc[index] = [index, np.asarray(pos_tagging_text(row.iloc[4]))]
+
+    else:
+        pos_end = pd.DataFrame(columns=['id', 'sen5', 'sen6'])
+        for index, row in data_original.iterrows():
+            pos_end.loc[index] = [index, np.asarray(pos_tagging_text(row.iloc[4])),
+                                  np.asarray(pos_tagging_text(row.iloc[5]))]
+
+    # Dealing with story beginning: either group pos tags as one array or seperate per sentence
     if seperate:
         pos_begin = pd.DataFrame(columns=['id', 'sen1', 'sen2', 'sen3', 'sen4'])
-        pos_begin = pd.DataFrame(columns=['id', 'sen'])
         for index, row in data_original.iterrows():
             pos_begin.loc[index] = [index,
-                                    np.asarray(pos_tagging_text(row['sen1']), object),
-                                    np.asarray(pos_tagging_text(row['sen2']), object),
-                                    np.asarray(pos_tagging_text(row['sen3']), object),
-                                    np.asarray(pos_tagging_text(row['sen4']), object)
+                                    np.asarray(pos_tagging_text(row.iloc[0]), object),
+                                    np.asarray(pos_tagging_text(row.iloc[1]), object),
+                                    np.asarray(pos_tagging_text(row.iloc[2]), object),
+                                    np.asarray(pos_tagging_text(row.iloc[3]), object)
                                     ]
-            pos_end.loc[index] = [index, pos_tagging_text(row['sen5'])]
             story_number = story_number + 1
 
             if story_number % 1000 == 0:
@@ -52,22 +70,15 @@ def pos_tag_dataset(dataset, seperate=False):
         path_begin = cur_dir + "_pos_begin"
         path_end = cur_dir + "_pos_end"
 
-        np.save(path_begin, pos_begin)
-        np.save(path_end, pos_end)
-        print("Saved the pos tagged corpus successfully !")
-
-        # To load dataset, then do np.load(train_pos_begin)
-
     else:
         pos_begin = pd.DataFrame(columns=['id', 'sen'])
         for index, row in data_original.iterrows():
             pos_begin.loc[index] = [index,
-                                    np.concatenate((np.asarray(pos_tagging_text(row['sen1']), object),
-                                                    np.asarray(pos_tagging_text(row['sen2']), object),
-                                                    np.asarray(pos_tagging_text(row['sen3']), object),
-                                                    np.asarray(pos_tagging_text(row['sen4']), object)
+                                    np.concatenate((np.asarray(pos_tagging_text(row.iloc[0]), object),
+                                                    np.asarray(pos_tagging_text(row.iloc[1]), object),
+                                                    np.asarray(pos_tagging_text(row.iloc[2]), object),
+                                                    np.asarray(pos_tagging_text(row.iloc[3]), object)
                                                     ))]
-            pos_end.loc[index] = [index, pos_tagging_text(row['sen5'])]
             story_number = story_number + 1
 
             if story_number % 1000 == 0:
@@ -78,13 +89,17 @@ def pos_tag_dataset(dataset, seperate=False):
 
         print("Saving pos tagged corpus..")
         # Saving models in two data files
-        cur_dir = os.path.splitext(dataset)[0]
+        cur_dir = os.path.splitext(dataset)[0] #TODO Remove if unused
+        # cur_dir = data_folder + dataset
         path_begin = cur_dir + "_pos_begin_together"
         path_end = cur_dir + "_pos_end_together"
 
-        np.save(path_begin, pos_begin)
-        np.save(path_end, pos_end)
-        print("Saved the pos tagged corpus successfully !")
+    # Saving pos tagged corpus
+    np.save(path_begin, pos_begin)
+    np.save(path_end, pos_end)
+    print("Saved the pos tagged corpus successfully as {} and {}".format(path_begin, path_end))
+
+    # To load dataset, then do np.load(train_pos_begin)
 
     return pos_begin, pos_end
 
@@ -158,14 +173,14 @@ if __name__ == '__main__':
 
     # dataset=train_set
     # pos_begin, pos_end = pos_tag_dataset(dataset, seperate=False) OR
-    pos_begin = np.load(data_folder + '/train_stories_pos_begin_together.npy')  # (88161, 2)
-    pos_end = np.load(data_folder + '/train_stories_pos_end_together.npy')  # (88161, 2)
-    pos_begin_processed, pos_end_processed = preprocess(pos_begin, pos_end)
-    print(pos_begin_processed)
-    print(pos_end_processed)
-    beg, end = filter_words(pos_begin_processed), filter_words(pos_end_processed)
-    print(beg)
-    print(end)
+    # pos_begin = np.load(data_folder + '/train_stories_pos_begin_together.npy')  # (88161, 2)
+    # pos_end = np.load(data_folder + '/train_stories_pos_end_together.npy')  # (88161, 2)
+    # pos_begin_processed, pos_end_processed = preprocess(pos_begin, pos_end)
+    # print(pos_begin_processed)
+    # print(pos_end_processed)
+    # beg, end = filter_words(pos_begin_processed), filter_words(pos_end_processed)
+    # print(beg)
+    # print(end)
 
 
 
@@ -226,3 +241,20 @@ if __name__ == '__main__':
     # n_stories, *_ = data_proc.shape
     # data_proc = np.reshape(data_proc, (n_stories*sentence_len, -1))
     # word_embedding(data_proc)
+
+    # dataset=train_set
+    # data_original = load_data(dataset)
+    # data_original = data_original.head(10)
+    # for index, row in data_original.iterrows():
+    #     print(row.iloc[0])
+
+
+    beg, end = pos_tag_dataset(val_set, seperate=True)
+    print(beg.shape)
+
+
+    # data_original = load_data(train_set)
+    # data_original = data_original.head(10)
+    # data_original.drop(columns=[c for c in data_original.columns if 'title' in c], inplace=True)
+    # print(data_original.columns)
+
