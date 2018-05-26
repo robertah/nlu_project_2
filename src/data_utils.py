@@ -3,6 +3,13 @@ import pandas as pd
 import numpy as np
 import pickle
 from collections import Counter
+from nltk.corpus import stopwords, wordnet
+from nltk.stem import WordNetLemmatizer
+from nltk import download
+from string import punctuation
+
+
+# DATA LOADING #######################################################
 
 def load_data(dataset):
     """
@@ -22,42 +29,136 @@ def load_data(dataset):
     return pd.read_csv(dataset, index_col='id', names=names, skiprows=1)
 
 
-def count_words(df):
+def get_answers(dataset):
     """
-    Count words in sentences columns in the given dataframe
+    Get answers from validation or test dataset
 
-    :param df: dataframe containing train / val / test data
+    :param df: dataframe containing val / test data
+    :return: answers array
+    """
+
+    assert dataset == val_set or dataset == test_set
+
+    df = load_data(dataset)
+
+    answers = df['ans'].values
+
+    return answers
+
+
+# VOCABULARY #######################################################
+
+def word_cleaning(pos_tag_data, punct, stop_words, lemm):
+    """
+    Clean words in pos-tag dataset
+
+    :param pos_tag_data: train / val / test dataset with pos-tagged words
+    :param punct: True to remove punctuation from sentences
+    :param stop_words: True to remove stop words from sentences
+    :param lemm: True to lemmitize words in sentences
+    :return: processed dataset with words processed according to parameters above
+    """
+
+    # create array for processed data
+    data_processed = np.empty(pos_tag_data.shape, dtype=list)
+
+    # list of words to be removed
+    words_to_remove = []
+    if punct:
+        words_to_remove += list(punctuation)
+    if stop_words:
+        download('stopwords')
+        words_to_remove += list(stopwords.words('english'))
+
+    # download wordnet for lemmatization if needed
+    if lemm:
+        download('wordnet')
+
+    for i, sentence in np.ndenumerate(pos_tag_data):
+        data_processed[i] = []
+        for word_pos in sentence:
+            word_pos = (word_pos[0].lower(), word_pos[1])
+            # lemmatize words to keep
+            if word_pos[0] not in words_to_remove:
+                if lemm:
+                    data_processed[i].append(tuple(lemmatize(word_pos)))
+                else:
+                    data_processed[i].append(word_pos)
+
+    return data_processed
+
+
+def lemmatize(word_pos):
+    """
+    Lemmatize words with Word Net Lemmatizer
+
+    :param word_pos: tuple containing word and its pos-tag
+    :return: tuple with lemmitized word and its pos-tag
+    """
+
+    lemmatizer = WordNetLemmatizer()
+
+    # get word and pos-tag
+    word, pos = word_pos
+
+    # lemmatize word
+    new_word_pos = (lemmatizer.lemmatize(word, get_wordnet_pos(pos)), pos)
+
+    return new_word_pos
+
+
+def get_wordnet_pos(tag):
+    """
+    Get wordnet pos tag for lemmatization
+
+    :param tag: pos-tag
+    :return: wordnet pos-tag
+    """
+
+    if tag.startswith('J'):
+        return wordnet.ADJ
+    elif tag.startswith('V'):
+        return wordnet.VERB
+    elif tag.startswith('N'):
+        return wordnet.NOUN
+    elif tag.startswith('R'):
+        return wordnet.ADV
+    else:
+        return wordnet.NOUN
+
+
+def count_words(sentences):
+    """
+    Count words in sentences
+
+    :param sentences: array containing train / val / test sentences
     :return: counter of words
     """
 
     # initialize counter
     words = Counter()
 
-    # get dataframe columns with sentences
-    sen_cols = [s for s in df if s.startswith('sen')]
-
     # add sentences to counter
-    for col in sen_cols:
-        for i, row in df.iterrows():
-            words.update(list(row[col]))
+    for s in sentences:
+            words.update(s)
+
     print("Found", len(words), "words in dataset.")
-    #print(words)
 
     return words
 
 
-def generate_vocabulary(df):
+def generate_vocabulary(data):
     """
     Generate vocabulary and save it as pickle
 
-    :param df: dataframe containing train / val / test data
-    :param voc_size: vocabulary size specified in config file (None, if do not want to limit vocabulary)
+    :param data: array containing train / val / test data
+    :param voc_size: vocabulary size specified in config file
     :return:
     """
 
     print("Generating vocabulary...")
 
-    words = count_words(df)
+    words = count_words(data)
 
     # create vocabulary
     if vocabulary_size is not None:
@@ -77,7 +178,6 @@ def generate_vocabulary(df):
     if vocabulary_size is not None:
         vocabulary.update({unk: len(vocabulary)})
 
-    #print("Vocabulary generated: \n", vocabulary)
     with open(vocabulary_pkl, 'wb') as output:
         pickle.dump(vocabulary, output, pickle.HIGHEST_PROTOCOL)
         print("Vocabulary saved as pkl")
@@ -104,6 +204,26 @@ def load_vocabulary():
     return vocabulary
 
 
+def check_for_unk(data, vocabulary):
+    """
+    Check for unk in sentence given the vocabulary
+
+    :param data: array containing raw sentences as list of tuples (word, pos-tag)
+    :param vocabulary: vocabulary generated during training
+    :return: array of sentences where missing words are replaced by unk
+    """
+
+    new_data = np.empty(data.shape, dtype=list)
+
+    # replace words not in vocabulary with unk
+    for i, sentence in np.ndenumerate(data):
+        new_data[i] = []
+        for word in sentence:
+            new_data[i].append(word if word[0] in vocabulary.keys() else (unk, word[1]))
+
+    return new_data
+
+
 def get_words_from_indexes(indexes, vocabulary):
     """
     Get words from indexes in the vocabulary
@@ -117,7 +237,16 @@ def get_words_from_indexes(indexes, vocabulary):
     vocabulary_reverse = {v: k for k, v in vocabulary.items()}
 
     # retrieve words corresponding to indexes
-    words = [vocabulary_reverse[x] for x in indexes]
+    if isinstance(indexes, list):
+        if isinstance(indexes[0], tuple):
+            words = [(vocabulary_reverse[x[0]], x[1]) for x in indexes]
+        else:
+            words = [vocabulary_reverse[x] for x in indexes]
+    else:
+        if isinstance(indexes, tuple):
+            words = (vocabulary_reverse[indexes[0]], indexes[1])
+        else:
+            words = vocabulary_reverse[indexes]
     return words
 
 
@@ -131,137 +260,118 @@ def get_indexes_from_words(words, vocabulary):
     """
 
     # retrieve indexes corresponding to words
-    indexes = [vocabulary[x] for x in words]
+
+    if isinstance(words, list):
+        if isinstance(words[0], tuple):
+            indexes = [(vocabulary[x[0]], x[1]) for x in words]
+        else:
+            indexes = [vocabulary[x] for x in words]
+    else:
+        if isinstance(words, tuple):
+            indexes = (vocabulary[words[0]], words[1])
+        else:
+            indexes = vocabulary[words]
+
     return indexes
 
 
-def read_sentences(df):
+def pad_endings(beginnings, endings):
     """
-    Get array of sentences from the given dataframe
+    Pad endings according to story_len
 
-    :param df: dataframe containing train / val / test data
-    :return: numpy array with sentences
-    """
-
-    # filter by sentences columns
-    story_df = df.loc[:, df.columns.str.startswith('sen')]
-
-    # get sentences
-    sentences = story_df.values
-
-    return sentences
-
-
-def read_stories(df):
-    """
-    Get array of stories from the given dataframe
-
-    :param df: dataframe containing train / val / test data
-    :return: numpy array with stories
+    :param beginnings: story beginnings containing the first 4 sentences
+    :param endings: story endings containing the last sentence
+    :return: padded endings
     """
 
-    # read sentences from dataframe
-    sentences = read_sentences(df)
+    assert len(beginnings) == len(endings)
+
+    padded_endings = np.empty(endings.shape, dtype=list)
+
+    len_beginnings = [len(beginning) for beginning in beginnings]
+
+    for i, ending in np.ndenumerate(endings):
+        # trim the ending if the story is too long
+        if len_beginnings[i[0]] + len(ending) > story_len:
+            padded_endings[i] = ending[:story_len-len_beginnings[i[0]]]
+
+        # pad the ending if the story is too short
+        else:
+            padded_endings[i] = ending
+            while len_beginnings[i[0]] + len(padded_endings[i]) < story_len:
+                padded_endings[i].append((pad, '.'))
+
+    return beginnings, padded_endings
+
+
+# DATA STRUCTURES HANDLING #######################################################
+
+def combine_senteces(sentences):
+    """
+    Combine multiple sentences in one sentence
+
+    :param sentences: array of sentences
+    :return: combines sentence
+    """
 
     # get number of stories
     n_stories, *_ = sentences.shape
 
-    # gather sentences together for each story
-    stories = []
-    for i, s in enumerate(sentences):
-        story = []
-        for ss in s:
-            story.extend(ss)
-        stories.append(story)
+    # combine sentences
+    combined = np.empty(n_stories)
+    for i in range(n_stories):
+        combined = np.append([sentences[i]])
 
-    # convert list of stories to numpy array
-    stories = np.asarray(stories)
+    return combined
+
+
+def combine_story(beginnings, endings):
+    """
+    Combine beginnings and endings to get stories
+
+    :param beginnings: array of beginnings with the first 4 sentences
+    :param endings: array of endings
+    :return: array of stories
+    """
+
+    assert len(beginnings) == len(endings)
+
+    # get number of stories
+    n_stories, *_ = beginnings.shape
+
+    # combine beginnings sentences
+    beginnings = combine_senteces(beginnings)
+
+    # create stories
+    stories = np.empty(n_stories)
+    for i in range(n_stories):
+        stories[i] = []
+        stories[i].append(beginnings[i], endings[i])
 
     return stories
 
 
-def check_for_unk(sentence, vocabulary):
+def filter_words(dataset):
     """
-    Check for unk in sentence given the vocabulary
+    Get sentences from pos-tagged dataset
 
-    :param sentence: raw sentence as list of words
-    :param vocabulary: vocabulary generated during training
-    :return: sentence where missing words are replaced by unk
-    """
-
-    new_sentence = []
-
-    # replace words not in vocabulary with unk
-    for word in sentence:
-        new_sentence.append(word if word in vocabulary.keys() else unk)
-
-    return new_sentence
-
-
-def pad_sentences(sentences):
-    """
-    Pad sentences according to sentence_len
-
-    :param sentences: list of sentences
-    :return: array of padded sentences
+    :param dataset: dataset contaning lists of tuples (word, pos-tag)
+    :return: array of sentences
     """
 
-    padded_sentences = []
+    # get number of sentences
+    n_sentences, *_ = dataset.shape
 
-    # len_sentences = np.asarray([len(s) for s in sentences])
-    # print('max:', np.max(len_sentences))
+    # filter pos-tag dataset by words
+    filtered_words = np.empty(n_sentences, dtype=list)
+    for i, sentence in np.ndenumerate(dataset):
+        filtered_words[i] = [word[0] for word in sentence]
 
-    for sentence in sentences:
-
-        # trim the sentence if it is too long
-        if len(sentence) > sentence_len:
-            padded_sentence = sentence[:sentence_len]
-
-        # pad the sentence if it is too short
-        else:
-            padded_sentence = sentence
-
-            while len(padded_sentence) < sentence_len:
-                padded_sentence.append(pad)
-
-        padded_sentences.append(padded_sentence)
-
-    padded_sentences = np.asarray(padded_sentences)
-
-    return padded_sentences
+    return filtered_words
 
 
-def pad_stories(stories):
-    """
-    Pad stories according to story_len
 
-    :param stories: list of stories
-    :return: array of padded stories
-    """
 
-    padded_stories = []
-
-    # len_stories = np.asarray([len(s) for s in stories])
-    # print('max:', np.max(len_stories))
-
-    for story in stories:
-
-        # trim the story if it is too long
-        if len(story) > story_len:
-            padded_story = story[:story_len]
-
-        # pad the story if it is too short
-        else:
-            padded_story = story
-
-            while len(padded_story) < story_len:
-                padded_story.append(pad)
-
-        padded_stories.append(padded_story)
-
-    padded_stories = np.asarray(padded_stories)
-
-    return padded_stories
 
 
 def generate_vocab_pos(pos_data):
