@@ -41,47 +41,48 @@ class CNN_ngrams():
                                                  strides=stride_size,
                                                  padding="same"))
         self.model.add(keras.layers.LeakyReLU(alpha=0.1))
-        self.model.add(keras.layers.Dropout(rate=0.25))
+        #self.model.add(keras.layers.Dropout(rate=0.25))
 
         """Second block"""
         self.model.add(keras.layers.Convolution2D(filters=100,
                                                   strides=stride_size,
                                                   kernel_size=(n_gram_size, 2),
                                                   padding="same"))
-        self.model.add(keras.layers.LeakyReLU(alpha=0.1))
         self.model.add(keras.layers.MaxPooling2D(pool_size=(n_gram_size, n_gram_size),
                                                  strides=stride_size,
                                                  padding="same"))
-        self.model.add(keras.layers.Dropout(rate=0.25))
+        self.model.add(keras.layers.LeakyReLU(alpha=0.1))
+        #self.model.add(keras.layers.Dropout(rate=0.25))
 
         """Third block"""
         self.model.add(keras.layers.Convolution2D(filters=100,
                                                   strides=stride_size,
                                                   kernel_size=(n_gram_size, n_gram_size),
                                                   padding="same"))
-        self.model.add(keras.layers.LeakyReLU(alpha=0.1))
         self.model.add(keras.layers.MaxPooling2D(pool_size=(n_gram_size, n_gram_size),
                                                  strides=stride_size,
                                                  padding="same"))
-        self.model.add(keras.layers.Dropout(rate=0.25))
+        self.model.add(keras.layers.LeakyReLU(alpha=0.1))
+
+        #self.model.add(keras.layers.Dropout(rate=0.25))
 
         """Fourth block"""
         self.model.add(keras.layers.Convolution2D(filters=100,
                                                   strides=stride_size,
                                                   kernel_size=(n_gram_size, n_gram_size),
                                                   padding="same"))
-        self.model.add(keras.layers.LeakyReLU(alpha=0.1))
         self.model.add(keras.layers.MaxPooling2D(pool_size=(n_gram_size, n_gram_size),
                                                  strides=stride_size,
                                                  padding="same"))
-        self.model.add(keras.layers.Dropout(rate=0.25))
+        self.model.add(keras.layers.LeakyReLU(alpha=0.1))
+        #self.model.add(keras.layers.Dropout(rate=0.25))
 
         """Fifth block -> dense layers + out layer"""
         self.model.add(keras.layers.Flatten())
         self.model.add(keras.layers.Dense(units=150,
                                           kernel_regularizer=keras.regularizers.l2(1e-6)))
         self.model.add(keras.layers.LeakyReLU(alpha=0.1))
-        self.model.add(keras.layers.Dropout(rate=0.5))
+        #self.model.add(keras.layers.Dropout(rate=0.5))
 
         self.model.add(keras.layers.Dense(units=2,
                                           kernel_regularizer=keras.regularizers.l2(1e-6),
@@ -96,7 +97,7 @@ class CNN_ngrams():
 
 
 
-    def train(self, epochs=100):
+    def train(self):
         """Train the model.
 
         Args:
@@ -131,13 +132,13 @@ class CNN_ngrams():
         
         steps = len(self.train_generator.dataset())
         #TODO train generator + validation generator to be implemented once preprocessing is ready
-        self.model.fit_generator(self.train_generator.generate_patch(),
+        self.model.fit_generator(self.train_generator,
                                  steps_per_epoch=steps,
                                  verbose=True,
                                  epochs=epochs,
                                  callbacks=[lr_callback, stop_callback, tensorboard_callback,
                                             checkpoint_callback],
-                                 validation_data=self.validation_generator.generate_patch(),
+                                 validation_data=self.validation_generator,
                                  validation_steps=100)
 
     def save(self, path):

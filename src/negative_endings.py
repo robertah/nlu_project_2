@@ -24,6 +24,7 @@ class Negative_endings:
         print("Negative endings object created..")
         self.set_sample_probabilities()
 
+
     def set_sample_probabilities(self):
         
         self.sampling_probs_tags = Counter(tags_to_sample_from)
@@ -92,13 +93,6 @@ class Negative_endings:
                   training stories with the original one and others
             """
         batch_aug_stories = []
-
-        #Original story added to the training_batch
-        if merge_sentences:
-            batch_aug_stories.append(self.join_story_from_sentences(full_training_story))
-        else:
-            batch_aug_stories.append(full_training_story)
-
         ver_aug_stories = np.zeros(batch_size)
         ver_aug_stories[0] = 1
         
@@ -134,7 +128,7 @@ class Negative_endings:
                                     is_w2v = True, #If the story is vocablary index already and tags are in a numerical form as well
                                     out_tagged_story = False, #Output a pos_tagged story if True
                                     batch_size = 2,
-                                    shuffle_batch = False):
+                                    shuffle_batch = True):
         
         """
         INPUT:
@@ -156,12 +150,6 @@ class Negative_endings:
         After the augmentation the order of the stories in the batch is shuffled (with the corresponding verifier).
 
         """
-
-
-        #TODO :out without pos tagging later on
-        #      Sampling with numerical forms
-        #      Simplify sampling not with the if statement
-
         batch_aug_endings = []
 
         if not out_tagged_story:
@@ -178,11 +166,13 @@ class Negative_endings:
         for i in range(batch_size-1):
 
             new_ending = deepcopy(ending_story)
-            changed_story_ending = self.change_sentence(new_ending[-1])
+            #print("Original ending: ", new_ending[-1])
+            changed_story_ending = self.change_sentence(sentence = new_ending[-1], is_w2v = is_w2v)
             new_ending[-1] = changed_story_ending
+            #print("Changed ending: ", new_ending[-1])
             
             if not out_tagged_story:
-                batch_aug_endings.append([word_tag[0] for word_tag in new_ending[0]])
+                batch_aug_endings.append([word_tag[0] for word_tag in new_ending[-1]])
             else:
                 batch_aug_endings.append(new_ending)
 
@@ -192,7 +182,7 @@ class Negative_endings:
                                                                              batch_aug_endings = batch_aug_endings, ver_aug_stories = ver_aug_stories)
 
 
-        print(batch_aug_endings)
+        #print(batch_aug_endings)
         #print(ver_aug_stories)
 
         return batch_aug_endings, ver_aug_stories
@@ -232,7 +222,7 @@ class Negative_endings:
         return joined_story
 
 
-    def change_sentence(self, sentence):
+    def change_sentence(self, sentence, is_w2v = False):
 
         """Check tags. If there is a noun, verb, adverb, adjective:
         1) Sample a random number from [0,1]
@@ -259,22 +249,14 @@ class Negative_endings:
         while not at_least_one_change:
             #print("SENTENCE IS ", sentence)
             for tagged_word in sentence:
-
-
-                #print(tagged_word)
-                #print(sentence[index][0])
                 if tagged_word[1] in self.sampling_tags:
-
                     p = random.uniform(0, 1)
-
                     if p > self.sampling_probs_tags[tagged_word[1]]:
                         new_word = list(sentence[index])
                         new_word[0] = self.sample_from_vocab(tagged_word[1])
                         sentence[index] = tuple(new_word)
                         at_least_one_change = True
                 
-                #print("Sentence len is: ",len(sentence))
-                #print("Index is: ",index)
                 index = index + 1
 
             index = 0
@@ -308,10 +290,32 @@ class Negative_endings:
 
         return new_list_of_words
 
+    def tag_and_words_vocab_to_numerical_form(self):
+
+        print("Translating the words in sentences and tags to vocabulary indices..")
+        total_vocab_idx = 0
+        print("Transalting words into vocabulary indices")
+        for tag in self.sampling_tags:
+            word_in_tag_vocab = self.sampling_tags[tag]
+            #print(self.vocabulary)
+
+            total_vocab_idx = total_vocab_idx + len(word_in_tag_vocab)
+            for word_idx in range(0, len(word_in_tag_vocab)):
+                word_in_tag_vocab[word_idx] = self.vocabulary[word_in_tag_vocab[word_idx]]
+
+            self.sampling_tags[tag] = word_in_tag_vocab
+
+        print("Translating tags into vocabulary indices..")
+        all_tags = list(self.sampling_tags)
+        for tag in all_tags:
+            self.sampling_tags[self.vocabulary[tag]] = self.sampling_tags.pop(tag)
+        print("Done with translations")
+
     def define_vocab_tags(self):
         
         for tag in tags_to_sample_from:
             self.sampling_tags[tag] = list(Counter(self.check_for_unknown_words(self.sampling_tags[tag])))
+        
 
         #self.total_corpus_specific_tag = len(self.sampling_tags[tag])
         
@@ -367,6 +371,7 @@ class Negative_endings:
 
 
         self.define_vocab_tags()
+        self.tag_and_words_vocab_to_numerical_form()
 
         print("Done -> filtered corpus by tags")
 
@@ -417,8 +422,13 @@ class Negative_endings:
 
     def load_vocabulary(self):
         
-        self.vocabulary = data_utils.load_vocabulary()
+        #self.vocabulary = data_utils.load_vocabulary()
+
+        with open(full_vocabulary_pkl, 'rb') as handle:
+            self.vocabulary = pickle.load(handle)
+        print("Vocabulary loaded")
         print("Vocabulary saved into negative ending object")
+
 
 
     def get_sentences_from_indices(self, sentence_vocab_indices):
