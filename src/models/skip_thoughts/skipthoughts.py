@@ -20,8 +20,8 @@ profile = False
 #-----------------------------------------------------------------------------#
 # Specify model and table locations here
 #-----------------------------------------------------------------------------#
-path_to_models = '/u/rkiros/public_html/models/'
-path_to_tables = '/u/rkiros/public_html/models/'
+path_to_models = 'data/'
+path_to_tables = 'data/'
 #-----------------------------------------------------------------------------#
 
 path_to_umodel = path_to_models + 'uni_skip.npz'
@@ -48,18 +48,18 @@ def load_model():
     btparams = init_tparams(bparams)
 
     # Extractor functions
-    print 'Compiling encoders...'
+    print ('Compiling encoders...')
     embedding, x_mask, ctxw2v = build_encoder(utparams, uoptions)
     f_w2v = theano.function([embedding, x_mask], ctxw2v, name='f_w2v')
     embedding, x_mask, ctxw2v = build_encoder_bi(btparams, boptions)
     f_w2v2 = theano.function([embedding, x_mask], ctxw2v, name='f_w2v2')
 
     # Tables
-    print 'Loading tables...'
+    print ('Loading tables...')
     utable, btable = load_tables()
 
     # Store everything we need in a dictionary
-    print 'Packing up...'
+    print ('Packing up...')
     model = {}
     model['uoptions'] = uoptions
     model['boptions'] = boptions

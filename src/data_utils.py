@@ -8,6 +8,7 @@ from nltk.stem import WordNetLemmatizer
 from nltk import download
 from nltk.data import load
 from string import punctuation
+import os.path
 
 
 # DATA LOADING #######################################################
@@ -178,14 +179,6 @@ def generate_vocabulary(data):
     if vocabulary_size is not None:
         vocabulary.update({unk: len(vocabulary)})
 
-    # load tags from nltk
-    tagdict = load('help/tagsets/upenn_tagset.pickle').keys()
-
-    # create dictionary for pos tags
-    pos_vocabulary = dict([(list(tagdict)[i], -(i+1)) for i in range(len(tagdict))])
-
-    vocabulary.update(pos_vocabulary)
-
     with open(vocabulary_pkl, 'wb') as output:
         pickle.dump(vocabulary, output, pickle.HIGHEST_PROTOCOL)
         print("Vocabulary saved as pkl")
@@ -221,11 +214,19 @@ def load_pos_vocabulary():
 
     print("Loading pos tag vocabulary... ")
 
-    # load tags from nltk
-    tagdict = load('help/tagsets/upenn_tagset.pickle').keys()
+    if os.path.isfile(pos_vocabulary_pkl):
+        with open(pos_vocabulary_pkl, 'rb') as handle:
+            pos_vocabulary = pickle.load(handle)
+    else:
+        # load tags from nltk
+        tagdict = load('help/tagsets/upenn_tagset.pickle').keys()
 
-    # create dictionary
-    pos_vocabulary = dict([(list(tagdict)[i], -(i+1)) for i in range(len(tagdict))])
+        # create dictionary
+        pos_vocabulary = dict([(list(tagdict)[i], -(i+1)) for i in range(len(tagdict))])
+
+        with open(pos_vocabulary_pkl , 'wb') as output:
+            pickle.dump(pos_vocabulary, output, pickle.HIGHEST_PROTOCOL)
+            print("Pos vocabulary saved as pkl")
 
     return pos_vocabulary
 
@@ -276,24 +277,25 @@ def get_words_from_indexes(indexes, vocabulary):
     return words
 
 
-def get_indexes_from_words(words, vocabulary):
+def get_indexes_from_words(words, vocabulary, pos_vocabulary):
     """
     Get indexes from words in the vocabulary
 
     :param words: list of words in vocabulary
     :param vocabulary: vocabulary
+    :param pos_vocabulary: pos tag vocabulary
     :return: indexes corresponding to given words
     """
 
     # retrieve indexes corresponding to words
     if isinstance(words, list):
         if isinstance(words[0], tuple):
-            indexes = [(vocabulary[x[0]], vocabulary[x[1]]) for x in words]
+            indexes = [(vocabulary[x[0]], pos_vocabulary[x[1]]) for x in words]
         else:
             indexes = [vocabulary[x] for x in words]
     else:
         if isinstance(words, tuple):
-            indexes = (vocabulary[words[0]], vocabulary[words[1]])
+            indexes = (vocabulary[words[0]], pos_vocabulary[words[1]])
         else:
             indexes = vocabulary[words]
 
@@ -343,12 +345,14 @@ def combine_senteces(sentences):
 
     # get number of stories
     n_stories, *_ = sentences.shape
-
+    print(sentences.shape)
     # combine sentences
-    combined = np.empty(n_stories)
+    combined = np.empty(n_stories, dtype=list)
     for i in range(n_stories):
-        combined = np.append([sentences[i]])
+        combined[i] = []
+        combined[i].extend([sentences[i]])
 
+    print(combined, "\n\n\n\n\n")
     return combined
 
 
@@ -370,10 +374,10 @@ def combine_story(beginnings, endings):
     beginnings = combine_senteces(beginnings)
 
     # create stories
-    stories = np.empty(n_stories)
+    stories = np.empty(n_stories, dtype=list)
     for i in range(n_stories):
         stories[i] = []
-        stories[i].append(beginnings[i], endings[i])
+        stories[i].extend([beginnings[i], endings[i]])
 
     return stories
 

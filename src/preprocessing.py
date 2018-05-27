@@ -143,6 +143,8 @@ def preprocess(pos_begin, pos_end, test=False, pad='ending', punct=True, stop_wo
     else:
         vocabulary = load_vocabulary()
 
+    pos_vocabulary = load_pos_vocabulary()
+
     # replace words not in vocab with unk
     begin_processed = check_for_unk(begin_processed, vocabulary)
     end_processed = check_for_unk(end_processed, vocabulary)
@@ -153,9 +155,10 @@ def preprocess(pos_begin, pos_end, test=False, pad='ending', punct=True, stop_wo
 
     # map words to vocabulary indexes
     for i in range(n_stories):
-        begin_processed[i] = [[get_indexes_from_words(sen, vocabulary) for sen in story] for story in
+        begin_processed[i] = [[get_indexes_from_words(sen, vocabulary, pos_vocabulary) for sen in story] for story in
                               begin_processed[i]]
-        end_processed[i] = [[get_indexes_from_words(sen, vocabulary) for sen in story] for story in end_processed[i]]
+        end_processed[i] = [[get_indexes_from_words(sen, vocabulary, pos_vocabulary) for sen in story] for story in
+                            end_processed[i]]
 
     return begin_processed, end_processed
 
@@ -177,19 +180,24 @@ def open_csv_asmatrix(datafile):
 if __name__ == '__main__':
     # context, end,  preprocess(train_set, pad=None)
 
-    # dataset=val_set
-    # pos_begin, pos_end = pos_tag_dataset(dataset, separate=True)
-    # # pos_begin = np.load(data_folder + '/train_stories_pos_begin.npy')  # (88161, 2)
-    # # pos_end = np.load(data_folder + '/train_stories_pos_end.npy')  # (88161, 2)
-    # pos_begin_processed, pos_end_processed = preprocess(pos_begin, pos_end, test=True, pad='ending', punct=True,
-    #                                                     stop_words=True, lemm=True)
+    dataset = val_set
+    pos_begin, pos_end = pos_tag_dataset(dataset, separate=True)
+    # pos_begin = np.load(data_folder + '/train_stories_pos_begin.npy')  # (88161, 2)
+    # pos_end = np.load(data_folder + '/train_stories_pos_end.npy')  # (88161, 2)
+    pos_begin_processed, pos_end_processed = preprocess(pos_begin, pos_end, test=True, pad='ending', punct=True,
+                                                        stop_words=True, lemm=True)
     # print(pos_begin_processed)
     # print(pos_end_processed)
-    # beg, end = filter_words(pos_begin_processed), filter_words(pos_end_processed)
+    beg, end = filter_words(pos_begin_processed), filter_words(pos_end_processed)
+    print(beg)
+    print("\n\n\n\n\n", end)
+    # comb = combine_story(beg, end)
+    # print(comb)
+    # print(comb.shape)
     # print(beg.shape)
     # print(end.shape)
 
-    print(get_answers(val_set))
+    # print(get_answers(val_set))
 
     # ----------
 
