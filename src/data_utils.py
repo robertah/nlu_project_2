@@ -42,7 +42,7 @@ def get_answers(dataset):
 
     df = load_data(dataset)
 
-    answers = df['ans'].values
+    answers = df['AnswerRightEnding'].values
 
     return answers
 
