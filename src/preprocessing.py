@@ -177,17 +177,19 @@ def open_csv_asmatrix(datafile):
 if __name__ == '__main__':
     # context, end,  preprocess(train_set, pad=None)
 
-    dataset=val_set
-    pos_begin, pos_end = pos_tag_dataset(dataset, separate=True)
-    # pos_begin = np.load(data_folder + '/train_stories_pos_begin.npy')  # (88161, 2)
-    # pos_end = np.load(data_folder + '/train_stories_pos_end.npy')  # (88161, 2)
-    pos_begin_processed, pos_end_processed = preprocess(pos_begin, pos_end, test=True, pad='ending', punct=True,
-                                                        stop_words=True, lemm=True)
-    print(pos_begin_processed)
-    print(pos_end_processed)
-    beg, end = filter_words(pos_begin_processed), filter_words(pos_end_processed)
-    print(beg.shape)
-    print(end.shape)
+    # dataset=val_set
+    # pos_begin, pos_end = pos_tag_dataset(dataset, separate=True)
+    # # pos_begin = np.load(data_folder + '/train_stories_pos_begin.npy')  # (88161, 2)
+    # # pos_end = np.load(data_folder + '/train_stories_pos_end.npy')  # (88161, 2)
+    # pos_begin_processed, pos_end_processed = preprocess(pos_begin, pos_end, test=True, pad='ending', punct=True,
+    #                                                     stop_words=True, lemm=True)
+    # print(pos_begin_processed)
+    # print(pos_end_processed)
+    # beg, end = filter_words(pos_begin_processed), filter_words(pos_end_processed)
+    # print(beg.shape)
+    # print(end.shape)
+
+    print(get_answers(val_set))
 
     # ----------
 
