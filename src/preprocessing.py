@@ -145,6 +145,9 @@ def preprocess(pos_begin, pos_end, test=False, pad='ending', punct=True, stop_wo
 
     pos_vocabulary = load_pos_vocabulary()
 
+    if not test:
+        merge_vocab(vocabulary_pkl, pos_vocabulary_pkl)
+
     # replace words not in vocab with unk
     begin_processed = check_for_unk(begin_processed, vocabulary)
     end_processed = check_for_unk(end_processed, vocabulary)
@@ -181,10 +184,10 @@ if __name__ == '__main__':
     # context, end,  preprocess(train_set, pad=None)
 
     dataset = val_set
-    pos_begin, pos_end = pos_tag_dataset(dataset, separate=True)
-    # pos_begin = np.load(data_folder + '/train_stories_pos_begin.npy')  # (88161, 2)
-    # pos_end = np.load(data_folder + '/train_stories_pos_end.npy')  # (88161, 2)
-    pos_begin_processed, pos_end_processed = preprocess(pos_begin, pos_end, test=True, pad='ending', punct=True,
+    # pos_begin, pos_end = pos_tag_dataset(dataset, separate=True)
+    pos_begin = np.load(data_folder + '/train_stories_pos_begin.npy')  # (88161, 2)
+    pos_end = np.load(data_folder + '/train_stories_pos_end.npy')  # (88161, 2)
+    pos_begin_processed, pos_end_processed = preprocess(pos_begin, pos_end, test=False, pad='ending', punct=True,
                                                         stop_words=True, lemm=True)
     # print(pos_begin_processed)
     # print(pos_end_processed)
