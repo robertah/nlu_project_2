@@ -8,7 +8,7 @@ import datetime
 import time
 
 from config import *
-
+from preprocessing import *
 
 # Remove tensorflow CPU instruction information.
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
@@ -69,14 +69,13 @@ def get_submission_filename():
 
     return submission_path_filename
 
-def initialize_negative_endings():
-    neg_end = data_aug.Negative_endings()
+def initialize_negative_endings(contexts, endings):
+    neg_end = data_aug.Negative_endings(contexts = contexts, endings = endings)
     neg_end.load_vocabulary()
-    context_pos_tagged, endings_pos_tagged = neg_end.load_corpus_no_ids()    
     #Preserve here in case the vocabulary change, do not save filters and reload them
     neg_end.filter_corpus_tags()
 
-    return neg_end, context_pos_tagged, endings_pos_tagged
+    return neg_end
 
 """********************************************** USER ACTIONS from parser ************************************************************"""
 
@@ -113,24 +112,27 @@ if __name__ == "__main__":
         if args.model == "cnn_ngrams":
 
             print("CNN grams training invoked")
-            
+            print("Loading dataset..")
+            pos_train_begin_tog, pos_train_end_tog, pos_val_begin_tog, pos_val_end_tog = load_train_val_datasets_pos_tagged()
+            ver_val_set = generate_binary_verifiers()
             print("Initializing negative endings..")
-            neg_end, context_pos_tagged, endings_pos_tagged = initialize_negative_endings()
+            neg_end = initialize_negative_endings(contexts = pos_train_begin_tog, endings = pos_train_end_tog)
             
             #Construct data generators
             
-            #train_generator = train_utils.batch_iter_train_cnn(contexts = context_pos_tagged, endings = endings_pos_tagged, neg_end_obj = neg_end,
-            #                                                    is_w2v = False, batch_size = 4, num_epochs = 5000, shuffle=True)
-            #validation_data_generator = ..... Wait preprocessing pipeline
+            train_generator = train_utils.batch_iter_train_cnn(contexts = pos_train_begin_tog, endings = pos_train_end_tog, neg_end_obj = neg_end,
+                                                               batch_size = 2, num_epochs = 5000, shuffle=True)
+            validation_generator = train_utils.batch_iter_val_cnn(contexts = pos_val_begin_tog, endings = pos_val_end_tog, binary_verifiers = ver_val_set, 
+                                                                  neg_end_obj = neg_end, batch_size = 2, num_epochs = 5000, shuffle=True)
             
             #Initialize model
             #model = cnn_ngrams.CNN_ngrams(train_generator = train_generator, validation_generator = validation_generator)
             #model.train()
 
-            #for batch in train_data_generator:
-            #    stories_train, verif_train = zip*(batch)
-            #    print(stories_train)
-
+            for batch in train_generator:
+                stories_train, verif_train = zip*(batch)
+                print(stories_train)
+                print(verif_train)
 
 
         elif args.model == "put_your_model_name_here2":

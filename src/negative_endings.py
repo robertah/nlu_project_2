@@ -19,12 +19,14 @@ class Negative_endings:
        please see the paper An RNN-based Binary Classifier for the Story Cloze Test
        """
 
-    def __init__(self):
+    def __init__(self, contexts, endings):
 
         print("Negative endings object created..")
         self.set_sample_probabilities()
-
-
+        self.all_stories_context_pos_tagged = contexts
+        self.all_stories_endings_pos_tagged = endings
+        self.no_samp = 0
+    
     def set_sample_probabilities(self):
         
         self.sampling_probs_tags = Counter(tags_to_sample_from)
@@ -237,7 +239,7 @@ class Negative_endings:
         return joined_story
 
 
-    def change_sentence(self, sentence, is_w2v = False):
+    def change_sentence(self, sentence):
 
         """Check tags. If there is a noun, verb, adverb, adjective:
         1) Sample a random number from [0,1]
@@ -259,12 +261,17 @@ class Negative_endings:
         #max_changes = 2
         #changes  = 0
         at_least_one_change = False
+        no_sampling_tags = False
+        sentence_no_sampling = 0
+        found_one = False
+
         iterations = 0
         
-        while not at_least_one_change:
+        while not at_least_one_change and not no_sampling_tags:
             #print("SENTENCE IS ", sentence)
             for tagged_word in sentence:
                 if tagged_word[1] in self.sampling_tags:
+                    found_one = True
                     p = random.uniform(0, 1)
                     if p > self.sampling_probs_tags[tagged_word[1]]:
                         new_word = list(sentence[index])
@@ -273,6 +280,12 @@ class Negative_endings:
                         at_least_one_change = True
                 
                 index = index + 1
+            if not found_one:
+                #TODO : Decide if sampling a random word from anothe tag or if sampling 
+                #from all tag directly avoiding the problem
+                self.no_samp = self.no_samp + 1
+                no_sampling_tags = True
+
 
             index = 0
             iterations = iterations+1
@@ -327,14 +340,17 @@ class Negative_endings:
         print("Done -> numerical translations")
 
     def define_vocab_tags(self):
-        
-        for tag in tags_to_sample_from:
-            self.sampling_tags[tag] = list(Counter(self.check_for_unknown_words(self.sampling_tags[tag])))
-        
+        tags_to_sample_from_numerical = [self.vocabulary[tag] for tag in tags_to_sample_from]
 
-        #self.total_corpus_specific_tag = len(self.sampling_tags[tag])
-        
+        for tag in tags_to_sample_from_numerical:
+            self.sampling_tags[tag] = list(Counter(self.sampling_tags[tag]))
 
+        #print(self.sampling_tags)
+    
+    def sampling_tags_to_indices(self):
+        all_tags = list(self.sampling_tags)
+        for tag in all_tags:
+            self.sampling_tags[self.vocabulary[tag]] = self.sampling_tags.pop(tag)
 
     def filter_story_tags(self, tagged_story):
 
@@ -348,7 +364,6 @@ class Negative_endings:
             for tagged_word in tagged_sent:
 
                 if tagged_word[1] in self.sampling_tags:
-                    #print(tagged_word[0])
                     self.sampling_tags[tagged_word[1]].append(tagged_word[0])
   
 
@@ -378,6 +393,8 @@ class Negative_endings:
         
         for tag in tags_to_sample_from:
             self.sampling_tags[tag] = []
+
+        self.sampling_tags_to_indices()
         
         print("Filtering contexts..")
         self.filter(corpus = self.all_stories_context_pos_tagged)
@@ -387,7 +404,7 @@ class Negative_endings:
         print("Done -> filtered corpus by tags")
 
         self.define_vocab_tags()
-        self.tag_and_words_vocab_to_numerical_form()
+        #self.tag_and_words_vocab_to_numerical_form()
 
 
 

@@ -1,7 +1,10 @@
 import os
 import keras
 from keras.models import load_model
-from .. import config
+import sys
+sys.path.append("..")
+import config
+
 
 class CNN_ngrams():
     """CNN model implementing a classifier using leaky ReLU and dropouts.
@@ -42,12 +45,12 @@ class CNN_ngrams():
 
         """Blocks of layers
            First block"""
+        
         self.model.add(keras.layers.Convolution2D(filters=25,
                                                   strides=stride_size,
                                                   kernel_size=(n_gram_size, 2),
-                                                  padding="same",
-                                                  input_shape= (self.story_len, 2, self.embedding_dimensions) #2 because of pos tagging
-        self.model.add(keras.layers.MaxPooling2D(pool_size=(n_gram_size, n_gram_size),
+                                                  padding="same"))
+        self.model.add(keras.layers.MaxPooling2D(pool_size=(n_gram_size, 2),
                                                  strides=stride_size,
                                                  padding="same"))
         self.model.add(keras.layers.LeakyReLU(alpha=0.1))
@@ -58,7 +61,7 @@ class CNN_ngrams():
                                                   strides=stride_size,
                                                   kernel_size=(n_gram_size, 2),
                                                   padding="same"))
-        self.model.add(keras.layers.MaxPooling2D(pool_size=(n_gram_size, n_gram_size),
+        self.model.add(keras.layers.MaxPooling2D(pool_size=(n_gram_size, 2),
                                                  strides=stride_size,
                                                  padding="same"))
         self.model.add(keras.layers.LeakyReLU(alpha=0.1))
