@@ -126,12 +126,13 @@ if __name__ == "__main__":
                                                                   neg_end_obj = neg_end, batch_size = 2, num_epochs = 5000, shuffle=True)
             
             #Initialize model
-            #model = cnn_ngrams.CNN_ngrams(train_generator = train_generator, validation_generator = validation_generator)
+            model = cnn_ngrams.CNN_ngrams(train_generator = train_generator, validation_generator = validation_generator)
             #model.train()
 
             for batch in train_generator:
-                stories_train, verif_train = zip*(batch)
-                print(stories_train)
+                stories_train, verif_train = zip(*batch)
+                print(len(stories_train))
+                print(len(stories_train[0]))
                 print(verif_train)
 
 

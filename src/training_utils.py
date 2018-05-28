@@ -20,56 +20,26 @@ def full_stories_together(contexts, endings):
 
     idx_batch_endings = 0
     for context in contexts:
-        #endings = len()
-        #print(endings[0])
-        print("")
-        print("NEW CONTEXT GOT")
-        #print(endings[0][0])
-        #print(endings[0][0][0])
-        #print(endings[0][0][0][0])
-        #print("END")
         story_endings = endings[idx_batch_endings]
-        #for batch_endings in endings[idx_batch_endings]:
-        idx_ending = 0
+
         full_story_batch = []
         for ending in story_endings:
             ending = ending[0]
-            #print("Context")
-            #print(context)
-            #print("Ending")
-            #print(ending)
-            print("CONTEXT LEN")
-            print(len(context[0]))
-            print("ENDING LEN")
-            #print(ending)
-            print(len(ending))
-            print("ALL STORY TOGETHER LEN ")
-            #print(context[0]+ending)
-
-            #print(len(ending[0]))
-            #print(len(ending[0][0]))
-            #print("END analysis")
             original_context = deepcopy(context[0])
-            print(len(original_context))
-            #l = original_context[0] + ending
-            #print("CONTEXT")
-            #print(original_context)
-            print("IDX ending is: ", idx_ending)
-            #print(l)
-            #print("len(l) ", len(l))
-            #print("l[0] : ",l[0])
-            #print("l[1] : ",l[1])
-            #print("len(l[1]) : ",len(l[1]))
-            idx_ending = idx_ending + 1 
-            #print(len(original_context + ending))
-            #if l != :
-            #    print()
+            
+            if len(original_context + ending) !=45:
+                print("Found wrong len of story: ",len(original_context + ending))
+
             full_story_batch.append(original_context + ending)
         
         full_stories_batches.append(full_story_batch)
         idx_batch_endings = idx_batch_endings + 1
+        if idx_batch_endings%20000 == 0:
+            print("Stories combined together ",idx_batch_endings,"/",len(contexts))
     #print("Full stories in input: ", full_stories_batch)
-    return full_stories_batch
+    print(len(full_stories_batches))
+    print(len(full_stories_batches[0]))
+    return full_stories_batches
 
 #For this function the datast needs to be pos tagged
 def batches_pos_neg_endings(neg_end_obj, data, batch_size):
@@ -99,6 +69,7 @@ def batches_pos_neg_endings(neg_end_obj, data, batch_size):
         ver_aug_data.append(ver_aug_stories)
     print("OUT")
     print("Same endings batches : ",neg_end_obj.no_samp)
+    neg_end_obj.no_samp = 0
     return aug_data, ver_aug_data
 
 

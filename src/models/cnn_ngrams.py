@@ -23,6 +23,7 @@ class CNN_ngrams():
         self.embedding_dimensions_tags = 100
         self.n_gram_size = 5
         self.stride_size = 1
+        vocabulary_size_tags = 45
 
 
         """Loading trained model for predicting"""
