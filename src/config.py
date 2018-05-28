@@ -14,6 +14,13 @@ train_set = data_folder + '/train_stories.csv'
 val_set = data_folder + '/cloze_test_val__spring2016 - cloze_test_ALL_val.csv'
 test_set = data_folder + ''  # TODO add test set path when we have it
 
+
+#Ready to be used for preprocessing -> do not touch
+train_pos_context_tog = data_folder + '/train_stories_pos_begin_together.npy'
+train_pos_end_tog = data_folder + '/train_stories_pos_end_together.npy'
+val_pos_context_tog = data_folder + '/cloze_test_val__spring2016 - cloze_test_ALL_val_pos_begin_together.npy'
+val_pos_end_tog = data_folder +  '/cloze_test_val__spring2016 - cloze_test_ALL_val_pos_end_together.npy'
+
 # token used for the language model
 # bos = '<bos>'  # begin of sentence token
 # eos = '<eos>'  # end of sentence token

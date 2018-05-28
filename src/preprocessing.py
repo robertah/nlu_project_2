@@ -178,6 +178,36 @@ def open_csv_asmatrix(datafile):
     print("Loaded ", datafile, " successfully!")
     return file
 
+def load_train_val_datasets_pos_tagged():
+
+    print("Loading train set..")
+    pos_train_begin_tog, pos_train_end_tog = preprocess(pos_begin = np.load(train_pos_context_tog), pos_end = np.load(train_pos_end_tog), test=False, pad='ending', punct=True,
+                                                        stop_words=True, lemm=True)
+    print("Loading validation set..")
+    pos_val_begin_tog, pos_val_end_tog = preprocess(pos_begin = np.load(val_pos_context_tog), pos_end = np.load(val_pos_end_tog), test=True, pad='ending', punct=True,
+                                                    stop_words=True, lemm=True)
+    end_idx = 0
+    for cont in pos_train_begin_tog:
+        print("LENS")
+        print("CONT LEN ",len(cont[0]))
+        print("END LEN ",len(pos_train_end_tog[end_idx][0]))
+        end_idx = end_idx+1
+
+    return pos_train_begin_tog, pos_train_end_tog, pos_val_begin_tog, pos_val_end_tog
+
+def generate_binary_verifiers():
+
+    binary_verifiers = []
+
+    ver_val_set = get_answers(val_set)
+    for value in ver_val_set:
+        if value == 1:
+            binary_verifiers.append([1, 0]) #Correct ending is the first one
+        else:
+            binary_verifiers.append([0, 1]) #Correct ending is the first one
+    #print(binary_verifiers)
+    return binary_verifiers
+
 
 # just trying if works
 if __name__ == '__main__':
