@@ -2,6 +2,8 @@ from config import *
 import pandas as pd
 import numpy as np
 import pickle
+import nltk
+from nltk.data import load
 from collections import Counter
 from nltk.corpus import stopwords, wordnet
 from nltk.stem import WordNetLemmatizer
@@ -399,6 +401,8 @@ def filter_words(dataset):
     return filtered_words
 
 
+
+
 def generate_vocab_pos(pos_data):
     """
     Generate a pos_vocabulary file and save it in pkl form
@@ -431,6 +435,23 @@ def generate_vocab_pos(pos_data):
     return pos_dictionary
 
 
+def generate_vocab_pos_upenn():
+
+    # Getting tags from upenn_tagset
+    nltk.download('tagsets')
+    tagdict = load('help/tagsets/upenn_tagset.pickle')
+
+    #creating dictionary with pos_tags, using negative numbers
+    pos_dic = dict(enumerate(list(set(tagdict.keys()))))
+    pos_dictionary = {v: -(k+1) for k, v in pos_dic.items()}
+
+    # with open(pos_vocabulary_pkl , 'wb') as output:
+    #     pickle.dump(pos_dictionary, output, pickle.HIGHEST_PROTOCOL)
+    #     print("Pos vocabulary saved as pkl")
+
+    return pos_dictionary
+
+
 def merge_vocab(vocab1, vocab2):
     """
     Merges two dictionaries in pkl format and saves as new dictionary
@@ -455,9 +476,12 @@ def merge_vocab(vocab1, vocab2):
 
 if __name__ == '__main__':
 
-    generate_vocab_pos(train_pos_begin)
-    merge_vocab(vocabulary_pkl, pos_vocabulary_pkl)
+    # generate_vocab_pos(train_pos_begin)
+    # merge_vocab(vocabulary_pkl, pos_vocabulary_pkl)
+    #
+    # with open(full_vocabulary_pkl, 'rb') as f:
+    #     data = pickle.load(f)
+    # print(data)
 
-    with open(full_vocabulary_pkl, 'rb') as f:
-        data = pickle.load(f)
-    print(data)
+
+    print(generate_vocab_pos_upenn())
