@@ -192,8 +192,6 @@ if __name__ == '__main__':
     # print(pos_begin_processed)
     # print(pos_end_processed)
     beg, end = filter_words(pos_begin_processed), filter_words(pos_end_processed)
-    print(beg)
-    print("\n\n\n\n\n", end)
     # comb = combine_story(beg, end)
     # print(comb)
     # print(comb.shape)

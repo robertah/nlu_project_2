@@ -317,9 +317,10 @@ def pad_endings(beginnings, endings):
 
     padded_endings = np.empty(endings.shape, dtype=list)
 
-    len_beginnings = [len(beginning) for beginning in beginnings]
+    len_beginnings = [sum(len(s) for s in beginning) for beginning in beginnings]
 
     for i, ending in np.ndenumerate(endings):
+
         # trim the ending if the story is too long
         if len_beginnings[i[0]] + len(ending) > story_len:
             padded_endings[i] = ending[:story_len-len_beginnings[i[0]]]
