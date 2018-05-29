@@ -62,3 +62,9 @@ probs_tags_to_sample_from = [0.8, 0.8, 0.8, 0.8, 0.8, 0.8, #verbs
                              0.8, #pronouns
                              0.8, 0.8, 0.8, # adverbs
                              0.8, 0.8, 0.8] # adjectives
+
+#For Siamese LSTM
+n_hidden = 50
+gradient_clipping_norm = 1.25
+batch_size = 64
+n_epoch = 25
