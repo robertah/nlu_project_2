@@ -267,12 +267,14 @@ class Negative_endings:
 
         iterations = 0
         
+        #print("Initial setence is: ", sentence)
+
         while not at_least_one_change and not no_sampling_tags:
-            #print("SENTENCE IS ", sentence)
             for tagged_word in sentence:
                 if tagged_word[1] in self.sampling_tags:
                     found_one = True
                     p = random.uniform(0, 1)
+
                     if p > self.sampling_probs_tags[tagged_word[1]]:
                         new_word = list(sentence[index])
                         new_word[0] = self.sample_from_vocab(tagged_word[1])
@@ -294,7 +296,8 @@ class Negative_endings:
         #print("Iterations needed: ", iterations)
 
         return sentence
-    
+
+
     def sample_from_vocab(self, tag):
         
         vocab_list = self.sampling_tags[tag]
@@ -351,6 +354,8 @@ class Negative_endings:
         all_tags = list(self.sampling_tags)
         for tag in all_tags:
             self.sampling_tags[self.vocabulary[tag]] = self.sampling_tags.pop(tag)
+            self.sampling_probs_tags[self.vocabulary[tag]] = self.sampling_probs_tags.pop(tag)
+
 
     def filter_story_tags(self, tagged_story):
 

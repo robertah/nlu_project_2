@@ -85,10 +85,10 @@ if __name__ == "__main__":
     file_path = os.path.dirname(os.path.abspath(__file__))
 
     args = _setup_argparser()
-    """
+    
     #Once we get ready we can decomment. This avoids creating files when things have still to be debugged
     if args.train:
-        out_trained_models = os.path.normpath(os.path.join(properties["SRC_DIR"],
+        out_trained_models = os.path.normpath(os.path.join(file_path,
                                               "../trained_models/",
                                               args.model,
                                               datetime.datetime.now().strftime(r"%Y-%m-%d[%Hh%M]")))
@@ -98,7 +98,7 @@ if __name__ == "__main__":
             pass
     else:
         out_trained_models = os.path.normpath("..")
-    """
+    
 
     import training_utils as train_utils
     import negative_endings as data_aug
@@ -121,19 +121,26 @@ if __name__ == "__main__":
             #Construct data generators
             
             train_generator = train_utils.batch_iter_train_cnn(contexts = pos_train_begin_tog, endings = pos_train_end_tog, neg_end_obj = neg_end,
-                                                               batch_size = 2, num_epochs = 5000, shuffle=True)
+                                                               batch_size = 3, num_epochs = 500, shuffle=True)
             validation_generator = train_utils.batch_iter_val_cnn(contexts = pos_val_begin_tog, endings = pos_val_end_tog, binary_verifiers = ver_val_set, 
-                                                                  neg_end_obj = neg_end, batch_size = 2, num_epochs = 5000, shuffle=True)
+                                                                  neg_end_obj = neg_end, batch_size = 2, num_epochs = 500, shuffle=True)
             
             #Initialize model
             model = cnn_ngrams.CNN_ngrams(train_generator = train_generator, validation_generator = validation_generator)
-            #model.train()
+            model.train()
 
-            for batch in train_generator:
-                stories_train, verif_train = zip(*batch)
-                print(len(stories_train))
-                print(len(stories_train[0]))
-                print(verif_train)
+            #print("TRAINING STORIES")
+            #for batch in train_generator:
+                #stories_train, verif_train = zip(*batch)
+                #print(len(stories_train))
+                #print(len(stories_train[0]))
+                #print(verif_train)
+            #print("EVALUATION STORIES")
+            #for batch in validation_generator:
+                #stories_train, verif_train = zip(*batch)
+                #print(len(stories_train))
+                #print(len(stories_train[0]))
+                #print(verif_train)
 
 
         elif args.model == "put_your_model_name_here2":
