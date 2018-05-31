@@ -9,7 +9,7 @@ import time
 
 from config import *
 from preprocessing import *
-
+from data_utils import *
 # Remove tensorflow CPU instruction information.
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
@@ -110,8 +110,14 @@ if __name__ == "__main__":
     if args.train:
         """Create a field with your model (see the default one to be customized) and put the procedure to follow to train it"""
         if args.model == "cnn_ngrams":
+            
+            #indices = [3749,47,424,196,65, 52,731]
+            #vocab = load_vocabulary()
+            #print("SENTECe is ",get_words_from_indexes(indexes = indices,vocabulary=vocab))
+            
 
-            print("CNN grams training invoked")
+            #TOGETHER THE DATASET
+            """print("CNN grams training invoked")
             print("Loading dataset..")
             pos_train_begin_tog, pos_train_end_tog, pos_val_begin_tog, pos_val_end_tog = load_train_val_datasets_pos_tagged()
             ver_val_set = generate_binary_verifiers()
@@ -121,17 +127,42 @@ if __name__ == "__main__":
             #Construct data generators
             
             train_generator = train_utils.batch_iter_train_cnn(contexts = pos_train_begin_tog, endings = pos_train_end_tog, neg_end_obj = neg_end,
-                                                               batch_size = 3, num_epochs = 500, shuffle=True)
+                                                               batch_size = 2, num_epochs = 500, shuffle=True)
             validation_generator = train_utils.batch_iter_val_cnn(contexts = pos_val_begin_tog, endings = pos_val_end_tog, binary_verifiers = ver_val_set, 
                                                                   neg_end_obj = neg_end, batch_size = 2, num_epochs = 500, shuffle=True)
             
             #Initialize model
-            model = cnn_ngrams.CNN_ngrams(train_generator = train_generator, validation_generator = validation_generator)
-            model.train()
+            model = cnn_ngrams.CNN_ngrams(train_generator = validation_generator, validation_generator = validation_generator)
+            model.train()"""
+
+            #SEPARATE SENTENCES DATASET
+            print("Loading dataset..")
+            pos_train_begin, pos_train_end, pos_val_begin, pos_val_end = load_train_val_datasets_pos_tagged(together = False)
+            print("Initializing negative endings..")
+            #Needed for negative endings this data load together
+            pos_train_begin_tog, pos_train_end_tog, pos_val_begin_tog, pos_val_end_tog = load_train_val_datasets_pos_tagged()
+            ver_val_set = generate_binary_verifiers()
+
+            neg_end = initialize_negative_endings(contexts = pos_train_begin_tog, endings = pos_train_end_tog)
+            
+            #Construct data generators
+            #print(pos_train_begin)
+            #print(pos_train_end[0])
+            #print(pos_val_begin[0])
+            #print(pos_val_end[0])
+
+            train_generator = train_utils.batch_iter_backward_train_cnn(contexts = pos_train_begin, endings = pos_train_end, neg_end_obj = neg_end,
+                                                                        batch_size = 2, num_epochs = 500, shuffle=True)
+            validation_generator = train_utils.batch_iter_val_cnn(contexts = pos_val_begin_tog, endings = pos_val_end_tog, binary_verifiers = ver_val_set, 
+                                                                  neg_end_obj = neg_end, batch_size = 2, num_epochs = 500, shuffle=True)
+            
+            #Initialize model
+            #model = cnn_ngrams.CNN_ngrams(train_generator = validation_generator, validation_generator = validation_generator)
+            #model.train()
 
             #print("TRAINING STORIES")
-            #for batch in train_generator:
-                #stories_train, verif_train = zip(*batch)
+            for batch in train_generator:
+                stories_train, verif_train = zip(*batch)
                 #print(len(stories_train))
                 #print(len(stories_train[0]))
                 #print(verif_train)

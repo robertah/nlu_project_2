@@ -185,21 +185,24 @@ def open_csv_asmatrix(datafile):
     print("Loaded ", datafile, " successfully!")
     return file
 
-# TODO JUST so you know, I put what is to load as parameter (so I can use separate context) - Mel
-def load_train_val_datasets_pos_tagged(pos_begin_train = train_pos_context_tog, pos_end_train = train_pos_end_tog,
-                                       pos_begin_val = val_pos_context_tog, pos_end_val=val_pos_end_tog):
 
-    print("Loading train set..")
-    pos_train_begin, pos_train_end = preprocess(pos_begin = np.load(pos_begin_train), pos_end = np.load(pos_end_train), test=False, pad='ending', punct=True,
-                                                        stop_words=True, lemm=True)
-    print("Loading validation set..")
-    pos_val_begin, pos_val_end = preprocess(pos_begin = np.load(pos_begin_val), pos_end = np.load(pos_end_val), test=True, pad='ending', punct=True,
-                                                    stop_words=True, lemm=True)
+def load_train_val_datasets_pos_tagged(together = True):
 
-    if pos_begin_train==train_pos_context_tog:
-        print("Loading datasets together")
+    if together:
+        print("Loading train set together..")
+        pos_train_begin, pos_train_end = preprocess(pos_begin = np.load(train_pos_context_tog), pos_end = np.load(train_pos_end_tog), test=False, pad='ending', punct=True,
+                                                            stop_words=True, lemm=False)
+        print("Loading validation set together..")
+        pos_val_begin, pos_val_end = preprocess(pos_begin = np.load(val_pos_context_tog), pos_end = np.load(val_pos_end_tog), test=True, pad='ending', punct=True,
+                                                        stop_words=True, lemm=False)
     else:
-        print("Loading datasets separate")
+        print("Loading train set separate..")
+        pos_train_begin, pos_train_end = preprocess(pos_begin = np.load(train_pos_begin), pos_end = np.load(train_pos_end), test=False, pad='ending', punct=True,
+                                                            stop_words=True, lemm=False)
+        print("Loading validation set separate..")
+        pos_val_begin, pos_val_end = preprocess(pos_begin = np.load(val_pos_begin), pos_end = np.load(val_pos_end), test=True, pad='ending', punct=True,
+                                                        stop_words=True, lemm=False)
+
     return pos_train_begin, pos_train_end, pos_val_begin, pos_val_end
 
 def generate_binary_verifiers():
@@ -207,6 +210,9 @@ def generate_binary_verifiers():
     binary_verifiers = []
 
     ver_val_set = get_answers(val_set)
+    print("Verifier")
+    print(len(ver_val_set))
+    print(ver_val_set)
     for value in ver_val_set:
         if value == 1:
             binary_verifiers.append([1, 0]) #Correct ending is the first one
@@ -220,6 +226,7 @@ def generate_binary_verifiers():
 if __name__ == '__main__':
     # context, end,  preprocess(train_set, pad=None)
 
+<<<<<<< HEAD
     dataset = val_set
     # pos_tag_dataset(dataset, separate=False)
     # pos_begin = np.load(data_folder + '/train_stories_pos_begin.npy')  # (88161, 2)
@@ -229,7 +236,6 @@ if __name__ == '__main__':
     # # print(pos_begin_processed)
     # # print(pos_end_processed)
     # beg, end = filter_words(pos_begin_processed), filter_words(pos_end_processed)
-
     # comb = combine_story(beg, end)
     # print(comb)
     # print(comb.shape)
