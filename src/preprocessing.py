@@ -39,17 +39,11 @@ def pos_tag_dataset(dataset, separate=False):
     # Dealing with sentence endings: if not training set, then there are two ending sentences
     if dataset == train_set:
         pos_end = pd.DataFrame(columns=['id', 'sen5'])
-        for index, row in data_original.iterrows():
-            # print(row.iloc[0])
-            pos_end.loc[index] = [index, np.asarray(pos_tagging_text(row.iloc[4]))]
-
     else:
         pos_end = pd.DataFrame(columns=['id', 'sen5', 'sen6'])
-        for index, row in data_original.iterrows():
-            pos_end.loc[index] = [index, np.asarray(pos_tagging_text(row.iloc[4])),
-                                  np.asarray(pos_tagging_text(row.iloc[5]))]
 
     # Dealing with story beginning: either group pos tags as one array or seperate per sentence
+    print("Doing separate pos-tagging")
     if separate:
         pos_begin = pd.DataFrame(columns=['id', 'sen1', 'sen2', 'sen3', 'sen4'])
         for index, row in data_original.iterrows():
@@ -59,6 +53,12 @@ def pos_tag_dataset(dataset, separate=False):
                                     np.asarray(pos_tagging_text(row.iloc[2]), object),
                                     np.asarray(pos_tagging_text(row.iloc[3]), object)
                                     ]
+            if dataset == train_set:
+                pos_end.loc[index] = [index, np.asarray(pos_tagging_text(row.iloc[4]))]
+            else:
+                pos_end.loc[index] = [index, np.asarray(pos_tagging_text(row.iloc[4])),
+                                      np.asarray(pos_tagging_text(row.iloc[5]))]
+
             story_number = story_number + 1
 
             if story_number % 1000 == 0:
@@ -73,6 +73,7 @@ def pos_tag_dataset(dataset, separate=False):
         path_begin = cur_dir + "_pos_begin"
         path_end = cur_dir + "_pos_end"
 
+
     else:
         pos_begin = pd.DataFrame(columns=['id', 'sen'])
         for index, row in data_original.iterrows():
@@ -82,6 +83,12 @@ def pos_tag_dataset(dataset, separate=False):
                                                     np.asarray(pos_tagging_text(row.iloc[2]), object),
                                                     np.asarray(pos_tagging_text(row.iloc[3]), object)
                                                     ))]
+            if dataset == train_set:
+                pos_end.loc[index] = [index, np.asarray(pos_tagging_text(row.iloc[4]))]
+            else:
+                pos_end.loc[index] = [index, np.asarray(pos_tagging_text(row.iloc[4])),
+                                      np.asarray(pos_tagging_text(row.iloc[5]))]
+
             story_number = story_number + 1
 
             if story_number % 1000 == 0:
@@ -165,7 +172,7 @@ def preprocess(pos_begin, pos_end, test=False, pad='ending', punct=True, stop_wo
 
     return begin_processed, end_processed
 
-
+# TODO REmove if not used
 def combine_matrix_cols(array):
     return combined_matrix
 
@@ -178,16 +185,22 @@ def open_csv_asmatrix(datafile):
     print("Loaded ", datafile, " successfully!")
     return file
 
-def load_train_val_datasets_pos_tagged():
+# TODO JUST so you know, I put what is to load as parameter (so I can use separate context) - Mel
+def load_train_val_datasets_pos_tagged(pos_begin_train = train_pos_context_tog, pos_end_train = train_pos_end_tog,
+                                       pos_begin_val = val_pos_context_tog, pos_end_val=val_pos_end_tog):
 
     print("Loading train set..")
-    pos_train_begin_tog, pos_train_end_tog = preprocess(pos_begin = np.load(train_pos_context_tog), pos_end = np.load(train_pos_end_tog), test=False, pad='ending', punct=True,
+    pos_train_begin, pos_train_end = preprocess(pos_begin = np.load(pos_begin_train), pos_end = np.load(pos_end_train), test=False, pad='ending', punct=True,
                                                         stop_words=True, lemm=True)
     print("Loading validation set..")
-    pos_val_begin_tog, pos_val_end_tog = preprocess(pos_begin = np.load(val_pos_context_tog), pos_end = np.load(val_pos_end_tog), test=True, pad='ending', punct=True,
+    pos_val_begin, pos_val_end = preprocess(pos_begin = np.load(pos_begin_val), pos_end = np.load(pos_end_val), test=True, pad='ending', punct=True,
                                                     stop_words=True, lemm=True)
 
-    return pos_train_begin_tog, pos_train_end_tog, pos_val_begin_tog, pos_val_end_tog
+    if pos_begin_train==train_pos_context_tog:
+        print("Loading datasets together")
+    else:
+        print("Loading datasets separate")
+    return pos_train_begin, pos_train_end, pos_val_begin, pos_val_end
 
 def generate_binary_verifiers():
 
@@ -198,7 +211,7 @@ def generate_binary_verifiers():
         if value == 1:
             binary_verifiers.append([1, 0]) #Correct ending is the first one
         else:
-            binary_verifiers.append([0, 1]) #Correct ending is the first one
+            binary_verifiers.append([0, 1]) #Incorrect ending is the second one
     #print(binary_verifiers)
     return binary_verifiers
 
@@ -208,14 +221,15 @@ if __name__ == '__main__':
     # context, end,  preprocess(train_set, pad=None)
 
     dataset = val_set
-    # pos_begin, pos_end = pos_tag_dataset(dataset, separate=True)
-    pos_begin = np.load(data_folder + '/train_stories_pos_begin.npy')  # (88161, 2)
-    pos_end = np.load(data_folder + '/train_stories_pos_end.npy')  # (88161, 2)
-    pos_begin_processed, pos_end_processed = preprocess(pos_begin, pos_end, test=False, pad='ending', punct=True,
-                                                        stop_words=True, lemm=True)
-    # print(pos_begin_processed)
-    # print(pos_end_processed)
-    beg, end = filter_words(pos_begin_processed), filter_words(pos_end_processed)
+    # pos_tag_dataset(dataset, separate=False)
+    # pos_begin = np.load(data_folder + '/train_stories_pos_begin.npy')  # (88161, 2)
+    # # pos_end = np.load(data_folder + '/train_stories_pos_end.npy')  # (88161, 2)
+    # pos_begin_processed, pos_end_processed = preprocess(pos_begin, pos_end, test=False, pad='ending', punct=True,
+    #                                                     stop_words=True, lemm=True)
+    # # print(pos_begin_processed)
+    # # print(pos_end_processed)
+    # beg, end = filter_words(pos_begin_processed), filter_words(pos_end_processed)
+
     # comb = combine_story(beg, end)
     # print(comb)
     # print(comb.shape)
@@ -287,10 +301,27 @@ if __name__ == '__main__':
     # for index, row in data_original.iterrows():
     #     print(row.iloc[0])
 
-    # beg, end = pos_tag_dataset(val_set, seperate=True)
-    # print(beg.shape)
 
     # data_original = load_data(train_set)
     # data_original = data_original.head(10)
     # data_original.drop(columns=[c for c in data_original.columns if 'title' in c], inplace=True)
     # print(data_original.columns)
+
+    # pos_begin, pos_end = pos_tag_dataset(val_set, separate=False)
+    # # pos_end = pos_end.as_matrix
+    # # pos_end = pd.DataFrame(data=pos_end)
+    # print(pos_begin)
+    # print(pos_begin.shape)
+    # print(type(pos_begin))
+    # print(pos_begin[0][1])
+    # print(pos_end[0])
+
+    pos_train_begin, pos_train_end, pos_val_begin, pos_val_end= load_train_val_datasets_pos_tagged(pos_begin_train = train_pos_begin, pos_end_train = train_pos_end,
+                                       pos_begin_val = val_pos_begin, pos_end_val=val_pos_begin)
+    print("Pos_train_begin: {}".format(pos_train_begin))
+    print("pos_train_begin[0]: {}".format(pos_train_begin[0]))
+    print("pos_train_begin[0][0]: {}".format(pos_train_begin[0][0]))
+
+    pos_train_begin[:,][0] = pos_train_begin[:,]
+    print("Pos_train_begin: {}".format(pos_train_begin))
+    print("pos_train_begin[0]: {}".format(pos_train_begin[0]))
