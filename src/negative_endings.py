@@ -1,6 +1,7 @@
 import preprocessing as prep
 import training_utils as train_utils
 from config import *
+from data_utils import *
 import random
 import pickle
 from collections import Counter
@@ -83,46 +84,69 @@ class Negative_endings:
         return batch_aug_stories, ver_aug_stories
 
 
-    #Replace 5th sentence with one random of the context
-    def backward_negative_ending(full_training_story, # The story can be both pos tagged and not pos tagged
-                                 batch_size = 2,
-                                 shuffle_batch = True):
+    #Replace 5th sentence with one random of the context & change words in it w.r.t to the tag
+    def backwards_words_substitution_approach(self, context_story, # The story has to be pos tagged
+                                              ending_story,
+                                              no_4th_context_sentence = False,
+                                              out_tagged_story = False, #Output a pos_tagged story if True
+                                              batch_size = 2,
+                                              debug = False, #Set to True if endings and original ending context is wanted to be displayed
+                                              shuffle_batch = True):
         """INPUT:
-                 full_training_story : matrix of 5 story sentences
-                 merge_sentences : boolean, if True the output will be a unique array of story words
-
-            OUTPUT:
-                  training stories with the original one and others
+                 context_story = 4 sentences context in one matrix
+                 ending_story = 1 ending (the correct one)
+           OUTPUT:
+                  training stories endings with the correnct one and others negative (batch_size-1)
             """
-        batch_aug_stories = []
+        
+        batch_aug_endings = []
         ver_aug_stories = np.zeros(batch_size)
         ver_aug_stories[0] = 1
-        
-        #Create new stories with different endings and add them to the training batch
-        if batch_size == 2:
 
-            new_story = deepcopy(pos_tagged_story)
-            new_story[-1] = deepcopy(full_training_story[randint(0, len(full_training_story)-2)]);
-            
-       
 
+        if not out_tagged_story:
+            batch_aug_endings.append([word_tag[0] for word_tag in ending_story[0]])
         else:
+            batch_aug_endings.append(ending_story[0])
 
-            for i in range(batch_size-1):
-                new_story = deepcopy(pos_tagged_story)
-                new_story[-1] = deepcopy(full_training_story[randint(0, len(full_training_story)-2)]);
-      
+
+        len_ending = len(ending_story[0])
+        #Create new stories with different endings and add them to the training batch
+        for i in range(batch_size-1):
+            new_ending = []
+            while len(new_ending) == 0:
+                if no_4th_context_sentence:
+                    new_ending = deepcopy(context_story[randint(0, len(context_story)-2)]);
+                else:
+                    new_ending = deepcopy(context_story[randint(0, len(context_story)-1)]);
+            
+            if debug:
+                print("Original chosen context story ending before changing words: ")
+
+                print(self.display_sentences(endings = [[word_tag[0] for word_tag in new_ending]], 
+                                             verifier = [], tagged_story = out_tagged_story))
+            
+            self.change_sentence(new_ending)
+
+            padding = len_ending-len(new_ending)
+
+            for i in range(0, padding):
+                new_ending = new_ending + [(self.vocabulary[pad],self.vocabulary["."])]
+
+            if not out_tagged_story:
+                batch_aug_endings.append([word_tag[0] for word_tag in new_ending])
+            else:
+                batch_aug_endings.append(new_ending)            
         
         if shuffle_batch:
 
-            batch_aug_stories, ver_aug_stories = self.shuffle_story_verifier(batch_size = batch_size, 
-                                                                             batch_aug_stories = batch_aug_stories, ver_aug_stories = ver_aug_stories)
-        
+            batch_aug_endings, ver_aug_stories = self.shuffle_story_verifier(batch_size = batch_size, 
+                                                                             batch_aug_endings = batch_aug_endings, ver_aug_stories = ver_aug_stories)
+        if debug:
+            print("All endings of the story & verifier:")
+            self.display_sentences(endings = batch_aug_endings, verifier = ver_aug_stories, tagged_story = out_tagged_story)
 
-        #print(batch_aug_stories)
-        #print(ver_aug_stories)
-
-        return batch_aug_stories, ver_aug_stories
+        return batch_aug_endings, ver_aug_stories
 
 
     def words_substitution_approach(self, 
@@ -130,7 +154,7 @@ class Negative_endings:
                                     out_tagged_story = False, #Output a pos_tagged story if True
                                     batch_size = 2,
                                     shuffle_batch = True,
-                                    debug = False): #If the changed endings should be displayed in charachter words
+                                    debug = True): #If the changed endings should be displayed in charachter words
         
         """
         INPUT:
@@ -183,6 +207,7 @@ class Negative_endings:
             batch_aug_endings, ver_aug_stories = self.shuffle_story_verifier(batch_size = batch_size, 
                                                                              batch_aug_endings = batch_aug_endings, ver_aug_stories = ver_aug_stories)
         if debug:
+            print("All endings of the story & verifier:")
             self.display_sentences(endings = batch_aug_endings, verifier = ver_aug_stories, tagged_story = out_tagged_story)
 
         #print(batch_aug_endings)
@@ -200,20 +225,21 @@ class Negative_endings:
     """******************************END USER FUNCTIONS**************************"""
 
 
-    def display_sentences(endings, verifier, tagged_story):
-        
+    def display_sentences(self, endings, verifier, tagged_story):
         for ending in endings:
             sentence = []
             vocabulary_list = list(self.vocabulary)
-            print("CHECK WHERE the tags are: ", self.vocabulary)
+            #print("CHECK WHERE the tags are: ", vocabulary_list)
             if tagged_story:
                 for word in ending:
                     sentence.append(vocabulary_list[word[0]])
             else:
                 for word in ending:
                     sentence.append(vocabulary_list[word])
-            print(sentence)
-        print(verifier)
+            #if sentence is not None:
+            #    print(sentence)
+        if len(verifier)!=0:
+            print(verifier)
 
     def shuffle_story_verifier(self, batch_size, batch_aug_endings, ver_aug_stories ):
         shuffled_idx = np.arange(batch_size)
@@ -237,6 +263,10 @@ class Negative_endings:
             #joined_story.append(sentence)
         #print("JOINED STORY: ",joined_story)
         return joined_story
+
+    def change_sentence_sampling_from_context(sentence, context):
+
+        return sentence
 
 
     def change_sentence(self, sentence):

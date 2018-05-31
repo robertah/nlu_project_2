@@ -26,7 +26,7 @@ def load_data(dataset):
     assert dataset == train_set or dataset == val_set or dataset == test_set
 
     if dataset == train_set:
-        names = ['id', 'title', 'sen1', 'sen2', 'sen3', 'sen4', 'sen5']
+        names = ['id', 'storytitle', 'sen1', 'sen2', 'sen3', 'sen4', 'sen5']
     else:
         names = ['id', 'sen1', 'sen2', 'sen3', 'sen4', 'sen5_1', 'sen5_2', 'ans']
 
