@@ -23,7 +23,7 @@ def _setup_argparser():
     parser = argparse.ArgumentParser(description="Control program to launch all actions related to this project.")
 
     parser.add_argument("-m", "--model", action="store",
-                        choices=["cnn_ngrams", "put_your_model_name_here2", "put_your_model_name_here3"],
+                        choices=["cnn_ngrams", "SiameseLSTM", "put_your_model_name_here3"],
                         default="cnn_ngrams",
                         type=str,
                         help="the model to be used, defaults to cnn_ngrams")
@@ -102,7 +102,7 @@ if __name__ == "__main__":
 
     import training_utils as train_utils
     import negative_endings as data_aug
-    from models import cnn_ngrams
+    from models import cnn_ngrams, SiameseLSTM
     import numpy as np
     import keras
 
@@ -143,9 +143,36 @@ if __name__ == "__main__":
                 #print(verif_train)
 
 
-        elif args.model == "put_your_model_name_here2":
+        elif args.model == "SiameseLSTM":
 
             print("Please put your procedure in here before running & remember to add the name of the model into the options of the parser!")
+            print("You chose the Siamese LSTM model; Good for you!")
+
+            # Loading datasets (training and validation)
+            print("Loading dataset..")
+            pos_train_begin_tog, pos_train_end_tog, pos_val_begin_tog, pos_val_end_tog = load_train_val_datasets_pos_tagged()
+            ver_val_set = generate_binary_verifiers()
+            print("Initializing negative endings..")
+            neg_end = initialize_negative_endings(contexts=pos_train_begin_tog, endings=pos_train_end_tog)
+
+            # Construct data generators
+            train_generator = train_utils.batch_iter_train_SiameseLSTM(contexts = pos_train_begin_tog,
+                                                               endings = pos_train_end_tog,
+                                                               neg_end_obj = neg_end,
+                                                               batch_size = 3,
+                                                               num_epochs = 500,
+                                                               shuffle=True)
+            validation_generator = train_utils.batch_iter_val_SiameseLSTM(contexts = pos_val_begin_tog,
+                                                                  endings = pos_val_end_tog,
+                                                                  binary_verifiers = ver_val_set,
+                                                                  neg_end_obj = neg_end,
+                                                                  batch_size = 2,
+                                                                  num_epochs = 500,
+                                                                  shuffle=True)
+
+            #Creating model
+            model = SiameseLSTM.SiameseLSTM(train_generator=train_generator, validation_generator = validation_generator)
+            model.train()
 
         elif args.model == "put_your_model_name_here3":
             
