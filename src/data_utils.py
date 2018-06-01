@@ -253,7 +253,7 @@ def check_for_unk(data, vocabulary):
     return new_data
 
 
-def get_words_from_indexes(indexes, vocabulary):
+def get_words_from_indexes(indexes, vocabulary, pos_vocabulary):
     """
     Get words from indexes in the vocabulary
 
@@ -264,16 +264,18 @@ def get_words_from_indexes(indexes, vocabulary):
 
     # map indexes to words in vocabulary
     vocabulary_reverse = {v: k for k, v in vocabulary.items()}
+    pos_vocabulary_reverse = {v: k for k, v in pos_vocabulary.items()}
+
 
     # retrieve words corresponding to indexes
     if isinstance(indexes, list):
         if isinstance(indexes[0], tuple):
-            words = [(vocabulary_reverse[x[0]], x[1]) for x in indexes]
+            words = [(vocabulary_reverse[x[0]], pos_vocabulary_reverse[x[1]]) for x in indexes]
         else:
             words = [vocabulary_reverse[x] for x in indexes]
     else:
         if isinstance(indexes, tuple):
-            words = (vocabulary_reverse[indexes[0]], indexes[1])
+            words = (vocabulary_reverse[indexes[0]], pos_vocabulary_reverse[indexes[1]])
         else:
             words = vocabulary_reverse[indexes]
     return words
@@ -401,6 +403,16 @@ def filter_words(dataset):
     return filtered_words
 
 
+def get_context_sentence(contexts, i):
+    """
+    Get the i-th sentences from the contexts
+    :param contexts: contexts array with 4 sentences per story
+    :param i: i-th sentence we want to filter
+    :return: filtered context matrix with i-th sentences
+    """
+    assert i in range(1, 5)
+
+    return contexts[:, i-1]
 
 
 def generate_vocab_pos(pos_data):
