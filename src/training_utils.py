@@ -268,6 +268,7 @@ def batch_iter_backward_train_cnn(contexts, endings, neg_end_obj, out_tagged_sto
 
 def batch_iter_ffnn(contexts, endings, neg_end_obj, binary_verifiers, out_tagged_story = False,
                        batch_size = 2, num_epochs = 500, shuffle=True):
+    # TODO need to be changed
     """
     Generates a batch generator for the train set.
     """
