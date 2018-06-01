@@ -237,6 +237,7 @@ def batch_iter_val_SiameseLSTM(contexts, endings, neg_end_obj, binary_verifiers,
             stories_batch = batches_full_stories[batch_idx]
             binary_batch_verifier = [[int(ver), 1-int(ver)] for ver in binary_verifiers[batch_idx]]
             yield (np.asarray(stories_batch), np.asarray(binary_batch_verifier))
+
 def batch_iter_backward_train_cnn(contexts, endings, neg_end_obj, out_tagged_story = False,
                                   batch_size = 2, num_epochs = 500, shuffle=True):
     """
@@ -251,6 +252,33 @@ def batch_iter_backward_train_cnn(contexts, endings, neg_end_obj, out_tagged_sto
         batch_endings, ver_batch_end = batches_backwards_neg_endings(neg_end_obj = neg_end_obj, endings = endings,
                                                                      batch_size = batch_size, contexts = contexts)
         batches_full_stories = full_stories_together(contexts = contexts_no_tag, endings = batch_endings, contexts_aggregated = False)
+        total_steps = len(batches_full_stories)
+        print("Train generator for the new epoch ready..")
+
+        for batch_idx in range(0, total_steps):
+            #batch_size stories -> 1 positive endings + batch_size-1 negative endings ones
+
+            stories_batch = batches_full_stories[batch_idx]
+            verifier_batch = [[int(ver), 1-int(ver)] for ver in ver_batch_end[batch_idx]]
+            yield (np.asarray(stories_batch), np.asarray(verifier_batch))
+
+
+
+# FEED FORWARD NEURAL NETWORK #######################################################
+
+def batch_iter_ffnn(contexts, endings, neg_end_obj, binary_verifiers, out_tagged_story = False,
+                       batch_size = 2, num_epochs = 500, shuffle=True):
+    """
+    Generates a batch generator for the train set.
+    """
+    if not out_tagged_story:
+        contexts = eliminate_tags_in_contexts(contexts_pos_tagged= contexts)
+    while True:
+    #for i in range(0,num_epochs):
+        print("Augmenting with negative endings for the next epoch -> stochastic approach..")
+        batch_endings, ver_batch_end= batches_pos_neg_endings(neg_end_obj = neg_end_obj, endings = endings,
+                                                              batch_size = batch_size)
+        batches_full_stories = full_stories_together(contexts = contexts, endings = batch_endings)
         total_steps = len(batches_full_stories)
         print("Train generator for the new epoch ready..")
 
