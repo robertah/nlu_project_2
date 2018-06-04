@@ -2,7 +2,7 @@ from config import *
 from preprocessing import load_data
 import nltk
 import pandas as pd
-
+import pickle
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
 
@@ -14,7 +14,7 @@ def sentiment_analysis(dataset):
     data_original = load_data(dataset)
 
     #Only go through the first 10 entries of dataset - Remove for entire dataset
-    data_original = data_original.head(10)
+    # data_original = data_original.head(10)
 
     sid = SentimentIntensityAnalyzer()
 
@@ -31,7 +31,28 @@ def sentiment_analysis(dataset):
             # print('{0}:{1}, '.format(key, scores[key]), end='')
             print(scores[key])
             sentiment_score.loc[index] = scores
+
+    with open(sentiment_pkl, 'wb') as output:
+        pickle.dump(sentiment_score, output, pickle.HIGHEST_PROTOCOL)
+        print("Sentiment analysis saved as pkl")
+
     return sentiment_score
+
+
+def load_sentiment():
+
+    print("Loading sentiment analysis... ")
+
+    try:
+        with open(sentiment_pkl, 'rb') as handle:
+            sentiment = pickle.load(handle)
+        print("Sentiment analysis loaded")
+    except FileNotFoundError:
+        print("Sentiment analysis not found.")
+
+    return sentiment
+
+
 
 if __name__ == '__main__':
     print(sentiment_analysis(train_set))

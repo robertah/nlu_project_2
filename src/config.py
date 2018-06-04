@@ -12,7 +12,7 @@ out_trained_models = '../trained_models'
 # TODO to be specified the dataset path
 train_set = data_folder + '/train_stories.csv'
 val_set = data_folder + '/cloze_test_val__spring2016 - cloze_test_ALL_val.csv'
-test_set = data_folder + ''  # TODO add test set path when we have it
+test_set = data_folder + '/test_set.csv'  # TODO add test set path when we have it
 
 
 #Ready to be used for preprocessing -> do not touch
@@ -31,12 +31,13 @@ unk = '<unk>'  # unknown token
 vocabulary_pkl = data_folder + '/vocabulary.pkl'
 pos_vocabulary_pkl = data_folder + '/pos_vocabulary.pkl'
 full_vocabulary_pkl = data_folder + '/full_vocabulary.pkl'
+sentiment_pkl = data_folder + '/sentiment.pkl'
 train_pos_begin = data_folder + '/train_stories_pos_begin.npy'
 train_pos_end = data_folder + '/train_stories_pos_end.npy'
 val_pos_begin = data_folder + '/cloze_test_val__spring2016 - cloze_test_ALL_val_pos_begin.npy'
 val_pos_end = data_folder + '/cloze_test_val__spring2016 - cloze_test_ALL_val_pos_end.npy'
-# test_pos_begin = data_folder + '/test_pos_begin.npy'
-# test_pos_end = data_folder + '/test_pos_end.npy'
+test_pos_begin = data_folder + '/test_pos_begin.npy'
+test_pos_end = data_folder + '/test_pos_end.npy'
 
 word_embedding = data_folder + '/word_embedding'
 
