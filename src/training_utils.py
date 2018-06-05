@@ -314,6 +314,6 @@ def batch_iter_val_cnn_sentiment(contexts, endings, binary_verifiers):
             #batch_size stories -> 1 positive endings + batch_size-1 negative endings ones
             stories_batch = batches_full_stories[batch_idx]
             binary_batch_verifier = [[int(ver), 1-int(ver)] for ver in binary_verifiers[batch_idx]]
-
+            # print(np.asarray(stories_batch), np.asarray(binary_batch_verifier))
             yield (np.asarray(stories_batch), np.asarray(binary_batch_verifier))
 

@@ -227,8 +227,8 @@ if __name__ == "__main__":
             sentiment_val = sentiment_analysis(val_set).values
 
 
-            sent_train = sentiment_val[train_indexes]
-            sent_val = sentiment_val[-train_indexes]
+            sent_train = np.take(sentiment_val, train_indexes, axis=0)
+            sent_val = np.delete(sentiment_val, train_indexes, axis=0)
 
             print("Loading skip-thoughts_model for embedding...")
             skipthoughts_model = skipthoughts.load_model()
@@ -240,8 +240,8 @@ if __name__ == "__main__":
             #                                   batch_size=2)
             # validation_generator = ffnn.batch_iter_val(val_set, sentiment_val, encoder)
 
-            train_generator = ffnn.batch_iter_val_train(X_train, sent_train, encoder, Y_train)
-            validation_generator = ffnn.batch_iter_val_val(X_val, sent_val, encoder, Y_val)
+            train_generator = ffnn.batch_iter_val_train(X_train, sent_train, encoder, Y_train, batch_size=10)
+            validation_generator = ffnn.batch_iter_val_val(X_val, sent_val, encoder, Y_val, batch_size=10)
 
             print("Initializing feed-forward neural network...")
             model = ffnn.FFNN(train_generator=train_generator, validation_generator=validation_generator)
