@@ -6,7 +6,7 @@ import os
 import theano
 import theano.tensor as tensor
 
-import cPickle as pkl
+import pickle as pkl
 import numpy
 import copy
 import nltk
@@ -33,7 +33,7 @@ def load_model():
     Load the model with saved tables
     """
     # Load model options
-    print 'Loading model parameters...'
+    print ('Loading model parameters...')
     with open('%s.pkl'%path_to_umodel, 'rb') as f:
         uoptions = pkl.load(f)
     with open('%s.pkl'%path_to_bmodel, 'rb') as f:
@@ -125,7 +125,7 @@ def encode(model, X, use_norm=True, verbose=True, batch_size=128, use_eos=False)
     # Get features. This encodes by length, in order to avoid wasting computation
     for k in ds.keys():
         if verbose:
-            print k
+            print (k)
         numbatches = len(ds[k]) / batch_size + 1
         for minibatch in range(numbatches):
             caps = ds[k][minibatch::numbatches]
@@ -194,10 +194,10 @@ def nn(model, text, vectors, query, k=5):
     scores = numpy.dot(qf, vectors.T).flatten()
     sorted_args = numpy.argsort(scores)[::-1]
     sentences = [text[a] for a in sorted_args[:k]]
-    print 'QUERY: ' + query
-    print 'NEAREST: '
+    print ('QUERY: ' + query)
+    print ('NEAREST: ')
     for i, s in enumerate(sentences):
-        print s, sorted_args[i]
+        print (s, sorted_args[i])
 
 
 def word_features(table):
@@ -221,10 +221,10 @@ def nn_words(table, wordvecs, query, k=10):
     scores = numpy.dot(qf, wordvecs.T).flatten()
     sorted_args = numpy.argsort(scores)[::-1]
     words = [keys[a] for a in sorted_args[:k]]
-    print 'QUERY: ' + query
-    print 'NEAREST: '
+    print ('QUERY: ' + query)
+    print ('NEAREST: ')
     for i, w in enumerate(words):
-        print w
+        print (w)
 
 
 def _p(pp, name):

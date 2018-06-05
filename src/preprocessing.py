@@ -1,7 +1,7 @@
 import nltk
 import os
 from data_utils import *
-
+from sentiment import *
 
 def pos_tagging_text(sentence):
     tokens = nltk.word_tokenize(sentence)
@@ -231,6 +231,60 @@ def eliminate_id(dataset):
         dataset_no_id.append(new_story)
     return dataset_no_id
 
+
+def sentences_to_sentiments(contexts):
+    all_scores = []
+    context_n = 0
+    for context in contexts:
+        scores = []
+        #print("LEN ", len(context))
+        for sentence in context:
+            #print("\nSENTENCE\n", sentence)
+            #print(" ".join(word for word in sentence))
+            #sentence_sentiment(" ".join(word for word in sentence))
+            scores.extend(np.around(sentence_sentiment(" ".join(word for word in sentence))*1000+1000))
+        #print("FINAL UNIQUE ARRAY ", scores)
+        context_n = context_n +1
+        if context_n%1000 == 0:
+            print(context_n)
+        all_scores.append(scores)
+    return all_scores
+
+def endings_to_sentiments(endings):
+    all_scores = []
+    context_n = 0
+    for batch_endings in endings:
+        scores_ending = []
+        for sentence in batch_endings:
+            #print("\nHERE ENDING\n\n", sentence)
+            scores_ending.append(np.around(sentence_sentiment(" ".join(word for word in sentence))*1000+1000))
+        all_scores.append(scores_ending)
+        #print("FINAL TWO UNIQUE ARRAY ", scores_ending)
+        context_n = context_n +1
+        if context_n%1000 == 0:
+            print(context_n)
+    return np.asarray(all_scores)
+
+def train_verifier(train_dataset):
+    verifiers = len(train_dataset)
+    ver_array = []
+    for i in range(verifiers):
+        ver_array.append([1,0])
+    return np.asarray(ver_array)
+
+def no_tags_in_val_endings(endings_pos_tagged):
+
+    endings_no_tag = []
+    for endings_batch_pos_tagged in endings_pos_tagged:
+        batch_endings_no_tag = []
+        for ending_pos_tagged in endings_batch_pos_tagged:
+
+            batch_endings_no_tag.append([word_tag[0] for word_tag in ending_pos_tagged])
+        #print(batch_endings_no_tag)
+        endings_no_tag.append(batch_endings_no_tag)
+
+    return endings_no_tag
+
 # just trying if works
 if __name__ == '__main__':
     # context, end,  preprocess(train_set, pad=None)
@@ -245,6 +299,13 @@ if __name__ == '__main__':
     
     print(len(pos_begin_processed))
     # # print(pos_end_processed)
+    # dataset = val_set
+    # pos_begin, pos_end = pos_tag_dataset(dataset, separate=True)
+    #pos_begin = np.load(data_folder + '/train_stories_pos_begin.npy')  # (88161, 2)
+    #pos_end = np.load(data_folder + '/train_stories_pos_end.npy')  # (88161, 2)
+    #pos_begin_processed, pos_end_processed = preprocess(pos_begin, pos_end, test=False, pad='ending', punct=True,
+    #                                                    stop_words=True, lemm=True)
+
     # beg, end = filter_words(pos_begin_processed), filter_words(pos_end_processed)
     # comb = combine_story(beg, end)
     # print(comb)

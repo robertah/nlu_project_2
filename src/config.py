@@ -32,10 +32,12 @@ unk = '<unk>'  # unknown token
 vocabulary_pkl = data_folder + '/vocabulary.pkl'
 pos_vocabulary_pkl = data_folder + '/pos_vocabulary.pkl'
 full_vocabulary_pkl = data_folder + '/full_vocabulary.pkl'
+sentiment_pkl = data_folder + '/sentiment.pkl'
 train_pos_begin = data_folder + '/train_stories_pos_begin.npy'
 train_pos_end = data_folder + '/train_stories_pos_end.npy'
 val_pos_begin = data_folder + '/cloze_test_val__spring2016 - cloze_test_ALL_val_pos_begin.npy'
 val_pos_end = data_folder + '/cloze_test_val__spring2016 - cloze_test_ALL_val_pos_end.npy'
+
 test_pos_begin = data_folder + '/test_set_pos_begin.npy'
 test_pos_end = data_folder + '/test_set_pos_end.npy'
 
