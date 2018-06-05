@@ -3,12 +3,13 @@ import keras
 from keras.layers import Embedding
 from keras.models import load_model
 from keras.utils import to_categorical
+from keras.layers import LSTM
 import sys
 sys.path.append("..")
 from config import *
 
 
-class CNN_ngrams():
+class Cnn_lstm_sentiment():
     """CNN model implementing a classifier using leaky ReLU and dropouts.
        INPUT -> sentence + pos tags as follows [(I,Sbj),(am,Verb),(bored,Adj)]
        """
@@ -21,15 +22,13 @@ class CNN_ngrams():
         """
         self.train_generator = train_generator
         self.validation_generator = validation_generator
-        self.embedding_dimensions_words = 100 #as in w2v
-        self.embedding_dimensions_tags = 10
-        n_gram_size = 9
-        pool_stride_size = 3
-        pool_last_stride_size = 2
-        stride_size = 5
+        self.embedding_dimensions_words = 50 #was 20 before (57/58% val acc)
+
         vocabulary_size_tags = 45
-        vocabulary_size = 20045
-        story_len = 45
+        vocabulary_size = 2001
+        story_len = 20
+        #story_len = 5
+        kernel_size = 4
 
         """Loading trained model for predicting"""
         if path:
@@ -38,70 +37,30 @@ class CNN_ngrams():
             print("Finished loading model")
             return
 
-        #TODO train generator + validation generator to be implemented once preprocessing is ready
-
         """Model creation"""
         self.model = keras.models.Sequential()
 
         """Embedding layer"""        
-        #input_dim: int > 0. Size of the vocabulary, i.e. maximum integer index + 1.
-        #output_dim: int >= 0. Dimension of the dense embedding.
-        #TODO: undecided wether is voc_words + voc_tags size and if input dim = (vocabulary_size, 2)
-        #[batch size][sequence length][word2vec dimensions (ie 300)]
         self.model.add(Embedding(input_dim = vocabulary_size, output_dim = self.embedding_dimensions_words, input_length = story_len))
-
-        """Blocks of layers
-           First block"""
-        self.model.add(keras.layers.Convolution1D(filters=25,
-                                                  strides=stride_size,
-                                                  kernel_size=n_gram_size,
-                                                  padding="same"))
-        self.model.add(keras.layers.MaxPooling1D(pool_size=n_gram_size,
-                                                 strides=pool_stride_size,
-                                                 padding="same"))
-        self.model.add(keras.layers.LeakyReLU(alpha=0.1))
-        #self.model.add(keras.layers.Dropout(rate=0.25))
-
-        """Second block"""
-        self.model.add(keras.layers.Convolution1D(filters=40,
-                                                  strides=2,
+        
+        self.model.add(keras.layers.Convolution1D(filters=50,
+                                                  strides=kernel_size,
                                                   kernel_size=3,
                                                   padding="same"))
-        self.model.add(keras.layers.MaxPooling1D(pool_size=2,
-                                                 strides=2,
-                                                 padding="same"))
-        self.model.add(keras.layers.LeakyReLU(alpha=0.1))
         #self.model.add(keras.layers.Dropout(rate=0.25))
-        
-        """Third block"""
-        """self.model.add(keras.layers.Convolution1D(filters=100,
-                                                  strides=stride_size,
-                                                  kernel_size=n_gram_size,
-                                                  padding="same"))
-        self.model.add(keras.layers.MaxPooling1D(pool_size=n_gram_size,
-                                                 strides=pool_stride_size,
-                                                 padding="same"))
-        self.model.add(keras.layers.LeakyReLU(alpha=0.1))
 
-        #self.model.add(keras.layers.Dropout(rate=0.25))
-        """
-        """Fourth block"""
-        """self.model.add(keras.layers.Convolution1D(filters=100,
-                                                  strides=stride_size,
-                                                  kernel_size=n_gram_size,
-                                                  padding="same"))
-        self.model.add(keras.layers.MaxPooling1D(pool_size=n_gram_size,
-                                                 strides=pool_last_stride_size,
-                                                 padding="same"))
-        self.model.add(keras.layers.LeakyReLU(alpha=0.1))
-        #self.model.add(keras.layers.Dropout(rate=0.25))
-        """
-        """Fifth block -> dense layers + out layer"""
-        self.model.add(keras.layers.Flatten())
-        #self.model.add(keras.layers.Dense(units=150,
-        #                                  kernel_regularizer=keras.regularizers.l2(1e-6)))
+        """self.model.add(keras.layers.MaxPooling1D(pool_size=n_gram_size,
+                                                 strides=pool_stride_size,
+                                                 padding="same"))"""
         #self.model.add(keras.layers.LeakyReLU(alpha=0.1))
-        #self.model.add(keras.layers.Dropout(rate=0.5))
+
+
+        self.model.add(LSTM(4, activation='tanh', recurrent_activation='hard_sigmoid', use_bias=True, kernel_initializer='glorot_uniform', recurrent_initializer='orthogonal', 
+                           bias_initializer='zeros', unit_forget_bias=True, kernel_regularizer=None, recurrent_regularizer=None, bias_regularizer=None, activity_regularizer=None, 
+                           kernel_constraint=None, recurrent_constraint=None, bias_constraint=None, dropout=0.0, recurrent_dropout=0.0, implementation=1, return_sequences=False, 
+                           return_state=False, go_backwards=False, stateful=False, unroll=False))
+        #self.model.add(keras.layers.Dropout(rate=0.25))
+        #self.model.add(keras.layers.LeakyReLU(alpha=0.1))
 
         self.model.add(keras.layers.Dense(units=2,
                                           kernel_regularizer=keras.regularizers.l2(1e-6),
@@ -124,9 +83,8 @@ class CNN_ngrams():
             steps (int): default: len(dataset) - batches per epoch to train.
         """
 
-        out_trained_models = '../trained_models'
 
-        lr_callback = keras.callbacks.ReduceLROnPlateau(monitor="acc",
+        lr_callback = keras.callbacks.ReduceLROnPlateau(monitor="val_acc",
                                                         factor=0.5,
                                                         patience=0.5,
                                                         verbose=0,
@@ -154,7 +112,7 @@ class CNN_ngrams():
                                  steps_per_epoch=1871,
                                  verbose=2,
                                  epochs=500,
-                                 shuffle = True,
+                                 shuffle=True,
                                  callbacks=[lr_callback, stop_callback, tensorboard_callback,
                                             checkpoint_callback],
                                  validation_data=self.validation_generator,

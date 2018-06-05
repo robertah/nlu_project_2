@@ -30,7 +30,7 @@ def pos_tag_dataset(dataset, separate=False):
     # data_original = data_original.head(10)
 
     # Removing story title if exists, to have the first sentence as the first column
-    data_original.drop(columns=[c for c in data_original.columns if 'title' in c], inplace=True)
+    #data_original.drop(columns=[c for c in data_original.columns if 'title' in c], inplace=True)
 
     # Counter to know how many sentences have been processed
     story_number = 0
@@ -205,14 +205,14 @@ def load_train_val_datasets_pos_tagged(together = True):
 
     return pos_train_begin, pos_train_end, pos_val_begin, pos_val_end
 
-def generate_binary_verifiers():
+def generate_binary_verifiers(dataset = None):
 
     binary_verifiers = []
 
-    ver_val_set = get_answers(val_set)
+    ver_val_set = get_answers(dataset)
     print("Verifier")
     print(len(ver_val_set))
-    print(ver_val_set)
+    print(dataset)
     for value in ver_val_set:
         if value == 1:
             binary_verifiers.append([1, 0]) #Correct ending is the first one
@@ -221,19 +221,29 @@ def generate_binary_verifiers():
     #print(binary_verifiers)
     return binary_verifiers
 
+def eliminate_id(dataset):   
+    dataset_no_id = []
+    sentence_in_stories = len(dataset[0])
+    total_stories = len(dataset)
+    for story_number in range(total_stories):
+        new_story = dataset[story_number][1:sentence_in_stories] # delete ids stories
+        story_number = story_number + 1
+        dataset_no_id.append(new_story)
+    return dataset_no_id
 
 # just trying if works
 if __name__ == '__main__':
     # context, end,  preprocess(train_set, pad=None)
 
-<<<<<<< HEAD
-    dataset = val_set
-    # pos_tag_dataset(dataset, separate=False)
-    # pos_begin = np.load(data_folder + '/train_stories_pos_begin.npy')  # (88161, 2)
+
+    dataset = test_set
+    pos_begin, pos_end = pos_tag_dataset(dataset, separate=False)
+    #pos_begin = np.load(data_folder + '/train_stories_pos_begin.npy')  # (88161, 2)
     # # pos_end = np.load(data_folder + '/train_stories_pos_end.npy')  # (88161, 2)
-    # pos_begin_processed, pos_end_processed = preprocess(pos_begin, pos_end, test=False, pad='ending', punct=True,
-    #                                                     stop_words=True, lemm=True)
-    # # print(pos_begin_processed)
+    pos_begin_processed, pos_end_processed = preprocess(pos_begin, pos_end, test=True, pad='ending', punct=True,
+                                                         stop_words=True, lemm=True)
+    
+    print(len(pos_begin_processed))
     # # print(pos_end_processed)
     # beg, end = filter_words(pos_begin_processed), filter_words(pos_end_processed)
     # comb = combine_story(beg, end)

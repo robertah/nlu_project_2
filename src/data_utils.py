@@ -30,7 +30,9 @@ def load_data(dataset):
     else:
         names = ['id', 'sen1', 'sen2', 'sen3', 'sen4', 'sen5_1', 'sen5_2', 'ans']
 
-    return pd.read_csv(dataset, index_col='id', names=names, skiprows=1)
+    #return pd.read_csv(dataset, index_col='id', names=names, skiprows=1, sep = ';')
+    #For sentiment uncomment the following return
+    return pd.read_csv(dataset, names=names, skiprows=1)
 
 
 def get_answers(dataset):

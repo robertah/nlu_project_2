@@ -2,7 +2,9 @@ import numpy as np
 from data_utils import *
 import negative_endings as neg_end
 from copy import deepcopy
-
+from sentiment import *
+from preprocessing import *
+from config import *
 
 def batch_iter(data, batch_size, num_epochs, shuffle=False):
     """
@@ -32,7 +34,13 @@ def full_stories_together(contexts, endings, contexts_aggregated = True, validat
         contexts = aggregate_contexts(contexts)
 
     full_stories_batches = []
-    #print(endings[0][0])
+    #print("ENDING")
+    #print(len(endings))
+    #print(len(endings[0]))
+    #print("CONTEXT")
+    #print(len(contexts[0]))
+
+
     idx_batch_endings = 0
 
     for context in contexts:
@@ -40,17 +48,25 @@ def full_stories_together(contexts, endings, contexts_aggregated = True, validat
 
         full_story_batch = []
         for ending in story_endings:
-
+            #print("\n Ending is\n ",ending)
             if list_array:
                 original_context = deepcopy(context[0])
             else:
                 original_context = deepcopy(context)
+            #print("\n Original_context is\n ", original_context)
+            #print(len(ending))
+            full_story = list(original_context) + list(ending)
+            #print("UNIQUE is ", full_story)
+            lenght = len(full_story)
+            if lenght > story_len:
+                print("Found wrong len of story: ", lenght)
+                full_story = full_story[0:story_len]
+            else:
+                full_story = full_story
 
-            if len(list(original_context) + list(ending)) !=45:
-                print("Found wrong len of story: ",len(original_context + ending))
 
             #print(original_context+ending)
-            full_story_batch.append(list(original_context) + list(ending))
+            full_story_batch.append(full_story)
         
         full_stories_batches.append(full_story_batch)
         idx_batch_endings = idx_batch_endings + 1
@@ -144,7 +160,9 @@ def batch_iter_val_cnn(contexts, endings, neg_end_obj, binary_verifiers, out_tag
 
     while True:
 
-        batches_full_stories = full_stories_together(contexts = contexts, endings = endings, validation = True)
+        batches_full_stories = full_stories_together(contexts = contexts, endings = endings, list_array = True)
+
+        #batches_full_stories = full_stories_together(contexts = contexts, endings = endings, validation = True)
 
         total_steps = len(batches_full_stories)
 
@@ -155,7 +173,7 @@ def batch_iter_val_cnn(contexts, endings, neg_end_obj, binary_verifiers, out_tag
             yield (np.asarray(stories_batch), np.asarray(binary_batch_verifier))
 
 def batch_iter_train_cnn(contexts, endings, neg_end_obj, out_tagged_story = False,
-                         batch_size = 2, num_epochs = 500, shuffle=True):
+                         batch_size = 2, num_epochs = 500, shuffle=True, test = False):
     """
     Generates a batch generator for the train set.
     """
@@ -166,7 +184,11 @@ def batch_iter_train_cnn(contexts, endings, neg_end_obj, out_tagged_story = Fals
         print("Augmenting with negative endings for the next epoch -> stochastic approach..")
         batch_endings, ver_batch_end= batches_pos_neg_endings(neg_end_obj = neg_end_obj, endings = endings,
                                                               batch_size = batch_size)
-        batches_full_stories = full_stories_together(contexts = contexts, endings = batch_endings)
+        if not test:
+            batches_full_stories = full_stories_together(contexts = contexts, endings = batch_endings)
+        else:
+            batches_full_stories = full_stories_together(contexts = contexts, endings = batch_endings)
+
         total_steps = len(batches_full_stories)
         print("Train generator for the new epoch ready..")
 
@@ -200,3 +222,91 @@ def batch_iter_backward_train_cnn(contexts, endings, neg_end_obj, out_tagged_sto
             stories_batch = batches_full_stories[batch_idx]
             verifier_batch = [[int(ver), 1-int(ver)] for ver in ver_batch_end[batch_idx]]
             yield (np.asarray(stories_batch), np.asarray(verifier_batch))
+
+
+
+
+
+"""***************************CNN LSTM sentiment********************"""
+
+
+
+def sentences_to_sentiments(contexts):
+    all_scores = []
+    context_n = 0
+    for context in contexts:
+        scores = []
+        #print("LEN ", len(context))
+        for sentence in context:
+            #print("\nSENTENCE\n", sentence)
+            #print(" ".join(word for word in sentence))
+            #sentence_sentiment(" ".join(word for word in sentence))
+            scores.extend(np.around(sentence_sentiment(" ".join(word for word in sentence))*1000+1000))
+        #print("FINAL UNIQUE ARRAY ", scores)
+        context_n = context_n +1
+        if context_n%1000 == 0:
+            print(context_n)
+        all_scores.append(scores)
+    return all_scores
+
+def endings_to_sentiments(endings):
+    all_scores = []
+    context_n = 0
+    for batch_endings in endings:
+        scores_ending = []
+        for sentence in batch_endings:
+            #print("\nHERE ENDING\n\n", sentence)
+            scores_ending.append(np.around(sentence_sentiment(" ".join(word for word in sentence))*1000+1000))
+        all_scores.append(scores_ending)
+        #print("FINAL TWO UNIQUE ARRAY ", scores_ending)
+        context_n = context_n +1
+        if context_n%1000 == 0:
+            print(context_n)
+    return np.asarray(all_scores)
+
+def train_verifier(train_dataset):
+    verifiers = len(train_dataset)
+    ver_array = []
+    for i in range(verifiers):
+        ver_array.append([1,0])
+    return np.asarray(ver_array)
+
+def no_tags_in_val_endings(endings_pos_tagged):
+
+    endings_no_tag = []
+    for endings_batch_pos_tagged in endings_pos_tagged:
+        batch_endings_no_tag = []
+        for ending_pos_tagged in endings_batch_pos_tagged:
+
+            batch_endings_no_tag.append([word_tag[0] for word_tag in ending_pos_tagged])
+        #print(batch_endings_no_tag)
+        endings_no_tag.append(batch_endings_no_tag)
+
+    return endings_no_tag
+
+def batch_iter_val_cnn_sentiment(contexts, endings, binary_verifiers):
+    """
+    Generates a batch generator for the validation set.
+    """
+    contexts = eliminate_tags_in_contexts(contexts_pos_tagged = contexts)
+    endings = no_tags_in_val_endings(endings_pos_tagged = endings)
+    print("LEN ENDINGS ",len(endings))
+    #print("\n\nCONTEXT & ENDINGS\n\n")
+    #print(binary_verifiers)
+    #print(contexts[0])
+    #print(endings[0])
+    context_sentiments = sentences_to_sentiments(contexts = contexts)
+    endings_sentiments = endings_to_sentiments(endings = endings)
+    
+    while True:
+
+        batches_full_stories = full_stories_together(contexts = context_sentiments, endings = endings_sentiments)#, list_array = True)
+        
+        total_steps = len(batches_full_stories)
+
+        for batch_idx in range(0, total_steps):
+            #batch_size stories -> 1 positive endings + batch_size-1 negative endings ones
+            stories_batch = batches_full_stories[batch_idx]
+            binary_batch_verifier = [[int(ver), 1-int(ver)] for ver in binary_verifiers[batch_idx]]
+
+            yield (np.asarray(stories_batch), np.asarray(binary_batch_verifier))
