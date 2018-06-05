@@ -7,7 +7,7 @@ from preprocessing import *
 from config import *
 
 
-"""THIS PART UNTIL THE BATCH ITERS SHOULD E MOVED SOMEWHERE ELSE"""                
+"""THIS PART UNTIL THE BATCH ITERS SHOULD E MOVED SOMEWHERE ELSE"""
 
 def aggregate_contexts(contexts):
     contexts_aggregated = []
@@ -70,6 +70,8 @@ def full_stories_together(contexts, endings, contexts_aggregated = True, validat
 
     return full_stories_batches
 
+
+
 #For this function the datast needs to be pos tagged
 def batches_pos_neg_endings(neg_end_obj, endings, batch_size):
     """INPUT:
@@ -83,7 +85,7 @@ def batches_pos_neg_endings(neg_end_obj, endings, batch_size):
     for story_idx in range(0, total_stories):
 
         batch_aug_stories, ver_aug_stories = neg_end_obj.words_substitution_approach(ending_story = endings[story_idx], batch_size = batch_size,
-                                                                                         out_tagged_story = False, shuffle_batch = True)
+                                                                                         out_tagged_story = False, shuffle_batch = True, debug=False)
         if story_idx%20000 ==0:
             print("Negative ending(s) created for : ",story_idx, "/",total_stories)
         aug_data.append(batch_aug_stories)
@@ -301,11 +303,11 @@ def batch_iter_val_cnn_sentiment(contexts, endings, binary_verifiers):
     #print(endings[0])
     context_sentiments = sentences_to_sentiments(contexts = contexts)
     endings_sentiments = endings_to_sentiments(endings = endings)
-    
+
     while True:
 
         batches_full_stories = full_stories_together(contexts = context_sentiments, endings = endings_sentiments)#, list_array = True)
-        
+
         total_steps = len(batches_full_stories)
 
         for batch_idx in range(0, total_steps):
@@ -315,31 +317,3 @@ def batch_iter_val_cnn_sentiment(contexts, endings, binary_verifiers):
 
             yield (np.asarray(stories_batch), np.asarray(binary_batch_verifier))
 
-
-
-
-# FEED FORWARD NEURAL NETWORK #######################################################
-
-def batch_iter_ffnn(contexts, endings, neg_end_obj, binary_verifiers, out_tagged_story = False,
-                       batch_size = 2, num_epochs = 500, shuffle=True):
-    # TODO need to be changed
-    """
-    Generates a batch generator for the train set.
-    """
-    if not out_tagged_story:
-        contexts = eliminate_tags_in_contexts(contexts_pos_tagged= contexts)
-    while True:
-    #for i in range(0,num_epochs):
-        print("Augmenting with negative endings for the next epoch -> stochastic approach..")
-        batch_endings, ver_batch_end= batches_pos_neg_endings(neg_end_obj = neg_end_obj, endings = endings,
-                                                              batch_size = batch_size)
-        batches_full_stories = full_stories_together(contexts = contexts, endings = batch_endings)
-        total_steps = len(batches_full_stories)
-        print("Train generator for the new epoch ready..")
-
-        for batch_idx in range(0, total_steps):
-            #batch_size stories -> 1 positive endings + batch_size-1 negative endings ones
-
-            stories_batch = batches_full_stories[batch_idx]
-            verifier_batch = [[int(ver), 1-int(ver)] for ver in ver_batch_end[batch_idx]]
-            yield (np.asarray(stories_batch), np.asarray(verifier_batch))

@@ -1,27 +1,23 @@
 #!/usr/bin/env python3 -W ignore::DeprecationWarning
 
 import argparse
-import logging
-import os
 import sys
 import datetime
 import time
-import training_utils as train_utils
 import negative_endings as data_aug
-import numpy as np
-import keras
 
 from models import cnn_ngrams, cnn_lstm_sent, SiameseLSTM
 
-from config import *
-from preprocessing import *
-from data_utils import *
 from training_utils import *
 
 
+from sentiment import *
+from negative_endings import *
+from models.skip_thoughts import skipthoughts
 # Remove tensorflow CPU instruction information.
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
+from models import ffnn
 
 def _setup_argparser():
     """Sets up the argument parser and returns the arguments.
@@ -32,7 +28,7 @@ def _setup_argparser():
     parser = argparse.ArgumentParser(description="Control program to launch all actions related to this project.")
 
     parser.add_argument("-m", "--model", action="store",
-                        choices=["cnn_ngrams", "SiameseLSTM", "cnn_lstm", "put_your_model_name_here4", "put_your_model_name_here5"],
+                        choices=["cnn_ngrams", "SiameseLSTM", "cnn_lstm", "ffnn", "put_your_model_name_here5"],
                         default="cnn_ngrams",
                         type=str,
                         help="the model to be used, defaults to cnn_ngrams")
@@ -126,12 +122,12 @@ if __name__ == "__main__":
             print("Loading validation set together..")
             pos_test_begin_tog, pos_test_end_tog = preprocess(pos_begin = np.load(test_pos_begin_tog), pos_end = np.load(test_pos_end_tog), test=True, pad='ending', punct=True,
                                                               stop_words=True, lemm=False)
-            
+
             print("LENS")
             print(pos_test_begin_tog[0][0])
             print(len(pos_test_begin_tog[0][0]))
             print(len(pos_test_end_tog[0][0]))
-            
+
             #Construct data generators
             ver_test_set = generate_binary_verifiers(test_set)
 
@@ -139,7 +135,7 @@ if __name__ == "__main__":
             #                                                   batch_size = 2, num_epochs = 500, shuffle=True)
             validation_generator = train_utils.batch_iter_val_cnn(contexts = pos_val_begin_tog, endings = pos_val_end_tog, binary_verifiers = ver_val_set, 
                                                                   neg_end_obj = neg_end, batch_size = 2, num_epochs = 500, shuffle=True)
-            test_generator = train_utils.batch_iter_val_cnn(contexts = pos_test_begin_tog, endings = pos_test_end_tog, binary_verifiers = ver_test_set, 
+            test_generator = train_utils.batch_iter_val_cnn(contexts = pos_test_begin_tog, endings = pos_test_end_tog, binary_verifiers = ver_test_set,
                                                                   neg_end_obj = neg_end, batch_size = 2, num_epochs = 500, shuffle=True)
             #Initialize model
             #model = cnn_ngrams.CNN_ngrams(train_generator = validation_generator, validation_generator = test_generator)
@@ -167,7 +163,7 @@ if __name__ == "__main__":
 
             gen_val = batch_iter_val_cnn_sentiment(contexts = contexts_val, endings = endings_val, binary_verifiers = binary_verifiers_val)
             gen_test = batch_iter_val_cnn_sentiment(contexts = contexts_test, endings = endings_test, binary_verifiers = binary_verifiers_test)
-            
+
             model = cnn_lstm_sent.Cnn_lstm_sentiment(train_generator = gen_val, validation_generator = gen_test)
             model.train(save_path = out_trained_models)
 
@@ -204,46 +200,37 @@ if __name__ == "__main__":
 
         elif args.model == "ffnn":
 
-            print("Loading dataset..")
-            pos_train_begin, pos_train_end, pos_val_begin, pos_val_end = load_train_val_datasets_pos_tagged(
-                together=False)
-            print("Initializing negative endings..")
-            # Needed for negative endings this data load together
-            pos_train_begin_tog, pos_train_end_tog, pos_val_begin_tog, pos_val_end_tog = load_train_val_datasets_pos_tagged()
-            ver_val_set = generate_binary_verifiers()
+            print("Loading dataset...")
+            train_data = load_data(train_set)
+            sens = [col for col in train_data if col.startswith('sen')]
+            train_data = train_data[sens].values
+            val_data = load_data(val_set)
+            sens = [col for col in val_data if col.startswith('sen')]
+            val_data = val_data[sens]
+            ver_val_set = generate_binary_verifiers(val_set)
 
+            print("Initializing negative endings...")
+            pos_train_begin, pos_train_end, pos_val_begin, pos_val_end = load_train_val_datasets_pos_tagged(False)
+            pos_train_begin_tog, pos_train_end_tog, pos_val_begin_tog, pos_val_end_tog = load_train_val_datasets_pos_tagged()
             neg_end = initialize_negative_endings(contexts=pos_train_begin_tog, endings=pos_train_end_tog)
 
-            # Construct data generators
-            # print(pos_train_begin)
-            # print(pos_train_end[0])
-            # print(pos_val_begin[0])
-            # print(pos_val_end[0])
+            print("Sentiment analysis...")
+            sentiment_train = sentiment_analysis(train_set).values
+            sentiment_val = sentiment_analysis(val_set).values
 
-            train_generator = train_utils.batch_iter_backward_train_cnn(contexts=pos_train_begin, endings=pos_train_end,
-                                                                        neg_end_obj=neg_end,
-                                                                        batch_size=2, num_epochs=500, shuffle=True)
-            validation_generator = train_utils.batch_iter_val_cnn(contexts=pos_val_begin_tog, endings=pos_val_end_tog,
-                                                                  binary_verifiers=ver_val_set,
-                                                                  neg_end_obj=neg_end, batch_size=2, num_epochs=500,
-                                                                  shuffle=True)
+            print("Loading skip-thoughts_model for embedding...")
+            skipthoughts_model = skipthoughts.load_model()
+            encoder = skipthoughts.Encoder(skipthoughts_model)
 
-            # Initialize model
-            # model = cnn_ngrams.CNN_ngrams(train_generator = validation_generator, validation_generator = validation_generator)
-            # model.train()
+            print("Defining batch data generators... ")
+            train_generator = ffnn.batch_iter(train_data, pos_train_end,
+                                              neg_end_obj=neg_end, sentiment=sentiment_train, encoder=encoder,
+                                              batch_size=2)
+            validation_generator = ffnn.batch_iter_val(val_set, sentiment_val, encoder)
 
-            # print("TRAINING STORIES")
-            for batch in train_generator:
-                stories_train, verif_train = zip(*batch)
-                # print(len(stories_train))
-                # print(len(stories_train[0]))
-                # print(verif_train)
-            # print("EVALUATION STORIES")
-            # for batch in validation_generator:
-            # stories_train, verif_train = zip(*batch)
-            # print(len(stories_train))
-            # print(len(stories_train[0]))
-            # print(verif_train)
+            print("Initializing feed-forward neural network...")
+            model = ffnn.FFNN(train_generator=train_generator, validation_generator=validation_generator)
+            model.train()
         
 
     if args.predict:

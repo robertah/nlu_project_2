@@ -20,8 +20,9 @@ profile = False
 #-----------------------------------------------------------------------------#
 # Specify model and table locations here
 #-----------------------------------------------------------------------------#
-path_to_models = 'data/'
-path_to_tables = 'data/'
+path = os.path.dirname(__file__)
+path_to_models = os.path.join(path, 'data/')
+path_to_tables = os.path.join(path, 'data/')
 #-----------------------------------------------------------------------------#
 
 path_to_umodel = path_to_models + 'uni_skip.npz'
@@ -76,8 +77,8 @@ def load_tables():
     Load the tables
     """
     words = []
-    utable = numpy.load(path_to_tables + 'utable.npy')
-    btable = numpy.load(path_to_tables + 'btable.npy')
+    utable = numpy.load(path_to_tables + 'utable.npy', encoding="bytes")
+    btable = numpy.load(path_to_tables + 'btable.npy', encoding="bytes")
     f = open(path_to_tables + 'dictionary.txt', 'rb')
     for line in f:
         words.append(line.decode('utf-8').strip())
@@ -125,8 +126,8 @@ def encode(model, X, use_norm=True, verbose=True, batch_size=128, use_eos=False)
     # Get features. This encodes by length, in order to avoid wasting computation
     for k in ds.keys():
         if verbose:
-            print (k)
-        numbatches = len(ds[k]) / batch_size + 1
+            print(k)
+        numbatches = int(len(ds[k]) / batch_size + 1)
         for minibatch in range(numbatches):
             caps = ds[k][minibatch::numbatches]
 
@@ -239,7 +240,7 @@ def init_tparams(params):
     initialize Theano shared variables according to the initial parameters
     """
     tparams = OrderedDict()
-    for kk, pp in params.iteritems():
+    for kk, pp in params.items():
         tparams[kk] = theano.shared(params[kk], name=kk)
     return tparams
 
@@ -249,7 +250,7 @@ def load_params(path, params):
     load parameters
     """
     pp = numpy.load(path)
-    for kk, vv in params.iteritems():
+    for kk, vv in params.items():
         if kk not in pp:
             warnings.warn('%s is not in the archive'%kk)
             continue

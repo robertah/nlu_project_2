@@ -197,8 +197,6 @@ def load_vocabulary():
     :return: vocabulary
     """
 
-    print("Loading vocabulary... ")
-
     try:
         with open(vocabulary_pkl, 'rb') as handle:
             vocabulary = pickle.load(handle)
@@ -215,8 +213,6 @@ def load_pos_vocabulary():
 
     :return: pos tagging vocabulary
     """
-
-    print("Loading pos tag vocabulary... ")
 
     if os.path.isfile(pos_vocabulary_pkl):
         with open(pos_vocabulary_pkl, 'rb') as handle:
@@ -255,7 +251,7 @@ def check_for_unk(data, vocabulary):
     return new_data
 
 
-def get_words_from_indexes(indexes, vocabulary, pos_vocabulary):
+def get_words_from_indexes(indexes, vocabulary, pos_vocabulary=None):
     """
     Get words from indexes in the vocabulary
 
@@ -266,11 +262,12 @@ def get_words_from_indexes(indexes, vocabulary, pos_vocabulary):
 
     # map indexes to words in vocabulary
     vocabulary_reverse = {v: k for k, v in vocabulary.items()}
-    pos_vocabulary_reverse = {v: k for k, v in pos_vocabulary.items()}
+    if pos_vocabulary is not None:
+        pos_vocabulary_reverse = {v: k for k, v in pos_vocabulary.items()}
 
 
     # retrieve words corresponding to indexes
-    if isinstance(indexes, list):
+    if isinstance(indexes, list) or isinstance(indexes, np.ndarray):
         if isinstance(indexes[0], tuple):
             words = [(vocabulary_reverse[x[0]], pos_vocabulary_reverse[x[1]]) for x in indexes]
         else:
@@ -405,16 +402,15 @@ def filter_words(dataset):
     return filtered_words
 
 
-def get_context_sentence(contexts, i):
+def get_context_sentence(stories, i):
     """
-    Get the i-th sentences from the contexts
-    :param contexts: contexts array with 4 sentences per story
+    Get the i-th sentences from the stories
+    :param stories: stories array
     :param i: i-th sentence we want to filter
-    :return: filtered context matrix with i-th sentences
+    :return: filtered stories matrix with i-th sentences
     """
-    assert i in range(1, 5)
 
-    return contexts[:, i-1]
+    return stories[:, i-1]
 
 
 def generate_vocab_pos(pos_data):
