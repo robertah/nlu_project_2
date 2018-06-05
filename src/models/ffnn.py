@@ -1,6 +1,7 @@
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau, TensorBoard
+from keras.regularizers import l2
 from run import *
 import os
 
@@ -38,10 +39,13 @@ class FFNN():
 
         # create feed-forward neural network layers
         self.model = Sequential()
-        self.model.add(Dense(2400, input_dim=4804, kernel_initializer="uniform", activation="relu"))
+        self.model.add(Dense(4800, input_dim=9604, kernel_initializer="uniform", activation="relu"))
+        self.model.add(Dense(2400, kernel_initializer="uniform", activation="relu"))
         self.model.add(Dense(1200, kernel_initializer="uniform", activation="relu"))
         self.model.add(Dense(600, kernel_initializer="uniform", activation="relu"))
-        self.model.add(Dense(2, activation="softmax"))
+        self.model.add(Dense(2, kernel_regularizer=l2(1e-6), activation="softmax"))
+
+
 
     def train(self):
         out_trained_models = '../trained_models'
@@ -50,6 +54,8 @@ class FFNN():
 
         # configure the model for training
         self.model.compile(loss="binary_crossentropy", optimizer="adam", metrics=["accuracy"])
+
+        print(self.model.summary())
 
         # reduce learning rate when a metric has stopped improving TODO check params
         lr_callback = ReduceLROnPlateau(monitor="acc", factor=0.5, patience=0.5, verbose=0, cooldown=0, min_lr=0)
@@ -73,7 +79,7 @@ class FFNN():
         n_batches = int(88161 / batch_size)  # batches of samples
 
         self.model.fit_generator(generator=self.train_generator, steps_per_epoch=n_batches,
-                                 verbose=2, epochs=100,
+                                 verbose=2, epochs=100, shuffle=True,
                                  callbacks=[lr_callback, stop_callback, tensorboard_callback,
                                             checkpoint_callback],
                                  validation_data=self.validation_generator,
@@ -96,6 +102,7 @@ class FFNN():
 
         self.model.save(path)
         print("Model saved to {}".format(path))
+
 
 
 def batch_iter(sentences, endings, neg_end_obj, sentiment, encoder, batch_size=2):
@@ -140,25 +147,33 @@ def batch_iter(sentences, endings, neg_end_obj, sentiment, encoder, batch_size=2
 
     # create labels array
     labels = np.empty((n_stories * aug_batch_size), dtype=np.ndarray)
+    labels_n = np.empty((n_stories * aug_batch_size), dtype=int)
     for i in range(n_stories):
         for j in range(aug_batch_size):
-            labels[i * aug_batch_size + j] = np.asarray([ver_batch_end[i][j], 1 - ver_batch_end[i][j]])
+            labels[i * aug_batch_size + j] = [ver_batch_end[i][j], 1 - ver_batch_end[i][j]]
+            labels_n[i * aug_batch_size + j] = ver_batch_end[i][j] + 1
+
+
+    print(labels_n)
+    print(len(labels_n))
 
     print("Train generator for the new epoch ready..")
 
-    X_train = np.empty((batch_size, features.shape[1]))
-    Y_train = np.empty((batch_size, 2))
+    total_steps = len(features)
+
+    # X_train = np.empty((batch_size, features.shape[1]))
+    # Y_train = np.empty((batch_size, 2))
 
     while True:
-        for i in range(0, batch_size, 2):
-            index = np.random.choice(np.arange(0, features.shape[0], 2), 1)
-            X_train[i], X_train[i+1] = features[index], features[index+1]
-            Y_train[i], Y_train[i+1] = labels[index][0], labels[index+1][0]
-        print(X_train, Y_train)
-        yield X_train, Y_train
+        for i in range(0, total_steps):
+            index = np.random.choice(np.arange(0, total_steps - batch_size, 2), 1)[0]
+            X_train = np.asarray(features[index:index+batch_size])
+            Y_train = labels_n[index:index+batch_size]
+            print(X_train, Y_train)
+            yield X_train, Y_train
 
 
-def batch_iter_val(sentences, sentiment, encoder, batch_size=1):
+def batch_iter_val(sentences, sentiment, encoder):
     last_sentences = get_context_sentence(sentences, 4)[:20]  # TODO remove size limit
     endings = get_context_sentence(sentences, 5)[:20]
 
@@ -169,7 +184,7 @@ def batch_iter_val(sentences, sentiment, encoder, batch_size=1):
     batch_endings_encoded = encoder.encode(endings, batch_size=1)
 
     # create features array
-    sentiment = sentiment.values[:20]
+    sentiment = sentiment[:20]
     last_sentences_endings = last_sentences_encoded + batch_endings_encoded
     features = np.concatenate((sentiment, last_sentences_endings), axis=1)
 
@@ -179,15 +194,77 @@ def batch_iter_val(sentences, sentiment, encoder, batch_size=1):
     ver_batch_end = generate_binary_verifiers()[:20]
 
     labels = np.empty((n_stories), dtype=np.ndarray)
+    labels_n = np.empty(n_stories, dtype=int)
     for i in range(n_stories):
         labels[i] = ver_batch_end[i]
-
-    X_val = np.empty((batch_size, features.shape[1]))
-    Y_val = np.empty((batch_size, 2))
 
     while True:
         for i in range(batch_size):
             index = np.random.choice(features.shape[0], 1)
-            X_val[i] = features[index]
-            Y_val[i] = labels[index]
-        yield X_val, Y_val
+            X_val = features[index]
+            Y_val = labels_n[index][0]
+            yield np.asarray(X_val), np.asarray(Y_val)
+
+
+def batch_iter_val_train(sentences, sentiment, encoder, labels):
+
+    last_sentences = sentences[:, 4]
+    endings = sentences[:, 4:]
+
+    n_stories = len(last_sentences)
+
+    sentences_encoded = np.empty((n_stories, 2, 4800))
+
+    print("##### Starting encoding......")
+
+    last_sentences_encoded = encoder.encode(last_sentences)
+
+    for i in range(endings.shape[1]):
+        sentences_encoded[:, i] = encoder.encode(endings[:, i])
+
+    sentences_encoded = np.reshape(sentences_encoded, (n_stories, -1))
+    print(sentences_encoded)
+    print(last_sentences_encoded)
+
+    for i in range(n_stories):
+        sentences_encoded[i] = np.tile(last_sentences_encoded[i], 2) + sentences_encoded[i]
+
+    print("\n\n\n#######################")
+    print(sentences_encoded[:10])
+
+    features = np.concatenate((sentences_encoded, sentiment), axis=1)
+    print(features)
+
+    n_stories = len(features)
+
+    while True:
+        for i in range(n_stories):
+            X_train = features[i]
+            Y_train = labels[i]
+            print(X_train.shape, Y_train.shape)
+            yield X_train, Y_train
+
+
+def batch_iter_val_val(sentences, sentiment, encoder, labels):
+    last_sentences = sentences[:, 4]
+    endings = sentences[:, 4:]
+
+    sentences_encoded = np.empty(endings.shape)
+
+    for i, end in np.ndenumerate(endings):
+        sentences_encoded = encoder.encode(last_sentences[i[0]]) + encoder.encode(endings[i])
+
+    print("\n\n\n#######################")
+    print(sentences_encoded[:10])
+
+    features = np.concatenate((sentences_encoded, sentiment), axis=1)
+    print(features)
+
+    n_stories = len(features)
+
+    while True:
+        for i in range(n_stories):
+            X_val = features[i]
+            Y_val = labels[i]
+            yield X_val, Y_val
+

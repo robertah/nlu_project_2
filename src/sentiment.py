@@ -21,7 +21,7 @@ def sentiment_analysis(dataset):
     data_original = load_data(dataset)
     # print(data_original)
     #Only go through the first 10 entries of dataset - Remove for entire dataset
-    data_original = data_original.head(20)
+    # data_original = data_original.head(20)
 
     sid = SentimentIntensityAnalyzer()
 
