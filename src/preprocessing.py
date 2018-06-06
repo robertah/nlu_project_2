@@ -290,12 +290,13 @@ if __name__ == '__main__':
     # context, end,  preprocess(train_set, pad=None)
 
 
-    dataset = test_set
+    dataset = test_set_cloze
     pos_begin, pos_end = pos_tag_dataset(dataset, separate=False)
+    print(pos_begin, pos_end)
     #pos_begin = np.load(data_folder + '/train_stories_pos_begin.npy')  # (88161, 2)
     # # pos_end = np.load(data_folder + '/train_stories_pos_end.npy')  # (88161, 2)
     pos_begin_processed, pos_end_processed = preprocess(pos_begin, pos_end, test=True, pad='ending', punct=True,
-                                                         stop_words=True, lemm=True)
+                                                         stop_words=False, lemm=True)
     
     print(len(pos_begin_processed))
     # # print(pos_end_processed)
@@ -393,12 +394,12 @@ if __name__ == '__main__':
     # print(pos_begin[0][1])
     # print(pos_end[0])
 
-    pos_train_begin, pos_train_end, pos_val_begin, pos_val_end= load_train_val_datasets_pos_tagged(pos_begin_train = train_pos_begin, pos_end_train = train_pos_end,
-                                       pos_begin_val = val_pos_begin, pos_end_val=val_pos_begin)
-    print("Pos_train_begin: {}".format(pos_train_begin))
-    print("pos_train_begin[0]: {}".format(pos_train_begin[0]))
-    print("pos_train_begin[0][0]: {}".format(pos_train_begin[0][0]))
-
-    pos_train_begin[:,][0] = pos_train_begin[:,]
-    print("Pos_train_begin: {}".format(pos_train_begin))
-    print("pos_train_begin[0]: {}".format(pos_train_begin[0]))
+    # pos_train_begin, pos_train_end, pos_val_begin, pos_val_end= load_train_val_datasets_pos_tagged(pos_begin_train = train_pos_begin, pos_end_train = train_pos_end,
+    #                                    pos_begin_val = val_pos_begin, pos_end_val=val_pos_begin)
+    # print("Pos_train_begin: {}".format(pos_train_begin))
+    # print("pos_train_begin[0]: {}".format(pos_train_begin[0]))
+    # print("pos_train_begin[0][0]: {}".format(pos_train_begin[0][0]))
+    #
+    # pos_train_begin[:,][0] = pos_train_begin[:,]
+    # print("Pos_train_begin: {}".format(pos_train_begin))
+    # print("pos_train_begin[0]: {}".format(pos_train_begin[0]))

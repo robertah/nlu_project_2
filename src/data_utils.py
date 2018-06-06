@@ -23,15 +23,19 @@ def load_data(dataset):
     :return: dataframe corresponding to the dataset
     """
 
-    assert dataset == train_set or dataset == val_set or dataset == test_set
+    assert dataset == train_set or dataset == val_set or dataset == test_set or dataset == test_set_cloze
 
     if dataset == train_set:
         names = ['id', 'storytitle', 'sen1', 'sen2', 'sen3', 'sen4', 'sen5']
+    elif dataset == test_set:
+        names = ['sen1', 'sen2', 'sen3', 'sen4', 'sen5_1', 'sen5_2']
     else:
         names = ['id', 'sen1', 'sen2', 'sen3', 'sen4', 'sen5_1', 'sen5_2', 'ans']
 
     #return pd.read_csv(dataset, index_col='id', names=names, skiprows=1, sep = ';')
     #For sentiment uncomment the following return
+    if dataset == test_set:
+        return pd.read_csv(dataset, names=names, encoding="ISO-8859-1")
     return pd.read_csv(dataset, names=names, skiprows=1)
 
 
