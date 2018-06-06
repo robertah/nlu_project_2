@@ -291,7 +291,7 @@ if __name__ == '__main__':
 
 
     dataset = test_set_cloze
-    pos_begin, pos_end = pos_tag_dataset(dataset, separate=False)
+    pos_begin, pos_end = pos_tag_dataset(dataset, separate=True)
     print(pos_begin, pos_end)
     #pos_begin = np.load(data_folder + '/train_stories_pos_begin.npy')  # (88161, 2)
     # # pos_end = np.load(data_folder + '/train_stories_pos_end.npy')  # (88161, 2)
