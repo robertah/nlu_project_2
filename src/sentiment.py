@@ -3,6 +3,7 @@ from preprocessing import load_data
 import nltk
 import pandas as pd
 import numpy as np
+import os
 import pickle
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
@@ -14,6 +15,12 @@ def sentence_sentiment(sentence):
     return scores_array
 
 def sentiment_analysis(dataset):
+
+    if dataset == train_set and os.path.isfile(sentiment_train_pkl):
+        return load_sentiment(sentiment_train_pkl)
+
+    if dataset == val_set and os.path.isfile(sentiment_val_pkl):
+        return load_sentiment(sentiment_val_pkl)
 
     nltk.download('vader_lexicon')
 
@@ -36,14 +43,25 @@ def sentiment_analysis(dataset):
         scores = sid.polarity_scores(story_to_complete)
         story_idx = story_idx +1
         if (story_idx%10000 == 0):
-            print(story_idx)
+            print(story_idx, "/", data_original.shape[0])
         for key in sorted(scores):
             # print('{0}:{1}, '.format(key, scores[key]), end='')
             #print(scores[key])
             sentiment_score.loc[index] = scores
 
+    if dataset == train_set:
+        with open(sentiment_train_pkl, 'wb') as output:
+            pickle.dump(sentiment_score, output, pickle.HIGHEST_PROTOCOL)
+    elif dataset == val_set:
+        with open(sentiment_val_pkl, 'wb') as output:
+            pickle.dump(sentiment_score, output, pickle.HIGHEST_PROTOCOL)
+
     return sentiment_score
 
+def load_sentiment(pkl):
+    with open(pkl, 'rb') as handle:
+        sentiment = pickle.load(handle)
+    return sentiment
 
 if __name__ == '__main__':
     #Value of sentiment to non negative integer

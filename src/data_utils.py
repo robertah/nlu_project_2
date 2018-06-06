@@ -200,7 +200,6 @@ def load_vocabulary():
     try:
         with open(vocabulary_pkl, 'rb') as handle:
             vocabulary = pickle.load(handle)
-        print("Vocabulary loaded")
     except FileNotFoundError:
         print("Vocabulary not found.")
 

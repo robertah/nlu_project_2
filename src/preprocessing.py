@@ -186,22 +186,22 @@ def open_csv_asmatrix(datafile):
     return file
 
 
-def load_train_val_datasets_pos_tagged(together = True):
+def load_train_val_datasets_pos_tagged(together = True, stop_words=True, lemm=False):
 
     if together:
         print("Loading train set together..")
         pos_train_begin, pos_train_end = preprocess(pos_begin = np.load(train_pos_context_tog), pos_end = np.load(train_pos_end_tog), test=False, pad='ending', punct=True,
-                                                            stop_words=True, lemm=False)
+                                                            stop_words=stop_words, lemm=lemm)
         print("Loading validation set together..")
         pos_val_begin, pos_val_end = preprocess(pos_begin = np.load(val_pos_context_tog), pos_end = np.load(val_pos_end_tog), test=True, pad='ending', punct=True,
-                                                        stop_words=True, lemm=False)
+                                                        stop_words=stop_words, lemm=lemm)
     else:
         print("Loading train set separate..")
         pos_train_begin, pos_train_end = preprocess(pos_begin = np.load(train_pos_begin), pos_end = np.load(train_pos_end), test=False, pad='ending', punct=True,
-                                                            stop_words=True, lemm=False)
+                                                            stop_words=stop_words, lemm=lemm)
         print("Loading validation set separate..")
         pos_val_begin, pos_val_end = preprocess(pos_begin = np.load(val_pos_begin), pos_end = np.load(val_pos_end), test=True, pad='ending', punct=True,
-                                                        stop_words=True, lemm=False)
+                                                        stop_words=stop_words, lemm=lemm)
 
     return pos_train_begin, pos_train_end, pos_val_begin, pos_val_end
 
