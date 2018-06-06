@@ -148,7 +148,7 @@ def batch_iter(sentences, endings, neg_end_obj, sentiment, encoder, batch_size, 
     print(sentiment_repeat)
     last_sentences_repeat = np.repeat(last_sentences_encoded, aug_batch_size, axis=0)
     last_sentences_endings = last_sentences_repeat + batch_endings_encoded
-    features = np.concatenate((last_sentences_endings, last_sentences_repeat), axis=1)
+    features = np.concatenate((last_sentences_endings, sentiment_repeat), axis=1)
 
     # create labels array
     labels = np.empty((n_stories * aug_batch_size, 2), dtype=int)
