@@ -54,7 +54,7 @@ class FFNN():
     def train(self):
         out_trained_models = '../trained_models'
 
-        print("[INFO] compiling model...")
+        print("Compiling model...")
 
         # configure the model for training
         self.model.compile(loss="binary_crossentropy", optimizer="adam", metrics=["accuracy"])
@@ -81,7 +81,7 @@ class FFNN():
                                               save_weights_only=False, mode='auto', period=1)
 
         # train the model on data generated batch-by-batch by customized generator
-        n_batches = np.ceil(88161 / batch_size)  # batches of samples
+        n_batches = np.ceil(88161/batch_size)  # batches of samples
         n_batches_val = np.ceil(1871/batch_size)
 
         self.model.fit_generator(generator=self.train_generator, steps_per_epoch=n_batches,
@@ -94,7 +94,7 @@ class FFNN():
         return self
 
     def evaluate(self, X_test, Y_test):
-        print("[INFO] evaluating on testing set...")
+        print("Evaluating on testing set...")
         (loss, accuracy) = self.model.evaluate(X_test, Y_test,
                                                batch_size=128, verbose=1)
         print("[INFO] loss={:.4f}, accuracy: {:.4f}%".format(loss, accuracy * 100))
@@ -121,6 +121,8 @@ def batch_iter(sentences, endings, neg_end_obj, sentiment, encoder, batch_size, 
     print("Data augmentation for negative endings for the next epoch -> stochastic approach..")
     batch_endings, ver_batch_end = batches_pos_neg_endings(neg_end_obj, endings, aug_batch_size)
 
+    # batch_endings, ver_batch_end = batches_backwards_neg_endings(neg_end_obj, endings, aug_batch_size)
+
     n_stories = len(batch_endings)
 
     vocabulary = load_vocabulary()
@@ -135,31 +137,25 @@ def batch_iter(sentences, endings, neg_end_obj, sentiment, encoder, batch_size, 
         if i % 5000 == 0:
             print(i, "/", n_stories)
 
-    print(batch_endings_words)
-
     # create embeddings
-    print("Generating skip-thoughts embeddings for last sentences...")
+    print("Generating skip-thoughts embeddings for last sentences (it might take a while)...")
     last_sentences_encoded = encoder.encode(last_sentences, verbose=False)
-    print("Generating skip-thoughts embeddings for the endings...")
+    print("Generating skip-thoughts embeddings for endings (it might take a while)...")
     batch_endings_encoded = encoder.encode(batch_endings_words, verbose=False)
 
     # create features array
+    print("Creating features array...")
     sentiment_repeat = np.repeat(sentiment, aug_batch_size, axis=0)
-    print(sentiment_repeat)
     last_sentences_repeat = np.repeat(last_sentences_encoded, aug_batch_size, axis=0)
     last_sentences_endings = last_sentences_repeat + batch_endings_encoded
     features = np.concatenate((last_sentences_endings, sentiment_repeat), axis=1)
 
     # create labels array
+    print("Creating labels array...")
     labels = np.empty((n_stories * aug_batch_size, 2), dtype=int)
     for i in range(n_stories):
         for j in range(aug_batch_size):
             labels[i * aug_batch_size + j] = [ver_batch_end[i][j], 1 - ver_batch_end[i][j]]
-
-    print("LABELS")
-    print(labels)
-
-    print(labels.shape)
 
     print("Train generator for the new epoch ready..")
 
@@ -167,7 +163,7 @@ def batch_iter(sentences, endings, neg_end_obj, sentiment, encoder, batch_size, 
 
     while True:
         for i in range(total_steps-batch_size):
-            index = np.random.choice(np.arange(0, total_steps, 2), 1)[0]
+            index = np.random.choice(np.arange(0, total_steps-batch_size, 2), 1)[0]
             X_train = features[index:index+batch_size]
             Y_train = labels[index:index+batch_size]
             yield X_train, Y_train
