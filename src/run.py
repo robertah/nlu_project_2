@@ -39,7 +39,9 @@ def _setup_argparser():
     parser.add_argument("-p", "--predict",
                         help="predict on a test set given the model",
                         action="store_true")
-
+    parser.add_argument("-e", "--evaluate",
+                        help="evaluate on a test set given the model",
+                        action="store_true")
 
     args, unknown = parser.parse_known_args()
 
@@ -343,3 +345,28 @@ if __name__ == "__main__":
             X_test = ffnn.transform(test_set, encoder)
             Y_predict = model.predict(X_test)
             Y_labels = get_predicted_labels(Y_predict, submission_path_filename)
+
+    if args.evaluate:
+
+        """Path to the model to restore for predictions -> be sure you save the model as model.h5
+           In reality, what is saved is not just the weights but the entire model structure""" #TODO
+        model_path = os.path.join(get_latest_model(), "model.h5")
+        """Submission file -> It will be in the same folder of the model restored to predict
+           e.g trained_model/27_05_2012.../submission_modelname...."""
+        submission_path_filename = get_submission_filename()
+
+        if args.model == "ffnn_val" or args.model == "ffnn_val_test":
+
+            model = load_model(model_path)
+
+            print("Loading skip-thoughts_model for embedding...")
+
+            skipthoughts_model = skipthoughts.load_model()
+            encoder = skipthoughts.Encoder(skipthoughts_model)
+
+            X_test = ffnn.transform(test_set_cloze, encoder)
+            Y_test = generate_binary_verifiers(test_set_cloze)
+            Y_test = np.asarray(Y_test)
+            (loss, accuracy) = model.evaluate(X_test, Y_test, batch_size=64, verbose=1)
+            print("[INFO] loss={:.4f}, accuracy: {:.4f}%".format(loss, accuracy * 100))
+
