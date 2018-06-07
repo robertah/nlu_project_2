@@ -54,8 +54,9 @@ def full_stories_together(contexts, endings, contexts_aggregated = True, validat
             #print("UNIQUE is ", full_story)
             lenght = len(full_story)
             if lenght > story_len:
-                print("Found wrong len of story: ", lenght)
+                #print("Found wrong len of story: ", lenght)
                 full_story = full_story[0:story_len]
+                #print("New story len is: ",len(full_story))
             else:
                 full_story = full_story
 
@@ -117,10 +118,10 @@ def eliminate_tags_in_contexts(contexts_pos_tagged):
 
 
     contexts_no_tag = []
-    """print("CHECK PERFORM: len contexts")
+    print("CHECK PERFORM: len contexts")
     print(len(contexts_pos_tagged))
     print(len(contexts_pos_tagged[0]))
-    print(len(contexts_pos_tagged[0][0]))"""
+    print(len(contexts_pos_tagged[0][0]))
 
     for context in contexts_pos_tagged:
         context_no_tag = []
@@ -260,6 +261,7 @@ def batch_iter_val_SiameseLSTM(contexts, endings, neg_end_obj, binary_verifiers,
             binary_batch_verifier = [[int(ver), 1-int(ver)] for ver in binary_verifiers[batch_idx]]
             yield (np.asarray(stories_batch), np.asarray(binary_batch_verifier))
 
+
 def batch_iter_backward_train_cnn(contexts, endings, neg_end_obj, out_tagged_story = False,
                                   batch_size = 2, num_epochs = 500, shuffle=True):
     """
@@ -282,10 +284,39 @@ def batch_iter_backward_train_cnn(contexts, endings, neg_end_obj, out_tagged_sto
 
             stories_batch = batches_full_stories[batch_idx]
             verifier_batch = [[int(ver), 1-int(ver)] for ver in ver_batch_end[batch_idx]]
+            
             yield (np.asarray(stories_batch), np.asarray(verifier_batch))
 
+"""            for story_idx in range(len(stories_batch)):
+                yield (np.asarray(stories_batch[story_idx]), np.asarray(verifier_batch[story_idx])
+            
+"""
 
 
+def batch_iter_backward_train_Siamese(contexts, endings, neg_end_obj, out_tagged_story = False,
+                                      batch_size = 2, num_epochs = 500, shuffle=True):
+    """
+    Generates a batch generator for the train set.
+    """
+    if not out_tagged_story:
+        contexts_no_tag = eliminate_tags_in_contexts(contexts_pos_tagged = contexts)
+
+    while True:
+    #for i in range(0,num_epochs):
+        print("Augmenting with negative endings for the next epoch -> stochastic approach..")
+        batch_endings, ver_batch_end = batches_backwards_neg_endings(neg_end_obj = neg_end_obj, endings = endings,
+                                                                     batch_size = batch_size, contexts = contexts)
+        batches_full_stories = full_stories_together(contexts = contexts_no_tag, endings = batch_endings, contexts_aggregated = False)
+        total_steps = len(batches_full_stories)
+        print("Train generator for the new epoch ready..")
+
+        for batch_idx in range(0, total_steps):
+            #batch_size stories -> 1 positive endings + batch_size-1 negative endings ones
+
+            stories_batch = batches_full_stories[batch_idx]
+            verifier_batch = [[int(ver), 1-int(ver)] for ver in ver_batch_end[batch_idx]]
+            
+            yield (np.asarray(stories_batch), np.asarray(verifier_batch))
 
 """***************************CNN LSTM sentiment********************"""
 
@@ -295,8 +326,12 @@ def batch_iter_val_cnn_sentiment(contexts, endings, binary_verifiers, test = Fal
     Generates a batch generator for the validation set.
     """
     contexts = eliminate_tags_in_contexts(contexts_pos_tagged = contexts)
-    endings = no_tags_in_val_endings(endings_pos_tagged = endings)
+    endings = eliminate_tags_in_val_endings(endings_pos_tagged = endings)
+
     print("LEN ENDINGS ",len(endings))
+    print("LEN ENDINGS[0] ",len(endings[0]))
+    print("LEN ENDINGS[0][0] ",len(endings[0][0]))
+
     #print("\n\nCONTEXT & ENDINGS\n\n")
     #print(binary_verifiers)
     #print(contexts[0])

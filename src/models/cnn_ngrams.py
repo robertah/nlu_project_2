@@ -23,13 +23,10 @@ class CNN_ngrams():
         self.validation_generator = validation_generator
         self.embedding_dimensions_words = 100 #as in w2v
         self.embedding_dimensions_tags = 10
-        n_gram_size = 9
-        pool_stride_size = 3
-        pool_last_stride_size = 2
-        stride_size = 5
-        vocabulary_size_tags = 45
-        vocabulary_size = 20045
-        story_len = 45
+        n_gram_size = 10
+        #pool_stride_size = 2
+        #pool_last_stride_size = 1
+        stride_size = 10
 
         """Loading trained model for predicting"""
         if path:
@@ -56,10 +53,10 @@ class CNN_ngrams():
                                                   strides=stride_size,
                                                   kernel_size=n_gram_size,
                                                   padding="same"))
-        self.model.add(keras.layers.MaxPooling1D(pool_size=n_gram_size,
-                                                 strides=pool_stride_size,
-                                                 padding="same"))
-        self.model.add(keras.layers.LeakyReLU(alpha=0.1))
+        #self.model.add(keras.layers.MaxPooling1D(pool_size=2,
+        #                                         strides=1,
+        #                                         padding="same"))
+        self.model.add(keras.layers.LeakyReLU(alpha=0.01))
         #self.model.add(keras.layers.Dropout(rate=0.25))
 
         """Second block"""
@@ -67,10 +64,10 @@ class CNN_ngrams():
                                                   strides=2,
                                                   kernel_size=3,
                                                   padding="same"))
-        self.model.add(keras.layers.MaxPooling1D(pool_size=2,
-                                                 strides=2,
-                                                 padding="same"))
-        self.model.add(keras.layers.LeakyReLU(alpha=0.1))
+        #self.model.add(keras.layers.MaxPooling2D(pool_size=(2,10),
+        #                                         strides=(2,10),
+        #                                         padding="same"))
+        self.model.add(keras.layers.LeakyReLU(alpha=0.01))
         #self.model.add(keras.layers.Dropout(rate=0.25))
         
         """Third block"""
@@ -112,7 +109,7 @@ class CNN_ngrams():
         self.model.compile(loss=keras.losses.categorical_crossentropy,
                            optimizer=optimiser,
                            metrics=["accuracy"])
-        print(self.model.summary())
+        #print(self.model.summary())
 
 
 
@@ -126,7 +123,7 @@ class CNN_ngrams():
 
         out_trained_models = '../trained_models'
 
-        lr_callback = keras.callbacks.ReduceLROnPlateau(monitor="acc",
+        cnn_grams_callback = keras.callbacks.ReduceLROnPlateau(monitor="acc",
                                                         factor=0.5,
                                                         patience=0.5,
                                                         verbose=0,
@@ -150,15 +147,16 @@ class CNN_ngrams():
             save_weights_only=False, mode='auto', period=1)
         
         #TODO train generator + validation generator to be implemented once preprocessing is ready
+        print(self.model.summary())
         self.model.fit_generator(self.train_generator,
-                                 steps_per_epoch=1871,
+                                 steps_per_epoch=1000, #88161
                                  verbose=2,
                                  epochs=500,
                                  shuffle = True,
-                                 callbacks=[lr_callback, stop_callback, tensorboard_callback,
+                                 callbacks=[cnn_grams_callback, stop_callback, tensorboard_callback,
                                             checkpoint_callback],
                                  validation_data=self.validation_generator,
-                                 validation_steps=140)
+                                 validation_steps=2) #1871
 
     def save(self, path):
         """Save the model of the trained model.

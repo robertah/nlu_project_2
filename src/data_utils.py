@@ -23,19 +23,15 @@ def load_data(dataset):
     :return: dataframe corresponding to the dataset
     """
 
-    assert dataset == train_set or dataset == val_set or dataset == test_set or dataset == test_set_cloze
+    assert dataset == train_set or dataset == val_set or dataset == test_set
 
     if dataset == train_set:
         names = ['id', 'storytitle', 'sen1', 'sen2', 'sen3', 'sen4', 'sen5']
-    elif dataset == test_set:
-        names = ['sen1', 'sen2', 'sen3', 'sen4', 'sen5_1', 'sen5_2']
     else:
         names = ['id', 'sen1', 'sen2', 'sen3', 'sen4', 'sen5_1', 'sen5_2', 'ans']
 
     #return pd.read_csv(dataset, index_col='id', names=names, skiprows=1, sep = ';')
     #For sentiment uncomment the following return
-    if dataset == test_set:
-        return pd.read_csv(dataset, names=names, encoding="ISO-8859-1")
     return pd.read_csv(dataset, names=names, skiprows=1)
 
 
@@ -47,7 +43,7 @@ def get_answers(dataset):
     :return: answers array
     """
 
-    assert dataset == val_set or dataset == test_set or dataset == test_set_cloze
+    assert dataset == val_set or dataset == test_set
 
     df = load_data(dataset)
 
@@ -201,9 +197,12 @@ def load_vocabulary():
     :return: vocabulary
     """
 
+    print("Loading vocabulary... ")
+
     try:
         with open(vocabulary_pkl, 'rb') as handle:
             vocabulary = pickle.load(handle)
+        print("Vocabulary loaded")
     except FileNotFoundError:
         print("Vocabulary not found.")
 
@@ -216,6 +215,8 @@ def load_pos_vocabulary():
 
     :return: pos tagging vocabulary
     """
+
+    print("Loading pos tag vocabulary... ")
 
     if os.path.isfile(pos_vocabulary_pkl):
         with open(pos_vocabulary_pkl, 'rb') as handle:
@@ -254,7 +255,7 @@ def check_for_unk(data, vocabulary):
     return new_data
 
 
-def get_words_from_indexes(indexes, vocabulary, pos_vocabulary=None):
+def get_words_from_indexes(indexes, vocabulary, pos_vocabulary):
     """
     Get words from indexes in the vocabulary
 
@@ -265,12 +266,11 @@ def get_words_from_indexes(indexes, vocabulary, pos_vocabulary=None):
 
     # map indexes to words in vocabulary
     vocabulary_reverse = {v: k for k, v in vocabulary.items()}
-    if pos_vocabulary is not None:
-        pos_vocabulary_reverse = {v: k for k, v in pos_vocabulary.items()}
+    pos_vocabulary_reverse = {v: k for k, v in pos_vocabulary.items()}
 
 
     # retrieve words corresponding to indexes
-    if isinstance(indexes, list) or isinstance(indexes, np.ndarray):
+    if isinstance(indexes, list):
         if isinstance(indexes[0], tuple):
             words = [(vocabulary_reverse[x[0]], pos_vocabulary_reverse[x[1]]) for x in indexes]
         else:
@@ -405,15 +405,16 @@ def filter_words(dataset):
     return filtered_words
 
 
-def get_context_sentence(stories, i):
+def get_context_sentence(contexts, i):
     """
-    Get the i-th sentences from the stories
-    :param stories: stories array
+    Get the i-th sentences from the contexts
+    :param contexts: contexts array with 4 sentences per story
     :param i: i-th sentence we want to filter
-    :return: filtered stories matrix with i-th sentences
+    :return: filtered context matrix with i-th sentences
     """
+    assert i in range(1, 5)
 
-    return stories[:, i-1]
+    return contexts[:, i-1]
 
 
 def generate_vocab_pos(pos_data):

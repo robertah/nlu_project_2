@@ -48,7 +48,8 @@ class Negative_endings:
     
     #Replace 5th sentence with one random of the training set
     def random_negative_ending(ending_story, # The story can be both pos tagged and not pos tagged
-                               full_train_dataset,
+                               endings,
+                               contexts,
                                batch_size = 2,
                                shuffle_batch = True):
         """INPUT:
@@ -62,17 +63,10 @@ class Negative_endings:
         ver_aug_stories = np.zeros(batch_size)
         ver_aug_stories[0] = 1
         
-        #Create new stories with different endings and add them to the training batch
-        if batch_size == 2:
-
+ 
+        for i in range(batch_size-1):
             new_story = deepcopy(pos_tagged_story)
-            #Not guaranteed to take the same sentence from the train dataset, but highly improbable
-            new_story[-1] = deepcopy(full_train_dataset[randint(0, len(full_train_dataset)-1)][-1]);            
-
-        else:
-            for i in range(batch_size-1):
-                new_story = deepcopy(pos_tagged_story)
-                new_story[-1] = deepcopy(full_train_dataset[randint(0, len(full_train_dataset)-1)][-1]);     
+            new_story[-1] = deepcopy(full_train_dataset[randint(0, len(full_train_dataset)-1)][-1]);     
         
         if shuffle_batch:
 
@@ -440,46 +434,6 @@ class Negative_endings:
 
         self.define_vocab_tags()
         #self.tag_and_words_vocab_to_numerical_form()
-
-
-
-    """******************FROM CORPUS TO POS TAGGED CORPUS & SAVE TO FILE*****************"""
-    
-
-
-    
-    def pos_tagger_sentence(self, sentence):
-
-        sentence_pos_tagged = nltk.pos_tag(sentence)
-
-        return sentence_pos_tagged
-
-    def pos_tagger_story(self, story):
-
-        story_pos_tagged = []
-
-        for sentence in story:
-
-            story_pos_tagged.append(self.pos_tagger_sentence(sentence = sentence))
-
-        return story_pos_tagged
-
-
-
-    def pos_tagger_dataset(self):
-
-        all_stories_context_pos_tagged = []
-        story_number = 0
-        for story in self.all_stories:
-
-            all_stories_context_pos_tagged.append(self.pos_tagger_story(story = story))
-            story_number = story_number + 1
-            if story_number % 1000 == 0:
-                print(story_number)
-        #print(all_stories_context_pos_tagged)
-        print("Done -> Dataset into pos tagged dataset")
-        self.all_stories_context_pos_tagged = all_stories_context_pos_tagged
-
 
 
 

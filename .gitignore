@@ -114,3 +114,5 @@ src/*.pkl
 
 # skip_thoughts data
 src/models/skip_thoughts/data/*
+
+trained_models/*

@@ -186,7 +186,7 @@ def open_csv_asmatrix(datafile):
     return file
 
 
-def load_train_val_datasets_pos_tagged(together = True, stop_words=True, lemm=False):
+def load_train_val_datasets_pos_tagged(together = True, stop_words=False, lemm=True):
 
     if together:
         print("Loading train set together..")
@@ -272,18 +272,6 @@ def train_verifier(train_dataset):
         ver_array.append([1,0])
     return np.asarray(ver_array)
 
-def no_tags_in_val_endings(endings_pos_tagged):
-
-    endings_no_tag = []
-    for endings_batch_pos_tagged in endings_pos_tagged:
-        batch_endings_no_tag = []
-        for ending_pos_tagged in endings_batch_pos_tagged:
-
-            batch_endings_no_tag.append([word_tag[0] for word_tag in ending_pos_tagged])
-        #print(batch_endings_no_tag)
-        endings_no_tag.append(batch_endings_no_tag)
-
-    return endings_no_tag
 
 # just trying if works
 if __name__ == '__main__':

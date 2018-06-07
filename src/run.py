@@ -116,32 +116,33 @@ if __name__ == "__main__":
             #TOGETHER THE DATASET
             print("CNN grams training invoked")
             print("Loading dataset..")
-            pos_train_begin_tog, pos_train_end_tog, pos_val_begin_tog, pos_val_end_tog = load_train_val_datasets_pos_tagged()
-            ver_val_set = generate_binary_verifiers(val_set)
+            pos_train_begin_tog, pos_train_end_tog, pos_val_begin_tog, pos_val_end_tog = load_train_val_datasets_pos_tagged(stop_words=False, lemm=True)
+
             print("Initializing negative endings..")
             neg_end = initialize_negative_endings(contexts = pos_train_begin_tog, endings = pos_train_end_tog)
             
-            print("Loading validation set together..")
-            pos_test_begin_tog, pos_test_end_tog = preprocess(pos_begin = np.load(test_pos_begin_tog), pos_end = np.load(test_pos_end_tog), test=True, pad='ending', punct=True,
-                                                              stop_words=True, lemm=False)
-
-            print("LENS")
-            print(pos_test_begin_tog[0][0])
-            print(len(pos_test_begin_tog[0][0]))
-            print(len(pos_test_end_tog[0][0]))
-
             #Construct data generators
-            ver_test_set = generate_binary_verifiers(test_set)
+            ver_val_set = generate_binary_verifiers(val_set)
 
-            #train_generator = train_utils.batch_iter_train_cnn(contexts = pos_train_begin_tog, endings = pos_train_end_tog, neg_end_obj = neg_end,
-            #                                                   batch_size = 2, num_epochs = 500, shuffle=True)
+            print("\nEXAMPLES :\n")
+            print(len(pos_train_begin_tog[0][0]))
+            print(len(pos_train_end_tog[0][0]))
+            print(len(pos_train_begin_tog[1][0]))
+            print(len(pos_train_end_tog[1][0]))
+            print(len(pos_train_begin_tog[2][0]))
+            print(len(pos_train_end_tog[2][0]))
+            print(len(pos_train_begin_tog[3][0]))
+            print(len(pos_train_end_tog[3][0]))
+
+            train_generator = train_utils.batch_iter_backward_train_cnn(contexts = pos_train_begin_tog, endings = pos_train_end_tog, neg_end_obj = neg_end,
+                                                               batch_size = 2, num_epochs = 500, shuffle=True)
             validation_generator = train_utils.batch_iter_val_cnn(contexts = pos_val_begin_tog, endings = pos_val_end_tog, binary_verifiers = ver_val_set, 
                                                                   neg_end_obj = neg_end, batch_size = 2, num_epochs = 500, shuffle=True)
-            test_generator = train_utils.batch_iter_val_cnn(contexts = pos_test_begin_tog, endings = pos_test_end_tog, binary_verifiers = ver_test_set,
-                                                                  neg_end_obj = neg_end, batch_size = 2, num_epochs = 500, shuffle=True)
+            #test_generator = train_utils.batch_iter_val_cnn(contexts = pos_test_begin_tog, endings = pos_test_end_tog, binary_verifiers = ver_test_set,
+            #                                                      neg_end_obj = neg_end, batch_size = 2, num_epochs = 500, shuffle=True)
             #Initialize model
             #model = cnn_ngrams.CNN_ngrams(train_generator = validation_generator, validation_generator = test_generator)
-            model = full_nn.CNN_ngrams(train_generator = validation_generator, validation_generator = test_generator)
+            model = cnn_ngrams.CNN_ngrams(train_generator = train_generator, validation_generator = validation_generator)
             model.train(save_path = out_trained_models)
 
         elif args.model == "cnn_lstm":
@@ -316,16 +317,17 @@ if __name__ == "__main__":
             print("Predicting with CNN_LSTM sentiment based..")
             contexts_test = np.load(test_cloze_pos_begin)
             endings_test = np.load(test_cloze_pos_end)
-            print("TEST SET BEGIN SIZE \n", contexts_test.shape)
-            print("TEST SET END SIZE \n", endings_test.shape)
 
+            contexts_test = eliminate_id(dataset = contexts_test)
+            endings_test = eliminate_id(dataset = endings_test)
 
-            test_generator = batch_iter_val_cnn_sentiment(contexts = contexts_test, endings = endings_test, binary_verifiers = [], test = False)
+            test_generator = batch_iter_val_cnn_sentiment(contexts = contexts_test, endings = endings_test, binary_verifiers = [], test = True)
             print(get_submission_filename())
             model_class = cnn_lstm_sent.Cnn_lstm_sentiment(train_generator = [], path=model_path)
             model = model_class.model
-            predictions = model.predict_generator(model, test_generator)
+            predictions = model.predict_generator(test_generator, steps=2343)
             print(predictions)
+            print(predictions.shape)
 
         elif args.model == "put_your_model_name_here3":
 
