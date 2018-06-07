@@ -51,15 +51,17 @@ def get_latest_model():
     Returns:
         (path) a path to the directory.
     """
-    print("Retrieving trained model from {}".format(os.path.join(os.path.dirname(os.path.abspath(__file__)), out_trained_models)))
-    if not os.path.exists(os.path.join(out_trained_models, args.model)):
+    __file__ = "run.py"
+    file_path = os.path.dirname(os.path.abspath(__file__))
+    
+    if not os.path.exists(os.path.join(file_path, "..","trained_models", args.model)):
         print("No trained model {} exists.".format(args.model))
         sys.exit(1)
     #Path to the model
-    res = os.path.join(os.path.abspath("run.py"), "../trained_models", args.model)
+    res = os.path.join(file_path, "..","trained_models", args.model)
     all_runs = [os.path.join(res, o) for o in os.listdir(res) if os.path.isdir(os.path.join(res, o))]
     res = max(all_runs, key=os.path.getmtime)
-
+    print("Retrieving trained model from {}".format(res))
     return res
 
 
@@ -102,8 +104,8 @@ if __name__ == "__main__":
         except OSError:
             pass
     else:
-        out_trained_models = os.path.normpath("..")
-    
+        out_trained_model = os.path.join(os.path.abspath("run.py"), "..","trained_models", args.model)
+
     print("Trained model will be saved in ", out_trained_models)
 
 
@@ -151,8 +153,10 @@ if __name__ == "__main__":
             contexts_val = eliminate_id(dataset = contexts_val)
             endings_val = eliminate_id(dataset = endings_val)
 
-            contexts_test = np.load(test_pos_begin)
-            endings_test = np.load(test_pos_end)
+            contexts_test = np.load(test_cloze_pos_begin)
+            endings_test = np.load(test_cloze_pos_end)
+            print("TEST SET BEGIN SIZE \n", contexts_test.shape)
+            print("TEST SET END SIZE \n", endings_test.shape)
 
             contexts_test = eliminate_id(dataset = contexts_test)
             endings_test = eliminate_id(dataset = endings_test)
@@ -295,23 +299,33 @@ if __name__ == "__main__":
 
     if args.predict:
 
-        """
-           Path to the model to restore for predictions
-        """
-
-        """Submission file"""
+        """Path to the model to restore for predictions -> be sure you save the model as weights.h5
+           In reality, what is saved is not just the weights but the entire model structure"""
+        model_path = os.path.join(get_latest_model(), "weights.h5")
+        """Submission file -> It will be in the same folder of the model restored to predict
+           e.g trained_model/27_05_2012.../submission_modelname...."""
         submission_path_filename = get_submission_filename()
 
         if args.model == "cnn_ngrams":
             
-            #path_model_to_restore = os.path.join(get_latest_model(), "weights.h5")
-            #print("Loading the last checkpoint of the model ", args.model, " from: ", path_model_to_restore)
-            print("cnn grams prediction invoked")
+            print("This prediction branch has not been implemented")
 
 
-        elif args.model == "put_your_model_name_here2":
+        elif args.model == "cnn_lstm":
 
-            print("Put your code here before calling predict")
+            print("Predicting with CNN_LSTM sentiment based..")
+            contexts_test = np.load(test_cloze_pos_begin)
+            endings_test = np.load(test_cloze_pos_end)
+            print("TEST SET BEGIN SIZE \n", contexts_test.shape)
+            print("TEST SET END SIZE \n", endings_test.shape)
+
+
+            test_generator = batch_iter_val_cnn_sentiment(contexts = contexts_test, endings = endings_test, binary_verifiers = [], test = False)
+            print(get_submission_filename())
+            model_class = cnn_lstm_sent.Cnn_lstm_sentiment(train_generator = [], path=model_path)
+            model = model_class.model
+            predictions = model.predict_generator(model, test_generator)
+            print(predictions)
 
         elif args.model == "put_your_model_name_here3":
 

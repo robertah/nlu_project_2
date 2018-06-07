@@ -7,6 +7,7 @@ from keras.layers import LSTM
 import sys
 sys.path.append("..")
 from config import *
+from keras.models import load_model
 
 
 class Cnn_lstm_sentiment():
@@ -33,7 +34,7 @@ class Cnn_lstm_sentiment():
         """Loading trained model for predicting"""
         if path:
             print("Loading existing model from {}".format(path))
-            self.load(path)
+            self.model = load_model(path)
             print("Finished loading model")
             return
 

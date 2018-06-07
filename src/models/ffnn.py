@@ -40,14 +40,14 @@ class FFNN():
         # create feed-forward neural network layers
         self.model = Sequential()
         self.model.add(Dense(4800, input_dim=9604, kernel_initializer="uniform", activation="relu"))
-        self.model.add(Dropout(0.35))
+        self.model.add(Dropout(0.2))
         self.model.add(Dense(2400, kernel_initializer="uniform", activation="relu"))
         # self.model.add(Dense(2400, input_dim=4804, kernel_initializer="uniform", activation="relu"))
-        self.model.add(Dropout(0.35))
+        self.model.add(Dropout(0.2))
         self.model.add(Dense(1200, kernel_initializer="uniform", activation="relu"))
-        self.model.add(Dropout(0.3))
+        self.model.add(Dropout(0.2))
         self.model.add(Dense(600, kernel_initializer="uniform", activation="relu"))
-        self.model.add(Dropout(0.35))
+        self.model.add(Dropout(0.2))
         self.model.add(Dense(2, kernel_regularizer=l2(1e-3), activation="softmax"))
 
 
