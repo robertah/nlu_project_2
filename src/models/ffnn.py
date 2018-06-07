@@ -9,11 +9,9 @@ import os
 class FFNN():
     """
     Feed-forward neural network:
-        - input: sentiment analysis of the context, last sententece, ending, answer label
-        - embedding: skip thoughts embeddings
-        - 3 layers: dimensions 2400, 1200, 600
+        - input: 9604 dim array, with embeddings with last sentences and two endings, and sentiment analysis
+        - 3 layers: dimensions 3200, 1600, 800
         - activation: softmax
-
     """
 
     def __init__(self, train_generator, validation_generator=[], batch_size=128, path=None):
@@ -48,7 +46,14 @@ class FFNN():
         self.model.add(Dense(2, kernel_regularizer=l2(1e-3), activation="softmax"))
 
     def train(self, train_size, val_size, save_path):
+        """
+        Train function for the feed forward neural networks
 
+        :param train_size: number of samples in the train data
+        :param val_size: number of samples in the validation data
+        :param save_path: path to model for saving
+        :return:
+        """
         print("Compiling model...")
 
         # configure the model for training
@@ -56,11 +61,10 @@ class FFNN():
 
         print(self.model.summary())
 
-        # reduce learning rate when a metric has stopped improving TODO check params
+        # reduce learning rate when a metric has stopped improving
         lr_callback = ReduceLROnPlateau(monitor="acc", factor=0.5, patience=0.5, verbose=0, cooldown=0, min_lr=0)
 
-        # stop training when a monitored quantity has stopped improving
-        # stop_callback = EarlyStopping(monitor="val_acc", min_delta=0.001, patience=5)
+        # stop training when validation loss has stopped improving
         stop_callback = EarlyStopping(monitor="val_loss", min_delta=0, patience=3)
 
         tensorboard_callback = TensorBoard(log_dir=out_trained_models, histogram_freq=0, batch_size=1,
@@ -75,7 +79,6 @@ class FFNN():
         # train the model on data generated batch-by-batch by customized generator
         n_batches = np.ceil(train_size/batch_size)
         n_batches_val = np.ceil(val_size/batch_size)
-
         self.model.fit_generator(generator=self.train_generator, steps_per_epoch=n_batches,
                                  verbose=1, epochs=50, shuffle=True,
                                  callbacks=[lr_callback, stop_callback, tensorboard_callback,
@@ -85,30 +88,37 @@ class FFNN():
         return self
 
 
+# BATCH GENERATORS AND ADDITIONAL PREPRPCESSING #############################################################
+
 def batch_iter(sentences, endings, neg_end_obj, sentiment, encoder, batch_size, aug_batch_size=2):
     """
-    Generates a batch generator for the train set.
+    Create batch generator for training data
+
+    :param sentences: sentences in the train data
+    :param endings: endings in the train data
+    :param neg_end_obj: object for negative endings
+    :param sentiment: sentiment analysis for training
+    :param encoder: encoder for skip-thought embedding
+    :param batch_size: batch size for training
+    :param aug_batch_size: number of negative endings + right ending per story
+    :return: batches
     """
 
+    # get last sentences
     last_sentences = get_context_sentence(sentences, 4)
 
+    # get number of stories
+    n_stories = len(last_sentences)
+
+    # load vocabulary
+    vocabulary = load_vocabulary()
+
+    # generate negative endings
     print("Data augmentation for negative endings for the next epoch -> stochastic approach..")
     batch_endings, ver_batch_end = batches_pos_neg_endings(neg_end_obj, endings, aug_batch_size)
 
-    n_stories = len(batch_endings)
-    # batch_endings, ver_batch_end = batches_backwards_neg_endings(neg_end_obj, endings, aug_batch_size)
-
-    ver_batch_end = np.reshape(ver_batch_end, (n_stories, 2))
-    print(ver_batch_end[:10])
-    print(len(ver_batch_end))
-    print(len(ver_batch_end[0]))
-
-
-
-
-    vocabulary = load_vocabulary()
+    # map negative endings to words
     batch_endings_words = np.empty((n_stories, aug_batch_size), dtype=np.ndarray)
-
     print("Mapping generated negative endings to words...")
     for i in range(n_stories):
         for j in range(aug_batch_size):
@@ -124,33 +134,85 @@ def batch_iter(sentences, endings, neg_end_obj, sentiment, encoder, batch_size, 
     sentences_encoded = np.empty((n_stories, aug_batch_size, 4800))
     for i in range(endings.shape[1]):
         sentences_encoded[:, i] = encoder.encode(batch_endings_words[:, i], verbose=False)
-
     sentences_encoded = np.reshape(sentences_encoded, (n_stories, -1))
-    print("SENTENCES ENCODED")
-    print(sentences_encoded.shape)
-    # create features array
-    print("Creating features array...")
 
+    # sum last sentences and endings
     for i in range(n_stories):
         sentences_encoded[i] = np.tile(last_sentences_encoded[i], aug_batch_size) + sentences_encoded[i]
 
+    # concatenate features
     features = np.concatenate((sentences_encoded, sentiment), axis=1)
+
+    # get binary verifiers for labels
+    ver_batch_end = np.reshape(ver_batch_end, (n_stories, 2))
 
     print("Train generator for the new epoch ready..")
 
-    total_steps = len(features)
-
     while True:
-        for i in range(total_steps-batch_size):
-            index = np.random.choice(np.arange(0, total_steps-batch_size, 2), 1)[0]
+        for i in range(n_stories-batch_size):
+            index = np.random.choice(np.arange(0, n_stories-batch_size, 2), 1)[0]
             X_train = features[index:index+batch_size]
             Y_train = ver_batch_end[index:index+batch_size]
             yield X_train, Y_train
 
 
-def batch_iter_val(features, labels, batch_size):
+def transform(dataset, encoder):
+    """
+    Transform validation and test data for batch generators
 
+    :param dataset: validation or test dataset
+    :param encoder: encoder for skip-thought embeddings
+    :return: features vector with embeddings and sentiment analysis
+    """
+
+    # get sentences from data set
+    sentences = load_data(dataset)
+    sens = [col for col in sentences if col.startswith('sen')]
+    sentences = sentences[sens].values
+
+    # get last sentences
+    last_sentences = sentences[:, 4]
+
+    # get endings
+    endings = sentences[:, 4:]
+
+    # get number of stories
+    n_stories = len(last_sentences)
+
+    # generate skip-thought embeddings
+    last_sentences_encoded = encoder.encode(last_sentences, verbose=False)
+    sentences_encoded = np.empty((n_stories, 2, 4800))
+    for i in range(endings.shape[1]):
+        sentences_encoded[:, i] = encoder.encode(endings[:, i], verbose=False)
+    sentences_encoded = np.reshape(sentences_encoded, (n_stories, -1))
+
+    # sum last sentences and endings
+    for i in range(n_stories):
+        sentences_encoded[i] = np.tile(last_sentences_encoded[i], 2) + sentences_encoded[i]
+
+    # create sentiment array for dataset
+    sentiment = sentiment_analysis(dataset)
+
+    # concatenate features
+    features = np.concatenate((sentences_encoded, sentiment), axis=1)
+
+    return features
+
+
+def batch_iter_val(features, labels, batch_size):
+    """
+    Create batch generator for validation and test data
+
+    :param features: features array generated with transform()
+    :param labels: labels for the endings
+    :param batch_size: batch size for validation
+    :return: batches
+    """
+
+    # get number of stories
     n_stories = len(features)
+
+    # reshape labels
     labels = np.reshape(labels, (n_stories, 2))
 
     while True:
@@ -159,35 +221,3 @@ def batch_iter_val(features, labels, batch_size):
             X = features[index:index+batch_size]
             Y = labels[index:index+batch_size]
             yield X, Y
-
-
-def transform(dataset, encoder):
-
-    sentences = load_data(dataset)
-    sens = [col for col in sentences if col.startswith('sen')]
-    sentences = sentences[sens].values
-
-    last_sentences = sentences[:, 4]
-    endings = sentences[:, 4:]
-
-    n_stories = len(last_sentences)
-
-    sentences_encoded = np.empty((n_stories, 2, 4800))
-
-    last_sentences_encoded = encoder.encode(last_sentences, verbose=False)
-
-    for i in range(endings.shape[1]):
-        sentences_encoded[:, i] = encoder.encode(endings[:, i], verbose=False)
-
-    sentences_encoded = np.reshape(sentences_encoded, (n_stories, -1))
-
-    for i in range(n_stories):
-        sentences_encoded[i] = np.tile(last_sentences_encoded[i], 2) + sentences_encoded[i]
-
-    sentiment = sentiment_analysis(dataset)
-
-    features = np.concatenate((sentences_encoded, sentiment), axis=1)
-
-    return features
-
-
