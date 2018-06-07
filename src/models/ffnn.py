@@ -52,8 +52,7 @@ class FFNN():
 
 
 
-    def train(self, train_size, val_size, model_path='ffnn/model.h5'):
-        out_trained_models = '../trained_models'
+    def train(self, train_size, val_size, save_path):
 
         print("Compiling model...")
 
@@ -76,10 +75,8 @@ class FFNN():
                                            write_grads=False, embeddings_freq=0,
                                            embeddings_layer_names=None, embeddings_metadata=None)
 
-        checkpoint_path = os.path.join(out_trained_models, model_path)
-
         # save the model after every epoch
-        checkpoint_callback = ModelCheckpoint(checkpoint_path, monitor='val_loss', verbose=0, save_best_only=True,
+        checkpoint_callback = ModelCheckpoint(os.path.join(save_path, 'model.h5'), monitor='val_loss', verbose=0, save_best_only=True,
                                               save_weights_only=False, mode='auto', period=1)
 
         # train the model on data generated batch-by-batch by customized generator
@@ -98,8 +95,12 @@ class FFNN():
     def evaluate(self, X_test, Y_test):
         print("Evaluating on testing set...")
         (loss, accuracy) = self.model.evaluate(X_test, Y_test,
-                                               batch_size=128, verbose=1)
+                                               batch_size=64, verbose=1)
         print("[INFO] loss={:.4f}, accuracy: {:.4f}%".format(loss, accuracy * 100))
+
+    def predict(self, X_test):
+        Y = self.model.predict_classes(X_test, batch_size=64, verbose=1)
+        return Y
 
     def save(self, path):
         """
@@ -288,7 +289,28 @@ def batch_iter(sentences, endings, neg_end_obj, sentiment, encoder, batch_size, 
             yield X_train, Y_train
 
 
-def batch_iter_val(sentences, sentiment, encoder, labels, batch_size):
+def batch_iter_val(dataset, encoder, batch_size):
+
+
+    features = transform(dataset, encoder)
+    n_stories = len(features)
+
+    labels = generate_binary_verifiers(dataset)
+    labels = np.reshape(labels, (n_stories, 2))
+
+    while True:
+        for i in range(n_stories-batch_size):
+            index = np.random.choice(n_stories-batch_size, 1)[0]
+            X = features[index:index+batch_size]
+            Y = labels[index:index+batch_size]
+            yield X, Y
+
+
+def transform(dataset, encoder):
+
+    sentences = load_data(dataset)
+    sens = [col for col in sentences if col.startswith('sen')]
+    sentences = sentences[sens].values
 
     last_sentences = sentences[:, 4]
     endings = sentences[:, 4:]
@@ -307,14 +329,18 @@ def batch_iter_val(sentences, sentiment, encoder, labels, batch_size):
     for i in range(n_stories):
         sentences_encoded[i] = np.tile(last_sentences_encoded[i], 2) + sentences_encoded[i]
 
+    sentiment = sentiment_analysis(dataset)
+
     features = np.concatenate((sentences_encoded, sentiment), axis=1)
 
-    n_stories = len(features)
-    labels = np.reshape(labels, (n_stories, 2))
+    return features
 
-    while True:
-        for i in range(n_stories-batch_size):
-            index = np.random.choice(n_stories-batch_size, 1)[0]
-            X = features[index:index+batch_size]
-            Y = labels[index:index+batch_size]
-            yield X, Y
+
+def get_labels(binary_verifiers, submission_filename):
+
+    labels = [1 if b == [1, 0] else 2 for b in binary_verifiers]
+    labels = np.reshape(labels, len(binary_verifiers))
+
+    np.savetxt(data_folder + "/" + submission_filename, labels, delimiter=',')
+
+    return labels

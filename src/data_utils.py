@@ -77,12 +77,12 @@ def word_cleaning(pos_tag_data, punct, stop_words, lemm):
     if punct:
         words_to_remove += list(punctuation)
     if stop_words:
-        download('stopwords')
+        download('stopwords', quiet=True)
         words_to_remove += list(stopwords.words('english'))
 
     # download wordnet for lemmatization if needed
     if lemm:
-        download('wordnet')
+        download('wordnet', quiet=True)
 
     for i, sentence in np.ndenumerate(pos_tag_data):
         data_processed[i] = []
@@ -451,7 +451,7 @@ def generate_vocab_pos(pos_data):
 def generate_vocab_pos_upenn():
 
     # Getting tags from upenn_tagset
-    nltk.download('tagsets')
+    nltk.download('tagsets', quiet=True)
     tagdict = load('help/tagsets/upenn_tagset.pickle')
 
     #creating dictionary with pos_tags, using negative numbers

@@ -20,8 +20,8 @@ def pos_tag_dataset(dataset, separate=False):
     :return: pos tagged beginning and ending matrices
     """
 
-    nltk.download('punkt')
-    nltk.download('averaged_perceptron_tagger')
+    nltk.download('punkt', quiet=True)
+    nltk.download('averaged_perceptron_tagger', quiet=True)
 
     # load data from csv
     data_original = load_data(dataset)

@@ -6,7 +6,7 @@ import datetime
 import time
 import negative_endings as data_aug
 
-from models import cnn_ngrams, cnn_lstm_sent, SiameseLSTM
+from models import cnn_ngrams, cnn_lstm_sent, SiameseLSTM, ffnn
 
 from training_utils import *
 
@@ -17,7 +17,7 @@ from models.skip_thoughts import skipthoughts
 # Remove tensorflow CPU instruction information.
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
-from models import ffnn
+from keras.models import load_model
 
 def _setup_argparser():
     """Sets up the argument parser and returns the arguments.
@@ -53,7 +53,7 @@ def get_latest_model():
     """
     __file__ = "run.py"
     file_path = os.path.dirname(os.path.abspath(__file__))
-    
+
     if not os.path.exists(os.path.join(file_path, "..","trained_models", args.model)):
         print("No trained model {} exists.".format(args.model))
         sys.exit(1)
@@ -104,7 +104,7 @@ if __name__ == "__main__":
         except OSError:
             pass
     else:
-        out_trained_model = os.path.join(os.path.abspath("run.py"), "..","trained_models", args.model)
+        out_trained_model = os.path.join(os.path.abspath("run.py"), "..", "trained_models", args.model)
 
     print("Trained model will be saved in ", out_trained_models)
 
@@ -241,16 +241,11 @@ if __name__ == "__main__":
 
             print("Initializing feed-forward neural network...")
             model = ffnn.FFNN(train_generator=train_generator, validation_generator=validation_generator)
-            model.train(train_size, val_size)
+            model.train(train_size, val_size, out_trained_models)
 
         elif args.model == "ffnn_val":
 
             print("Loading dataset...")
-            val_data = load_data(val_set)
-            sens = [col for col in val_data if col.startswith('sen')]
-            val_data = val_data[sens].values
-            # ans = get_answers(val_set)
-            ver_val_set = generate_binary_verifiers(val_set)
 
             # validation set split for training and validation
             # train_indexes = np.random.choice(len(val_data), int(len(val_data)*0.85), replace=False)
@@ -258,15 +253,6 @@ if __name__ == "__main__":
             # X_val = np.delete(val_data, train_indexes, axis=0)
             # Y_train = np.take(ver_val_set, train_indexes, axis=0)
             # Y_val = np.delete(ver_val_set, train_indexes, axis=0)
-
-            ## TRAIN ON VALIDATION DATA AND VALIDATE ON TEST SET CLOZE
-            test_data = load_data(test_set_cloze)
-            sens = [col for col in test_data if col.startswith('sen')]
-            X_train = val_data
-            X_val = test_data[sens].values
-            Y_train = generate_binary_verifiers(val_set)
-            Y_val = generate_binary_verifiers(test_set_cloze)
-
 
 
             print("Sentiment analysis...")
@@ -277,10 +263,6 @@ if __name__ == "__main__":
             # sent_val = np.delete(sentiment_val, train_indexes, axis=0)
 
 
-            ## SENTIMENT ANALYSIS
-            sent_train = sentiment_analysis(val_set).values
-            sent_val = sentiment_analysis(test_set_cloze).values
-
             print("Loading skip-thoughts_model for embedding...")
             skipthoughts_model = skipthoughts.load_model()
             encoder = skipthoughts.Encoder(skipthoughts_model)
@@ -288,14 +270,14 @@ if __name__ == "__main__":
             print("Defining batch data generators... ")
             # train_generator = ffnn.batch_iter_val(X_train, sent_train, encoder, Y_train, batch_size=64)
             # validation_generator = ffnn.batch_iter_val(X_val, sent_val, encoder, Y_val, batch_size=64)
-            train_generator = ffnn.batch_iter_val(X_train, sent_train, encoder, Y_train, batch_size=64)
-            validation_generator = ffnn.batch_iter_val(X_val, sent_val, encoder, Y_val, batch_size=64)
+            train_generator = ffnn.batch_iter_val(val_set, encoder, batch_size=64)
+            validation_generator = ffnn.batch_iter_val(test_set_cloze, encoder, batch_size=64)
 
-            train_size, val_size = len(X_train), len(X_val)
+            #train_size, val_size = len(X_train), len(X_val)
 
             print("Initializing feed-forward neural network...")
             model = ffnn.FFNN(train_generator=train_generator, validation_generator=validation_generator)
-            model.train(train_size, val_size, model_path='ffnn_val/model.h5')
+            model.train(1871, 1871, out_trained_models)
 
     if args.predict:
 
@@ -327,6 +309,28 @@ if __name__ == "__main__":
             predictions = model.predict_generator(model, test_generator)
             print(predictions)
 
-        elif args.model == "put_your_model_name_here3":
+        elif args.model == "ffnn":
 
-            print("Put your code here before calling predict")
+            print("bla bla")
+
+        elif args.model == "ffnn_val":
+
+            print("Ciaoooooo")
+
+            model = load_model(model_path)
+
+            test_data = load_data(test_set)
+            sens = [col for col in test_data if col.startswith('sen')]
+            test_data = val_data[test_data].values
+            sentiment = sentiment_analysis(test_set).values
+
+            print("Loading skip-thoughts_model for embedding...")
+
+            skipthoughts_model = skipthoughts.load_model()
+            encoder = skipthoughts.Encoder(skipthoughts_model)
+
+            X_test = ffnn.transform(test_data, sentiment, encoder)
+            Y_predict = model.predict(X_test)
+            Y_labels = ffnn.get_labels(Y_predict, submission_path_filename)
+
+            print(Y_labels)
