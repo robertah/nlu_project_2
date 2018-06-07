@@ -35,7 +35,7 @@ def load_data(dataset):
     #return pd.read_csv(dataset, index_col='id', names=names, skiprows=1, sep = ';')
     #For sentiment uncomment the following return
     if dataset == test_set:
-        return pd.read_csv(dataset, names=names, encoding="ISO-8859-1")
+        return pd.read_csv(dataset, names=names)
     return pd.read_csv(dataset, names=names, skiprows=1)
 
 

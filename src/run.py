@@ -29,7 +29,7 @@ def _setup_argparser():
     parser = argparse.ArgumentParser(description="Control program to launch all actions related to this project.")
 
     parser.add_argument("-m", "--model", action="store",
-                        choices=["cnn_ngrams", "SiameseLSTM", "cnn_lstm", "ffnn", "ffnn_val"],
+                        choices=["cnn_ngrams", "SiameseLSTM", "cnn_lstm", "ffnn", "ffnn_val", "ffnn_val_test"],
                         default="cnn_ngrams",
                         type=str,
                         help="the model to be used, defaults to cnn_ngrams")
@@ -254,19 +254,48 @@ if __name__ == "__main__":
             skipthoughts_model = skipthoughts.load_model()
             encoder = skipthoughts.Encoder(skipthoughts_model)
 
+            X = ffnn.transform(val_set, encoder)
+            Y = generate_binary_verifiers(val_set)
+
+            n_stories = len(X)
+            train_indexes = np.random.choice(n_stories, int(n_stories*0.9), replace=False)
+
+            X_train = np.take(X, train_indexes, axis=0)
+            Y_train = np.take(Y, train_indexes, axis=0)
+
+            X_val = np.delete(X, train_indexes, axis=0)
+            Y_val = np.delete(Y, train_indexes, axis=0)
+
             print("Defining batch data generators... ")
-            # train_generator = ffnn.batch_iter_val(X_train, sent_train, encoder, Y_train, batch_size=64)
-            # validation_generator = ffnn.batch_iter_val(X_val, sent_val, encoder, Y_val, batch_size=64)
-            train_generator = ffnn.batch_iter_val(val_set, encoder, batch_size=64)
-            validation_generator = ffnn.batch_iter_val(test_set_cloze, encoder, batch_size=64)
-
-            #train_size, val_size = len(X_train), len(X_val)
-
-
+            train_generator = ffnn.batch_iter_val(X_train, Y_train, batch_size=64)
+            validation_generator = ffnn.batch_iter_val(X_val, Y_val, batch_size=64)
 
             print("Initializing feed-forward neural network...")
             model = ffnn.FFNN(train_generator=train_generator, validation_generator=validation_generator)
-            model.train(1871, 1871, out_trained_models)
+            model.train(len(X_train), len(X_val), out_trained_models)
+
+
+        elif args.model == "ffnn_val_test":
+
+            print("Loading skip-thoughts_model for embedding...")
+            skipthoughts_model = skipthoughts.load_model()
+            encoder = skipthoughts.Encoder(skipthoughts_model)
+
+            X_train = ffnn.transform(val_set, encoder)
+            Y_train = generate_binary_verifiers(val_set)
+
+            X_val = ffnn.transform(test_set_cloze, encoder)
+            Y_val = generate_binary_verifiers(test_set_cloze)
+
+            print("Defining batch data generators... ")
+            train_generator = ffnn.batch_iter_val(X_train, Y_train, batch_size=64)
+            validation_generator = ffnn.batch_iter_val(X_val, Y_val, batch_size=64)
+
+            print("Initializing feed-forward neural network...")
+            model = ffnn.FFNN(train_generator=train_generator, validation_generator=validation_generator)
+            model.train(len(X_train), len(X_val), out_trained_models)
+
+
 
     if args.predict:
 
@@ -302,7 +331,7 @@ if __name__ == "__main__":
 
             print("bla bla")
 
-        elif args.model == "ffnn_val":
+        elif args.model == "ffnn_val" or args.model == "ffnn_val_test":
 
             model = load_model(model_path)
 
@@ -314,4 +343,3 @@ if __name__ == "__main__":
             X_test = ffnn.transform(test_set, encoder)
             Y_predict = model.predict(X_test)
             Y_labels = get_predicted_labels(Y_predict, submission_path_filename)
-
