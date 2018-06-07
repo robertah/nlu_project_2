@@ -22,7 +22,7 @@ def sentiment_analysis(dataset):
     if dataset == val_set and os.path.isfile(sentiment_val_pkl):
         return load_sentiment(sentiment_val_pkl)
 
-    nltk.download('vader_lexicon')
+    nltk.download('vader_lexicon', quiet=True)
 
     # load data from csv
     data_original = load_data(dataset)
