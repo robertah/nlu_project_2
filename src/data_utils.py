@@ -282,6 +282,17 @@ def get_words_from_indexes(indexes, vocabulary, pos_vocabulary=None):
             words = vocabulary_reverse[indexes]
     return words
 
+def get_index_from_tag(tag):
+    '''
+    Get vocabulary index for some tag
+    :param tag: tage of the form '<tag>'
+    :return: tag index
+    '''
+    with open(full_vocabulary_pkl, 'rb') as f:
+        vocabulary = pickle.load(f)
+    tag_index = vocabulary[tag]
+    return tag_index
+
 
 def get_indexes_from_words(words, vocabulary, pos_vocabulary):
     """
@@ -342,7 +353,7 @@ def pad_endings(beginnings, endings):
 
 # DATA STRUCTURES HANDLING #######################################################
 
-def combine_senteces(sentences):
+def combine_sentences(sentences):
     """
     Combine multiple sentences in one sentence
 
@@ -373,12 +384,14 @@ def combine_story(beginnings, endings):
     """
 
     assert len(beginnings) == len(endings)
+    print("beginnings's shape: {}".format(beginnings.shape))
+    print("endings shape : {}".format(endings.shape))
 
     # get number of stories
     n_stories, *_ = beginnings.shape
 
     # combine beginnings sentences
-    beginnings = combine_senteces(beginnings)
+    beginnings = combine_sentences(beginnings)
 
     # create stories
     stories = np.empty(n_stories, dtype=list)
@@ -487,7 +500,7 @@ def merge_vocab(vocab1, vocab2):
     return data1
 
 
-if __name__ == '__main__':
+# if __name__ == '__main__':
 
     # generate_vocab_pos(train_pos_begin)
     # merge_vocab(vocabulary_pkl, pos_vocabulary_pkl)
@@ -495,6 +508,3 @@ if __name__ == '__main__':
     # with open(full_vocabulary_pkl, 'rb') as f:
     #     data = pickle.load(f)
     # print(data)
-
-
-    print(generate_vocab_pos_upenn())
