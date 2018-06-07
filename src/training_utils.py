@@ -319,3 +319,4 @@ def batch_iter_val_cnn_sentiment(contexts, endings, binary_verifiers, test = Fal
                 yield (np.asarray(stories_batch), np.asarray(binary_batch_verifier))
             else:
                 yield np.asarray(stories_batch)
+

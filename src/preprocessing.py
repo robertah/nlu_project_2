@@ -210,9 +210,9 @@ def generate_binary_verifiers(dataset = None):
     binary_verifiers = []
 
     ver_val_set = get_answers(dataset)
-    print("Verifier")
-    print(len(ver_val_set))
-    print(dataset)
+    # print("Verifier")
+    # print(len(ver_val_set))
+    # print(dataset)
     for value in ver_val_set:
         if value == 1:
             binary_verifiers.append([1, 0]) #Correct ending is the first one

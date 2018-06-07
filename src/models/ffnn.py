@@ -99,7 +99,7 @@ class FFNN():
         print("[INFO] loss={:.4f}, accuracy: {:.4f}%".format(loss, accuracy * 100))
 
     def predict(self, X_test):
-        Y = self.model.predict_classes(X_test, batch_size=64, verbose=1)
+        Y = self.model.predict(X_test, batch_size=64, verbose=1)
         return Y
 
     def save(self, path):
@@ -336,11 +336,3 @@ def transform(dataset, encoder):
     return features
 
 
-def get_labels(binary_verifiers, submission_filename):
-
-    labels = [1 if b == [1, 0] else 2 for b in binary_verifiers]
-    labels = np.reshape(labels, len(binary_verifiers))
-
-    np.savetxt(data_folder + "/" + submission_filename, labels, delimiter=',')
-
-    return labels

@@ -18,6 +18,7 @@ from models.skip_thoughts import skipthoughts
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 from keras.models import load_model
+import csv
 
 def _setup_argparser():
     """Sets up the argument parser and returns the arguments.
@@ -76,6 +77,7 @@ def get_submission_filename():
 
     return submission_path_filename
 
+
 def initialize_negative_endings(contexts, endings):
     neg_end = data_aug.Negative_endings(contexts = contexts, endings = endings)
     neg_end.load_vocabulary()
@@ -83,6 +85,16 @@ def initialize_negative_endings(contexts, endings):
     neg_end.filter_corpus_tags()
 
     return neg_end
+
+
+def get_predicted_labels(probabilities, submission_filename):
+    labels = [1 if prob[0]>prob[1] else 2 for prob in probabilities]
+    labels = np.asarray(labels, dtype=int)
+    with open(submission_path_filename, "w+") as f:
+        np.savetxt(submission_path_filename, labels.astype(int), fmt='%i', delimiter=',')
+
+    print("Predicted endings saved in", submission_filename)
+    return labels
 
 """********************************************** USER ACTIONS from parser ************************************************************"""
 
@@ -104,7 +116,7 @@ if __name__ == "__main__":
         except OSError:
             pass
     else:
-        out_trained_model = os.path.join(os.path.abspath("run.py"), "..", "trained_models", args.model)
+        out_trained_models = os.path.join(os.path.abspath("run.py"), "..", "trained_models", args.model)
 
     print("Trained model will be saved in ", out_trained_models)
 
@@ -209,13 +221,6 @@ if __name__ == "__main__":
             train_data = load_data(train_set)
             sens = [col for col in train_data if col.startswith('sen')]
             train_data = train_data[sens].values
-            # get validation data
-            val_data = load_data(val_set)
-            sens = [col for col in val_data if col.startswith('sen')]
-            val_data = val_data[sens].values
-            # get labels for validation data
-            ans = get_answers(val_set)
-            ver_val_set = generate_binary_verifiers(val_set)
 
             print("Initializing negative endings...")
             _, pos_train_end, _, _ = load_train_val_datasets_pos_tagged(together=False, stop_words=False, lemm=True)
@@ -225,7 +230,6 @@ if __name__ == "__main__":
 
             print("Sentiment analysis...")
             sentiment_train = sentiment_analysis(train_set).values
-            sentiment_val = sentiment_analysis(val_set).values
 
             print("Loading skip-thoughts_model for embedding...")
             skipthoughts_model = skipthoughts.load_model()
@@ -235,33 +239,16 @@ if __name__ == "__main__":
             # train_generator = ffnn.batch_iter(train_data, pos_train_end, neg_end, sentiment_train, encoder, 128)
             # validation_generator = ffnn.batch_iter_val(val_data, sentiment_val, encoder, ver_val_set, 128)
             train_generator = ffnn.batch_iter(train_data, pos_train_end, neg_end, sentiment_train, encoder, 64)
-            validation_generator = ffnn.batch_iter_val(val_data, sentiment_val, encoder, ver_val_set, 64)
+            # validation_generator = ffnn.batch_iter_val(val_data, sentiment_val, encoder, ver_val_set, 64)
+            validation_generator = ffnn.batch_iter_val(val_set, encoder, batch_size=64)
 
-            train_size, val_size = len(train_data), len(val_data)
+            train_size, val_size = len(train_data), 1871
 
             print("Initializing feed-forward neural network...")
             model = ffnn.FFNN(train_generator=train_generator, validation_generator=validation_generator)
             model.train(train_size, val_size, out_trained_models)
 
         elif args.model == "ffnn_val":
-
-            print("Loading dataset...")
-
-            # validation set split for training and validation
-            # train_indexes = np.random.choice(len(val_data), int(len(val_data)*0.85), replace=False)
-            # X_train = np.take(val_data, train_indexes, axis=0)
-            # X_val = np.delete(val_data, train_indexes, axis=0)
-            # Y_train = np.take(ver_val_set, train_indexes, axis=0)
-            # Y_val = np.delete(ver_val_set, train_indexes, axis=0)
-
-
-            print("Sentiment analysis...")
-            # sentiment_val = sentiment_analysis(val_set).values
-
-
-            # sent_train = np.take(sentiment_val, train_indexes, axis=0)
-            # sent_val = np.delete(sentiment_val, train_indexes, axis=0)
-
 
             print("Loading skip-thoughts_model for embedding...")
             skipthoughts_model = skipthoughts.load_model()
@@ -275,15 +262,17 @@ if __name__ == "__main__":
 
             #train_size, val_size = len(X_train), len(X_val)
 
+
+
             print("Initializing feed-forward neural network...")
             model = ffnn.FFNN(train_generator=train_generator, validation_generator=validation_generator)
             model.train(1871, 1871, out_trained_models)
 
     if args.predict:
 
-        """Path to the model to restore for predictions -> be sure you save the model as weights.h5
+        """Path to the model to restore for predictions -> be sure you save the model as model.h5
            In reality, what is saved is not just the weights but the entire model structure"""
-        model_path = os.path.join(get_latest_model(), "weights.h5")
+        model_path = os.path.join(get_latest_model(), "model.h5")
         """Submission file -> It will be in the same folder of the model restored to predict
            e.g trained_model/27_05_2012.../submission_modelname...."""
         submission_path_filename = get_submission_filename()
@@ -315,22 +304,14 @@ if __name__ == "__main__":
 
         elif args.model == "ffnn_val":
 
-            print("Ciaoooooo")
-
             model = load_model(model_path)
-
-            test_data = load_data(test_set)
-            sens = [col for col in test_data if col.startswith('sen')]
-            test_data = val_data[test_data].values
-            sentiment = sentiment_analysis(test_set).values
 
             print("Loading skip-thoughts_model for embedding...")
 
             skipthoughts_model = skipthoughts.load_model()
             encoder = skipthoughts.Encoder(skipthoughts_model)
 
-            X_test = ffnn.transform(test_data, sentiment, encoder)
+            X_test = ffnn.transform(test_set, encoder)
             Y_predict = model.predict(X_test)
-            Y_labels = ffnn.get_labels(Y_predict, submission_path_filename)
+            Y_labels = get_predicted_labels(Y_predict, submission_path_filename)
 
-            print(Y_labels)
