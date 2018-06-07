@@ -12,7 +12,7 @@ out_trained_models = '../trained_models'
 # TODO to be specified the dataset path
 train_set = data_folder + '/train_stories.csv'
 val_set = data_folder + '/cloze_test_val__spring2016 - cloze_test_ALL_val.csv'
-test_set = data_folder + '/test_nlu18.csv'
+test_set = data_folder + '/test_nlu18_utf-8.csv'
 test_set_cloze = data_folder + '/cloze_test_spring2016-test.csv'
 
 
@@ -45,10 +45,10 @@ val_pos_end = data_folder + '/cloze_test_val__spring2016 - cloze_test_ALL_val_po
 
 test_pos_begin = data_folder + '/test_set_pos_begin.npy'
 test_pos_end = data_folder + '/test_set_pos_end.npy'
-test_cloze_pos_begin = data_folder + '/test_nlu18_pos_begin.npy'
-test_cloze_pos_end = data_folder + '/test_nlu18_pos_end.npy'
-test_cloze_pos_begin_tog = data_folder + '/test_nlu18_pos_begin_together.npy'
-test_cloze_pos_end_tog = data_folder + '/test_nlu18_pos_end_together.npy'
+test_cloze_pos_begin = data_folder + '/test_nlu18_utf-8_pos_begin.npy'
+test_cloze_pos_end = data_folder + '/test_nlu18_utf-8_pos_end.npy'
+test_cloze_pos_begin_tog = data_folder + '/test_nlu18_utf-8_pos_begin_together.npy'
+test_cloze_pos_end_tog = data_folder + '/test_nlu18_utf-8_pos_end_together.npy'
 
 word_embedding = data_folder + '/word_embedding'
 

@@ -32,6 +32,9 @@ def load_data(dataset):
 
     #return pd.read_csv(dataset, index_col='id', names=names, skiprows=1, sep = ';')
     #For sentiment uncomment the following return
+    if dataset == test_set:
+        return pd.read_csv(dataset, names=names)
+
     return pd.read_csv(dataset, names=names, skiprows=1)
 
 
@@ -73,12 +76,12 @@ def word_cleaning(pos_tag_data, punct, stop_words, lemm):
     if punct:
         words_to_remove += list(punctuation)
     if stop_words:
-        download('stopwords')
+        download('stopwords', quiet=True)
         words_to_remove += list(stopwords.words('english'))
 
     # download wordnet for lemmatization if needed
     if lemm:
-        download('wordnet')
+        download('wordnet', quiet=True)
 
     for i, sentence in np.ndenumerate(pos_tag_data):
         data_processed[i] = []
@@ -282,6 +285,17 @@ def get_words_from_indexes(indexes, vocabulary, pos_vocabulary):
             words = vocabulary_reverse[indexes]
     return words
 
+def get_index_from_tag(tag):
+    '''
+    Get vocabulary index for some tag
+    :param tag: tage of the form '<tag>'
+    :return: tag index
+    '''
+    with open(full_vocabulary_pkl, 'rb') as f:
+        vocabulary = pickle.load(f)
+    tag_index = vocabulary[tag]
+    return tag_index
+
 
 def get_indexes_from_words(words, vocabulary, pos_vocabulary):
     """
@@ -342,7 +356,7 @@ def pad_endings(beginnings, endings):
 
 # DATA STRUCTURES HANDLING #######################################################
 
-def combine_senteces(sentences):
+def combine_sentences(sentences):
     """
     Combine multiple sentences in one sentence
 
@@ -373,12 +387,14 @@ def combine_story(beginnings, endings):
     """
 
     assert len(beginnings) == len(endings)
+    print("beginnings's shape: {}".format(beginnings.shape))
+    print("endings shape : {}".format(endings.shape))
 
     # get number of stories
     n_stories, *_ = beginnings.shape
 
     # combine beginnings sentences
-    beginnings = combine_senteces(beginnings)
+    beginnings = combine_sentences(beginnings)
 
     # create stories
     stories = np.empty(n_stories, dtype=list)
@@ -452,7 +468,7 @@ def generate_vocab_pos(pos_data):
 def generate_vocab_pos_upenn():
 
     # Getting tags from upenn_tagset
-    nltk.download('tagsets')
+    nltk.download('tagsets', quiet=True)
     tagdict = load('help/tagsets/upenn_tagset.pickle')
 
     #creating dictionary with pos_tags, using negative numbers
@@ -488,7 +504,7 @@ def merge_vocab(vocab1, vocab2):
     return data1
 
 
-if __name__ == '__main__':
+# if __name__ == '__main__':
 
     # generate_vocab_pos(train_pos_begin)
     # merge_vocab(vocabulary_pkl, pos_vocabulary_pkl)
@@ -496,6 +512,3 @@ if __name__ == '__main__':
     # with open(full_vocabulary_pkl, 'rb') as f:
     #     data = pickle.load(f)
     # print(data)
-
-
-    print(generate_vocab_pos_upenn())

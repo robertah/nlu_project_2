@@ -20,8 +20,8 @@ def pos_tag_dataset(dataset, separate=False):
     :return: pos tagged beginning and ending matrices
     """
 
-    nltk.download('punkt')
-    nltk.download('averaged_perceptron_tagger')
+    nltk.download('punkt', quiet=True)
+    nltk.download('averaged_perceptron_tagger', quiet=True)
 
     # load data from csv
     data_original = load_data(dataset)
@@ -210,9 +210,9 @@ def generate_binary_verifiers(dataset = None):
     binary_verifiers = []
 
     ver_val_set = get_answers(dataset)
-    print("Verifier")
-    print(len(ver_val_set))
-    print(dataset)
+    # print("Verifier")
+    # print(len(ver_val_set))
+    # print(dataset)
     for value in ver_val_set:
         if value == 1:
             binary_verifiers.append([1, 0]) #Correct ending is the first one
@@ -278,8 +278,8 @@ if __name__ == '__main__':
     # context, end,  preprocess(train_set, pad=None)
 
 
-    dataset = test_set_cloze
-    pos_begin, pos_end = pos_tag_dataset(dataset, separate=True)
+    dataset = test_set
+    pos_begin, pos_end = pos_tag_dataset(dataset, separate=False)
     print(pos_begin, pos_end)
     #pos_begin = np.load(data_folder + '/train_stories_pos_begin.npy')  # (88161, 2)
     # # pos_end = np.load(data_folder + '/train_stories_pos_end.npy')  # (88161, 2)

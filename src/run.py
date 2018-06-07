@@ -6,7 +6,7 @@ import datetime
 import time
 import negative_endings as data_aug
 
-from models import cnn_ngrams, cnn_lstm_sent, SiameseLSTM
+from models import cnn_ngrams, cnn_lstm_sent, SiameseLSTM, ffnn
 
 from training_utils import *
 
@@ -17,7 +17,8 @@ from models.skip_thoughts import skipthoughts
 # Remove tensorflow CPU instruction information.
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
-from models import ffnn
+from keras.models import load_model
+import csv
 
 def _setup_argparser():
     """Sets up the argument parser and returns the arguments.
@@ -28,7 +29,7 @@ def _setup_argparser():
     parser = argparse.ArgumentParser(description="Control program to launch all actions related to this project.")
 
     parser.add_argument("-m", "--model", action="store",
-                        choices=["cnn_ngrams", "SiameseLSTM", "cnn_lstm", "ffnn", "ffnn_val"],
+                        choices=["cnn_ngrams", "SiameseLSTM", "cnn_lstm", "ffnn", "ffnn_val", "ffnn_val_test"],
                         default="cnn_ngrams",
                         type=str,
                         help="the model to be used, defaults to cnn_ngrams")
@@ -38,7 +39,9 @@ def _setup_argparser():
     parser.add_argument("-p", "--predict",
                         help="predict on a test set given the model",
                         action="store_true")
-
+    parser.add_argument("-e", "--evaluate",
+                        help="evaluate on a test set given the model",
+                        action="store_true")
 
     args, unknown = parser.parse_known_args()
 
@@ -53,7 +56,7 @@ def get_latest_model():
     """
     __file__ = "run.py"
     file_path = os.path.dirname(os.path.abspath(__file__))
-    
+
     if not os.path.exists(os.path.join(file_path, "..","trained_models", args.model)):
         print("No trained model {} exists.".format(args.model))
         sys.exit(1)
@@ -76,6 +79,7 @@ def get_submission_filename():
 
     return submission_path_filename
 
+
 def initialize_negative_endings(contexts, endings):
     neg_end = data_aug.Negative_endings(contexts = contexts, endings = endings)
     neg_end.load_vocabulary()
@@ -83,6 +87,16 @@ def initialize_negative_endings(contexts, endings):
     neg_end.filter_corpus_tags()
 
     return neg_end
+
+
+def get_predicted_labels(probabilities, submission_filename):
+    labels = [1 if prob[0]>prob[1] else 2 for prob in probabilities]
+    labels = np.asarray(labels, dtype=int)
+    with open(submission_path_filename, "w+") as f:
+        np.savetxt(submission_path_filename, labels.astype(int), fmt='%i', delimiter=',')
+
+    print("Predicted endings saved in", submission_filename)
+    return labels
 
 """********************************************** USER ACTIONS from parser ************************************************************"""
 
@@ -104,7 +118,7 @@ if __name__ == "__main__":
         except OSError:
             pass
     else:
-        out_trained_model = os.path.join(os.path.abspath("run.py"), "..","trained_models", args.model)
+        out_trained_models = os.path.join(os.path.abspath("run.py"), "..", "trained_models", args.model)
 
     print("Trained model will be saved in ", out_trained_models)
 
@@ -210,13 +224,6 @@ if __name__ == "__main__":
             train_data = load_data(train_set)
             sens = [col for col in train_data if col.startswith('sen')]
             train_data = train_data[sens].values
-            # get validation data
-            val_data = load_data(val_set)
-            sens = [col for col in val_data if col.startswith('sen')]
-            val_data = val_data[sens].values
-            # get labels for validation data
-            ans = get_answers(val_set)
-            ver_val_set = generate_binary_verifiers(val_set)
 
             print("Initializing negative endings...")
             _, pos_train_end, _, _ = load_train_val_datasets_pos_tagged(together=False, stop_words=False, lemm=True)
@@ -226,7 +233,6 @@ if __name__ == "__main__":
 
             print("Sentiment analysis...")
             sentiment_train = sentiment_analysis(train_set).values
-            sentiment_val = sentiment_analysis(val_set).values
 
             print("Loading skip-thoughts_model for embedding...")
             skipthoughts_model = skipthoughts.load_model()
@@ -236,73 +242,69 @@ if __name__ == "__main__":
             # train_generator = ffnn.batch_iter(train_data, pos_train_end, neg_end, sentiment_train, encoder, 128)
             # validation_generator = ffnn.batch_iter_val(val_data, sentiment_val, encoder, ver_val_set, 128)
             train_generator = ffnn.batch_iter(train_data, pos_train_end, neg_end, sentiment_train, encoder, 64)
-            validation_generator = ffnn.batch_iter_val(val_data, sentiment_val, encoder, ver_val_set, 64)
+            # validation_generator = ffnn.batch_iter_val(val_data, sentiment_val, encoder, ver_val_set, 64)
+            validation_generator = ffnn.batch_iter_val(val_set, encoder, batch_size=64)
 
-            train_size, val_size = len(train_data), len(val_data)
+            train_size, val_size = len(train_data), 1871
 
             print("Initializing feed-forward neural network...")
             model = ffnn.FFNN(train_generator=train_generator, validation_generator=validation_generator)
-            model.train(train_size, val_size)
+            model.train(train_size, val_size, out_trained_models)
 
         elif args.model == "ffnn_val":
-
-            print("Loading dataset...")
-            val_data = load_data(val_set)
-            sens = [col for col in val_data if col.startswith('sen')]
-            val_data = val_data[sens].values
-            # ans = get_answers(val_set)
-            ver_val_set = generate_binary_verifiers(val_set)
-
-            # validation set split for training and validation
-            # train_indexes = np.random.choice(len(val_data), int(len(val_data)*0.85), replace=False)
-            # X_train = np.take(val_data, train_indexes, axis=0)
-            # X_val = np.delete(val_data, train_indexes, axis=0)
-            # Y_train = np.take(ver_val_set, train_indexes, axis=0)
-            # Y_val = np.delete(ver_val_set, train_indexes, axis=0)
-
-            ## TRAIN ON VALIDATION DATA AND VALIDATE ON TEST SET CLOZE
-            test_data = load_data(test_set_cloze)
-            sens = [col for col in test_data if col.startswith('sen')]
-            X_train = val_data
-            X_val = test_data[sens].values
-            Y_train = generate_binary_verifiers(val_set)
-            Y_val = generate_binary_verifiers(test_set_cloze)
-
-
-
-            print("Sentiment analysis...")
-            # sentiment_val = sentiment_analysis(val_set).values
-
-
-            # sent_train = np.take(sentiment_val, train_indexes, axis=0)
-            # sent_val = np.delete(sentiment_val, train_indexes, axis=0)
-
-
-            ## SENTIMENT ANALYSIS
-            sent_train = sentiment_analysis(val_set).values
-            sent_val = sentiment_analysis(test_set_cloze).values
 
             print("Loading skip-thoughts_model for embedding...")
             skipthoughts_model = skipthoughts.load_model()
             encoder = skipthoughts.Encoder(skipthoughts_model)
 
-            print("Defining batch data generators... ")
-            # train_generator = ffnn.batch_iter_val(X_train, sent_train, encoder, Y_train, batch_size=64)
-            # validation_generator = ffnn.batch_iter_val(X_val, sent_val, encoder, Y_val, batch_size=64)
-            train_generator = ffnn.batch_iter_val(X_train, sent_train, encoder, Y_train, batch_size=64)
-            validation_generator = ffnn.batch_iter_val(X_val, sent_val, encoder, Y_val, batch_size=64)
+            X = ffnn.transform(val_set, encoder)
+            Y = generate_binary_verifiers(val_set)
 
-            train_size, val_size = len(X_train), len(X_val)
+            n_stories = len(X)
+            train_indexes = np.random.choice(n_stories, int(n_stories*0.9), replace=False)
+
+            X_train = np.take(X, train_indexes, axis=0)
+            Y_train = np.take(Y, train_indexes, axis=0)
+
+            X_val = np.delete(X, train_indexes, axis=0)
+            Y_val = np.delete(Y, train_indexes, axis=0)
+
+            print("Defining batch data generators... ")
+            train_generator = ffnn.batch_iter_val(X_train, Y_train, batch_size=64)
+            validation_generator = ffnn.batch_iter_val(X_val, Y_val, batch_size=64)
 
             print("Initializing feed-forward neural network...")
             model = ffnn.FFNN(train_generator=train_generator, validation_generator=validation_generator)
-            model.train(train_size, val_size, model_path='ffnn_val/model.h5')
+            model.train(len(X_train), len(X_val), out_trained_models)
+
+
+        elif args.model == "ffnn_val_test":
+
+            print("Loading skip-thoughts_model for embedding...")
+            skipthoughts_model = skipthoughts.load_model()
+            encoder = skipthoughts.Encoder(skipthoughts_model)
+
+            X_train = ffnn.transform(val_set, encoder)
+            Y_train = generate_binary_verifiers(val_set)
+
+            X_val = ffnn.transform(test_set_cloze, encoder)
+            Y_val = generate_binary_verifiers(test_set_cloze)
+
+            print("Defining batch data generators... ")
+            train_generator = ffnn.batch_iter_val(X_train, Y_train, batch_size=64)
+            validation_generator = ffnn.batch_iter_val(X_val, Y_val, batch_size=64)
+
+            print("Initializing feed-forward neural network...")
+            model = ffnn.FFNN(train_generator=train_generator, validation_generator=validation_generator)
+            model.train(len(X_train), len(X_val), out_trained_models)
+
+
 
     if args.predict:
 
-        """Path to the model to restore for predictions -> be sure you save the model as weights.h5
+        """Path to the model to restore for predictions -> be sure you save the model as model.h5
            In reality, what is saved is not just the weights but the entire model structure"""
-        model_path = os.path.join(get_latest_model(), "weights.h5")
+        model_path = os.path.join(get_latest_model(), "model.h5")
         """Submission file -> It will be in the same folder of the model restored to predict
            e.g trained_model/27_05_2012.../submission_modelname...."""
         submission_path_filename = get_submission_filename()
@@ -329,6 +331,44 @@ if __name__ == "__main__":
             print(predictions)
             print(predictions.shape)
 
-        elif args.model == "put_your_model_name_here3":
+        elif args.model == "ffnn":
 
-            print("Put your code here before calling predict")
+            print("bla bla")
+
+        elif args.model == "ffnn_val" or args.model == "ffnn_val_test":
+
+            model = load_model(model_path)
+
+            print("Loading skip-thoughts_model for embedding...")
+
+            skipthoughts_model = skipthoughts.load_model()
+            encoder = skipthoughts.Encoder(skipthoughts_model)
+
+            X_test = ffnn.transform(test_set, encoder)
+            Y_predict = model.predict(X_test)
+            Y_labels = get_predicted_labels(Y_predict, submission_path_filename)
+
+    if args.evaluate:
+
+        """Path to the model to restore for predictions -> be sure you save the model as model.h5
+           In reality, what is saved is not just the weights but the entire model structure""" #TODO
+        model_path = os.path.join(get_latest_model(), "model.h5")
+        """Submission file -> It will be in the same folder of the model restored to predict
+           e.g trained_model/27_05_2012.../submission_modelname...."""
+        submission_path_filename = get_submission_filename()
+
+        if args.model == "ffnn_val" or args.model == "ffnn_val_test":
+
+            model = load_model(model_path)
+
+            print("Loading skip-thoughts_model for embedding...")
+
+            skipthoughts_model = skipthoughts.load_model()
+            encoder = skipthoughts.Encoder(skipthoughts_model)
+
+            X_test = ffnn.transform(test_set_cloze, encoder)
+            Y_test = generate_binary_verifiers(test_set_cloze)
+            Y_test = np.asarray(Y_test)
+            (loss, accuracy) = model.evaluate(X_test, Y_test, batch_size=64, verbose=1)
+            print("[INFO] loss={:.4f}, accuracy: {:.4f}%".format(loss, accuracy * 100))
+

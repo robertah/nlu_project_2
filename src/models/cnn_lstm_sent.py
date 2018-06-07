@@ -104,7 +104,7 @@ class Cnn_lstm_sentiment():
                                                            embeddings_layer_names=None, embeddings_metadata=None)
 
         checkpoint_callback = keras.callbacks.ModelCheckpoint(
-            os.path.join(save_path, 'weights.h5'),
+            os.path.join(save_path, 'model.h5'),
             monitor='val_loss', verbose=0, save_best_only=True,
             save_weights_only=False, mode='auto', period=1)
         
