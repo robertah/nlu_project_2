@@ -103,6 +103,7 @@ def embedding(docs):
 
 def siamese(seq_len, n_epoch, train_dataA, train_dataB, train_y, val_dataA, val_dataB, val_y, embedding_docs):
 
+
     # If no base_network
     # prepare embedding
     embeddings = embedding(embedding_docs)
@@ -221,25 +222,6 @@ def cosine_dist_output_shape(shapes):
     return (shape1[0], 1)
 
 
-''' FUNCTIONS TECHNICALLY FROM NEGATIVE_ENDINGS, DATA_UTILS OR TRAINING_UTILITIES'''
-
-# def padding(max_len, dataset):
-#     for i in range(len(dataset)):
-#         padding = np.zeros(max_len-dataset[i].shape[0])
-#         dataset[i] = np.concatenate((dataset[i], padding))
-#     padded_dataset = np.array(dataset)
-#     return padded_dataset
-
-
-#used in run.py
-def initialize_negative_endings(contexts, endings):
-    neg_end = Negative_endings(contexts = contexts, endings = endings)
-    neg_end.load_vocabulary()
-    #Preserve here in case the vocabulary change, do not save filters and reload them
-    neg_end.filter_corpus_tags()
-
-    return neg_end
-
 def eliminate_tags_corpus(corpus_pos_tagged):
     '''
     Removes pos tagging from corpus
@@ -257,19 +239,13 @@ def eliminate_tags_corpus(corpus_pos_tagged):
 
     return corpus_no_tag
 
-#new
-def get_index_from_tag(tag):
-    '''
-    Get vocabulary index for some tag
-    :param tag: tage of the form '<tag>'
-    :return: tag index
-    '''
-    with open(full_vocabulary_pkl, 'rb') as f:
-        vocabulary = pickle.load(f)
-    tag_index = vocabulary[tag]
-    return tag_index
+def initialize_negative_endings(contexts, endings):
+    neg_end = Negative_endings(contexts = contexts, endings = endings)
+    neg_end.load_vocabulary()
+    #Preserve here in case the vocabulary change, do not save filters and reload them
+    neg_end.filter_corpus_tags()
 
-
+    return neg_end
 
 
 if __name__ == '__main__':
@@ -300,9 +276,6 @@ if __name__ == '__main__':
     pos_val_end_tog = pos_val_end_tog
 
     neg_end = initialize_negative_endings(contexts=pos_train_begin_tog, endings=pos_train_end_tog)
-    # print("neg_end: {}".format(neg_end))
-    # print("neg_end: {}".format(type(neg_end)))
-
 
     ver_val_set = generate_binary_verifiers(val_set)
 
@@ -314,42 +287,13 @@ if __name__ == '__main__':
 
     val_ending_notag = np.array(eliminate_tags_in_val_endings((pos_val_end_tog)))
 
-    # val_context=[]
-    # for context in val_context_notag:
-    #     val_context.append(np.asarray(context))
-    # val_context = np.array(val_context)
-
-
-    # print('that: {}'.format(np.array(eliminate_tags_corpus(pos_val_end_tog))))
-
-    # val_ending_1 = np.array(eliminate_tags_corpus(pos_val_end_tog)[:,])
-    # val_ending_2 = np.array(eliminate_tags_corpus(pos_val_end_tog)[:,1])
-    #
-    #
-    # print('val_ending_no tag: {}'.format(val_ending_1.shape))
-    # print('val_ending_no tag: {}'.format(val_ending_2.shape))
-
-
-    # aug_data, ver_aug_data = batches_backwards_neg_endings(neg_end_obj=neg_end,
-    #                                                        endings=pos_train_end,
-    #                                                        batch_size=n_endings,
-    #                                                        contexts = pos_train_begin)
-    # print('aug data: {}'.format(type(aug_data)))
-
-    # ------
-
-
-    print("index pad: {}".format(get_index_from_tag(pad)))
-
-
-
     n_endings=3
     aug_data, ver_aug_data = batches_pos_neg_endings(neg_end_obj=neg_end,
                                                      endings=pos_train_end,
                                                      batch_size=n_endings)
 
-    train_structured_context, train_structured_ending, train_structured_verifier = pad_restructure_trainset()
-    val_structured_context, val_structured_ending, val_structured_verifier = pad_restructure_valset()
+    train_structured_context, train_structured_ending, train_structured_verifier = pad_restructure_trainset(aug_data, ver_aug_data, train_context_notag)
+    val_structured_context, val_structured_ending, val_structured_verifier = pad_restructure_valset(val_context_notag, val_ending_notag, ver_val_set)
 
     #
     n_epoch = 1
