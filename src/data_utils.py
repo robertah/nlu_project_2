@@ -46,7 +46,7 @@ def get_answers(dataset):
     :return: answers array
     """
 
-    assert dataset == val_set or dataset == test_set
+    assert dataset == val_set or dataset == test_set or dataset == train_set_sampled
 
     df = load_data(dataset)
 

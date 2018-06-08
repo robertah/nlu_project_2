@@ -241,51 +241,9 @@ if __name__ == "__main__":
 
         elif args.model == "ffnn":
 
-            # print("Loading dataset...")
-            # # get train data
-            # train_data = load_data(train_set)
-            # sens = [col for col in train_data if col.startswith('sen')]
-            # train_data = train_data[sens].values
-            #
-            # print("Initializing negative endings...")
-            # _, pos_train_end, _, _ = load_train_val_datasets_pos_tagged(together=False, stop_words=False, lemm=True)
-            # pos_train_begin_tog, pos_train_end_tog, _, _ = load_train_val_datasets_pos_tagged(stop_words=False, lemm=True)
-            #
-            # neg_end = initialize_negative_endings(contexts=pos_train_begin_tog, endings=pos_train_end_tog)
-            #
-            # print("Sentiment analysis...")
-            # sentiment_train = sentiment_analysis(train_set).values
-            #
-            # print("Loading skip-thoughts_model for embedding...")
-            # skipthoughts_model = skipthoughts.load_model()
-            # encoder = skipthoughts.Encoder(skipthoughts_model)
-            #
-            # print("Defining batch data generators... ")
-            # # train_generator = ffnn.batch_iter(train_data, pos_train_end, neg_end, sentiment_train, encoder, 128)
-            # # validation_generator = ffnn.batch_iter_val(val_data, sentiment_val, encoder, ver_val_set, 128)
-            # train_generator = ffnn.batch_iter(train_data, pos_train_end, neg_end, sentiment_train, encoder, 64)
-            # # validation_generator = ffnn.batch_iter_val(val_data, sentiment_val, encoder, ver_val_set, 64)
-            # validation_generator = ffnn.batch_iter_val(val_set, encoder, batch_size=64)
-            #
-            # train_size, val_size = len(train_data), 1871
-            #
-            # print("Initializing feed-forward neural network...")
-            # model = ffnn.FFNN(train_generator=train_generator, validation_generator=validation_generator)
-            # model.train(train_size, val_size, out_trained_models)
-
             print("Loading skip-thoughts_model for embedding...")
             skipthoughts_model = skipthoughts.load_model()
             encoder = skipthoughts.Encoder(skipthoughts_model)
-
-            # sentences = load_data(train_set)
-            # sens = [col for col in sentences if col.startswith('sen')]
-            # sentences = sentences[sens].values
-            #
-            # X_train, Y_train = data_aug.random_negative_endings(sentences)
-            #
-            #
-            # X_val = ffnn.transform(val_set, encoder)
-            # Y_val = generate_binary_verifiers(val_set)
 
             print("Generating features array for train data (grab a coffee, it might take a while)...")
             X_train = ffnn.transform(train_set_sampled, encoder)
@@ -410,7 +368,7 @@ if __name__ == "__main__":
            e.g trained_model/27_05_2012.../submission_modelname...."""
         submission_path_filename = get_submission_filename()
 
-        if args.model == "ffnn_val" or args.model == "ffnn_val_test":
+        if args.model == "ffnn" or args.model == "ffnn_val" or args.model == "ffnn_val_test":
 
             model = load_model(model_path)
 
