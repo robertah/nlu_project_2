@@ -160,8 +160,9 @@ if __name__ == "__main__":
             model.train(save_path = out_trained_models)
 
         elif args.model == "cnn_lstm":
+            
+            print("CNN LSTM training invoked")
 
-            print("Please put your procedure in here before running & remember to add the name of the model into the options of the parser!")
             contexts_val = np.load(val_pos_begin)
             endings_val = np.load(val_pos_end)
 
@@ -177,7 +178,6 @@ if __name__ == "__main__":
 
             binary_verifiers_val = generate_binary_verifiers(dataset = val_set)
             binary_verifiers_test = [[1,0]]*len(contexts_test)
-
 
             gen_val = batch_iter_val_cnn_sentiment(contexts = contexts_val, endings = endings_val, binary_verifiers = binary_verifiers_val)
             gen_test = batch_iter_val_cnn_sentiment(contexts = contexts_test, endings = endings_test, binary_verifiers = binary_verifiers_test)
@@ -384,15 +384,10 @@ if __name__ == "__main__":
             X_test = ffnn.transform(test_set_cloze, encoder)
             Y_test = generate_binary_verifiers(test_set_cloze)
             Y_test = np.asarray(Y_test)
-<<<<<<< HEAD
             (loss, accuracy) = model.evaluate(X_test, Y_test, batch_size=64, verbose=1)
             print("[INFO] loss={:.4f}, accuracy: {:.4f}%".format(loss, accuracy * 100))
         
         elif args.model == "cnn_lstm":
-=======
-            _, accuracy = model.evaluate(X_test, Y_test, batch_size=64, verbose=1)
-            print("[INFO] accuracy: {:.4f}%".format(accuracy * 100))
->>>>>>> a44b558bb9d9ebcf1f6f0b1daa18eedbf19b9659
 
             model = load_model(model_path)
 
