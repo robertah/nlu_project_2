@@ -41,10 +41,7 @@ class CNN_ngrams():
         self.model = keras.models.Sequential()
 
         """Embedding layer"""        
-        #input_dim: int > 0. Size of the vocabulary, i.e. maximum integer index + 1.
-        #output_dim: int >= 0. Dimension of the dense embedding.
-        #TODO: undecided wether is voc_words + voc_tags size and if input dim = (vocabulary_size, 2)
-        #[batch size][sequence length][word2vec dimensions (ie 300)]
+
         self.model.add(Embedding(input_dim = vocabulary_size, output_dim = self.embedding_dimensions_words, input_length = story_len))
 
         """Blocks of layers
@@ -64,41 +61,11 @@ class CNN_ngrams():
                                                   strides=2,
                                                   kernel_size=3,
                                                   padding="same"))
-        #self.model.add(keras.layers.MaxPooling2D(pool_size=(2,10),
-        #                                         strides=(2,10),
-        #                                         padding="same"))
+
         self.model.add(keras.layers.LeakyReLU(alpha=0.01))
         #self.model.add(keras.layers.Dropout(rate=0.25))
-        
-        """Third block"""
-        """self.model.add(keras.layers.Convolution1D(filters=100,
-                                                  strides=stride_size,
-                                                  kernel_size=n_gram_size,
-                                                  padding="same"))
-        self.model.add(keras.layers.MaxPooling1D(pool_size=n_gram_size,
-                                                 strides=pool_stride_size,
-                                                 padding="same"))
-        self.model.add(keras.layers.LeakyReLU(alpha=0.1))
 
-        #self.model.add(keras.layers.Dropout(rate=0.25))
-        """
-        """Fourth block"""
-        """self.model.add(keras.layers.Convolution1D(filters=100,
-                                                  strides=stride_size,
-                                                  kernel_size=n_gram_size,
-                                                  padding="same"))
-        self.model.add(keras.layers.MaxPooling1D(pool_size=n_gram_size,
-                                                 strides=pool_last_stride_size,
-                                                 padding="same"))
-        self.model.add(keras.layers.LeakyReLU(alpha=0.1))
-        #self.model.add(keras.layers.Dropout(rate=0.25))
-        """
-        """Fifth block -> dense layers + out layer"""
         self.model.add(keras.layers.Flatten())
-        #self.model.add(keras.layers.Dense(units=150,
-        #                                  kernel_regularizer=keras.regularizers.l2(1e-6)))
-        #self.model.add(keras.layers.LeakyReLU(alpha=0.1))
-        #self.model.add(keras.layers.Dropout(rate=0.5))
 
         self.model.add(keras.layers.Dense(units=2,
                                           kernel_regularizer=keras.regularizers.l2(1e-6),

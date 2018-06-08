@@ -302,9 +302,6 @@ def pad_restructure_trainset(aug_data, ver_aug_data, train_context_notag):
 
             train_context_notag[count] = np.asarray(train_context_notag[count])
             train_structured_context.append(train_context_notag[count])
-
-            """print("BEFORE \n\n\nLEN train_structured_context ",len(train_structured_context))
-            print("LEN train_structured_context[0] ", len(train_structured_context[0]))"""
             
             story_ending_list = story_ending[i].tolist()
             while len(story_ending_list) < story_len:
