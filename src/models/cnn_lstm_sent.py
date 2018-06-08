@@ -49,20 +49,13 @@ class Cnn_lstm_sentiment():
                                                   strides=kernel_size,
                                                   kernel_size=3,
                                                   padding="same"))
-        #self.model.add(keras.layers.Dropout(rate=0.25))
-
-        """self.model.add(keras.layers.MaxPooling1D(pool_size=n_gram_size,
-                                                 strides=pool_stride_size,
-                                                 padding="same"))"""
-        #self.model.add(keras.layers.LeakyReLU(alpha=0.1))
 
 
         self.model.add(LSTM(4, activation='tanh', recurrent_activation='hard_sigmoid', use_bias=True, kernel_initializer='glorot_uniform', recurrent_initializer='orthogonal', 
                            bias_initializer='zeros', unit_forget_bias=True, kernel_regularizer=None, recurrent_regularizer=None, bias_regularizer=None, activity_regularizer=None, 
                            kernel_constraint=None, recurrent_constraint=None, bias_constraint=None, dropout=0.0, recurrent_dropout=0.0, implementation=1, return_sequences=False, 
                            return_state=False, go_backwards=False, stateful=False, unroll=False))
-        #self.model.add(keras.layers.Dropout(rate=0.25))
-        #self.model.add(keras.layers.LeakyReLU(alpha=0.1))
+
 
         self.model.add(keras.layers.Dense(units=2,
                                           kernel_regularizer=keras.regularizers.l2(1e-6),

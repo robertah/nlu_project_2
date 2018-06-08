@@ -148,9 +148,9 @@ if __name__ == "__main__":
             
             ver_val_set = generate_binary_verifiers(val_set)
 
-            train_generator = train_utils.batch_iter_backward_train_cnn(contexts = pos_train_begin_tog, endings = pos_train_end_tog, neg_end_obj = neg_end,
+            train_generator = batch_iter_backward_train_cnn(contexts = pos_train_begin_tog, endings = pos_train_end_tog, neg_end_obj = neg_end,
                                                                batch_size = 2, num_epochs = 500, shuffle=True)
-            validation_generator = train_utils.batch_iter_val_cnn(contexts = pos_val_begin_tog, endings = pos_val_end_tog, binary_verifiers = ver_val_set, 
+            validation_generator = batch_iter_val_cnn(contexts = pos_val_begin_tog, endings = pos_val_end_tog, binary_verifiers = ver_val_set, 
                                                                   neg_end_obj = neg_end, batch_size = 2, num_epochs = 500, shuffle=True)
             #test_generator = train_utils.batch_iter_val_cnn(contexts = pos_test_begin_tog, endings = pos_test_end_tog, binary_verifiers = ver_test_set,
             #                                                      neg_end_obj = neg_end, batch_size = 2, num_epochs = 500, shuffle=True)
