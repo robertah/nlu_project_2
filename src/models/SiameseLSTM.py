@@ -1,129 +1,144 @@
 import keras
 from keras.preprocessing import sequence
-from keras.models import Model,Sequential
-from keras.layers import LSTM, Embedding, Input, Merge
+from keras.models import Model, Sequential
+from keras.layers import LSTM, Embedding, Input, Merge, Dense
 from keras.optimizers import Adadelta,SGD
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 from keras.callbacks import TensorBoard
 import keras.backend as K
+import numpy as np
+import sys
+sys.path.append("..")
+from config import *
+from data_utils import *
+from preprocessing import *
+from keras.preprocessing.text import Tokenizer
+from keras.preprocessing.sequence import pad_sequences
+from copy import deepcopy
+from negative_endings import *
+import pickle
+import training_utils as train_utils
 
-"""
-Resources used: 
-https://github.com/rupak-118/Quora-Question-Pairs/blob/master/MaLSTM_train.py
-LeCun's paper on Siamese networks: http://yann.lecun.com/exdb/publis/pdf/hadsell-chopra-lecun-06.pdf
 
-Still to read (could be interesting):
-http://www.mit.edu/~jonasm/info/MuellerThyagarajan_AAAI16.pdf
-https://ac.els-cdn.com/S1877050917320847/1-s2.0-S1877050917320847-main.pdf?_tid=2a77f1f1-60fe-4992-8a23-041c11da5a30&acdnat=1527584460_92f00d6539077486b1bc415347a7be48
-
-For me (Keras implementation of LSTM):
-http://adventuresinmachinelearning.com/keras-lstm-tutorial/
-"""
-
-"""
-IDEA: Use siamese LSTM network with Manhattan distance as similarity measure
-Input 1 = sen1-sen4 concatenated 
-Input 2 = sen5 or sen 6
-Each word in input is converted to a word index, used with word-2-vec -> 300-dimensional embedding layer
-Embedding layer -> LSTM layer -> Manhattan similarity measure
-Objective: Run Siamese LSTM for both endings and choose ending sentence with highest Manhattan similarity measure 
-"""
-
+'''
+https://stackoverflow.com/questions/46466013/siamese-network-with-lstm-for-sentence-similarity-in-keras-gives-periodically-th
+'''
 
 class SiameseLSTM():
+    '''
+    Model for a Siamese LSTM - > will need two inputs for LSTM's of equal weights
+    '''
 
-    def __init__(self, train_generator, validation_generator = [], path=None):
-        '''
+    def __init__(self, seq_len, n_epoch, train_dataA, train_dataB, train_y, val_dataA, val_dataB, val_y,  embedding_docs):
 
-        :param train_generator: Input array of the form([context, ending], [verifier]) for training set
-        :param validation_generator: Input array of the form([context, ending], [verifier]) for validation set
-        :param path: Path to the model to restore for predictions
-        '''
-        # Model variables
-        self.train_generator = train_generator
-        self.validation_generator = validation_generator
-        self.n_hidden = n_hidden
-        self.gradient_clipping_norm = gradient_clipping_norm
-        self.batch_size = batch_size
-        self.n_epoch = n_epoch
-        self.story_len = 45
+
+        self.seq_len = seq_len
+        self.m_epoch = n_epoch
+        self.embedding_docs = embedding_docs
+
+        self.train_dataA = train_dataA
+        self.train_dataB = train_dataB
+        self.train_y = train_y
+        self.val_dataA = val_dataA
+        self.val_dataB = val_dataB
+        self.val_y = val_y
+
+        # From config file
         self.embedding_dim = embedding_dim
 
-        n_gram_size = 5
-        vocabulary_size_tags = 45
-        self.vocabulary_size = vocabulary_size
+        # If no base_network
+        # prepare embedding
+        self.embeddings = train_utils.embedding(embedding_docs)
+        print(self.embeddings.shape)
 
-        """Loading trained model for predicting"""
-        if path:
-            print("Loading existing model from {}".format(path))
-            self.load(path)
-            print("Finished loading model")
-            return
+        # define model
+        self.model = Sequential()
+        print(self.model.summary())
+        print("Embedding input shape: {}".format(self.seq_len))
+        self.model.add(Embedding(input_dim=len(self.embeddings), output_dim=self.embedding_dim,
+                            weights=[self.embeddings], input_shape=(self.seq_len,), trainable=False))
+        # model.add(Embedding(input_dim = vocabulary_size, output_dim = embedding_dim, input_length = seq_len))
+        print("LSTM batch input shape: {}".format([self.seq_len, self.embedding_dim]))
+        self.model.add(LSTM(128, batch_input_shape=(None, seq_len, self.embedding_dim), return_sequences=False))
+        # model.add(Dense(50, activation='relu'))
+        # model.add(Dense(10, activation='relu'))
+        # model.add(Dense(1, activation='relu'))
+        print(self.model.summary())
 
+        self.input_a = Input(shape=(self.seq_len, ), dtype='int32')
+        self.input_b = Input(shape=(self.seq_len, ), dtype='int32')
 
-        # TODO Make sure inputs are: lemmatized, no stop words, padded and embedded
-
-        # TODO Make sure that  input is of the form ([context, ending], [verifier])
-        print("Train_generator[1]: {}".format(train_generator[1]))
-        print("Train_generator[2]: {}".format(train_generator[2]))
-        self.X = self.train_generator[1]
-        self.Y = self.train_generator[2]
-
-        # Check that shapes and sizes match
-        assert self.X.shape == self.Y.shape
-        assert len(self.X) == len(self.Y)
-
-        # Visible layer of input
-        self.X_input = Input(shape=(story_len,), dtype='int32', name='X_Context')
-        self.Y_input = Input(shape=(story_len,), dtype='int32', name = 'Y_Ending')
-
-        # Add embedding layer
-        embedding_layer = Embedding(len(embeddings),self.embedding_dim, weights=[embeddings],
-                                    input_length=story_len, trainable=False, name='embedding_layers')
-
-        # TODO Get embedded version of inputs
-        self.X_encoded = embedding_layer(self.X)
-        self.Y_encoded = embedding_layer(self.Y)
-
-        # Since we have a siamese network, both sides share the same LSTM
-        self.shared_lstm = LSTM(n_hidden, activation='relu', name='LSTM_1_2')
-
-        # Possible parameters for LSTM
-        # keras.layers.LSTM(units, activation='tanh', recurrent_activation='hard_sigmoid',
-        #                   use_bias=True, kernel_initializer='glorot_uniform',
-        #                   recurrent_initializer='orthogonal', bias_initializer='zeros',
-        #                   unit_forget_bias=True, kernel_regularizer=None,
-        #                   recurrent_regularizer=None, bias_regularizer=None,
-        #                   activity_regularizer=None, kernel_constraint=None, recurrent_constraint=None,
-        #                   bias_constraint=None, dropout=0.0, recurrent_dropout=0.0, implementation=1,
-        #                   return_sequences=False, return_state=False, go_backwards=False, stateful=False, unroll=False)
+        self.processed_a = self.model(self.input_a)
+        self.processed_b = self.model(self.input_b)
 
 
-        self.X_output = shared_lstm(self.X_encoded)
-        self.Y_output = shared_lstm(self.Y_encoded)
+        # If using base_network
+        # base_network = create_base_network(feature_dim, seq_len)
 
-        # Calculates the distance as defined by the MaLSTM model
-        manhattan_distance = Merge(mode=lambda x: exponent_neg_manhattan_distance(x[0], x[1]),
-                                output_shape=lambda x: (x[0][0], 1))([self.X_output, self.Y_output])
+        # model = Sequential()
+        # model.add(Embedding(inpu_dim=vocabulary_size, output_dim=embedding_dim, weights=[embedding_matrix],
+        #                     input_length=story_len, trainable=False))
+        # model.add(Embedding(input_dim = vocabulary_size, output_dim = embedding_dim, input_length = story_len))
+        # model.add(LSTM(100, batch_input_shape=(None, seq_len, feature_dim), return_sequences=True))
+        # print(model.summary())
 
-        # Making the model
-        model = Model(inputs=[self.X_input, self.Y_input], outputs=[manhattan_distance])
+        # input_a = Input(shape=(seq_len, ), dtype='int32')
+        # input_b = Input(shape=(seq_len, ), dtype='int32')
+        # processed_a = base_network(input_a)
+        # processed_b = base_network(input_b)
 
-        # TODO Check which optimizer works best
-        # Adadelta optimizer, with gradient clipping by norm
-        # optimizer = Adadelta(clipnorm=gradient_clipping_norm)
-        optimizer = tf.keras.optimizers.Adam()
+        self.distance = keras.layers.Lambda(self.cosine_distance, output_shape=self.cosine_dist_output_shape)([self.processed_a, self.processed_b])
+        self.model = Model([self.input_a, self.input_b], self.distance)
+        self.adam_optimizer = keras.optimizers.Adam(lr=0.0001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
 
-        model.compile(loss='mean_squared_error', optimizer=optimizer, metrics=['accuracy'])
-        model.summary()
-        shared_model.summary()
-        print(model_summary)
+        self.model.compile(loss='mean_squared_error', optimizer=self.adam_optimizer, metrics=['accuracy'])
+        self.model.summary()
+        print(self.model.summary())
+
+        # Fitting if not generator
+        # model.fit(x=[train_data[:,0], train_data[:,1]], y=[train_data[:,2]],
+        #           batch_size=2,
+        #           epochs=n_epoch,
+        #           validation_data=([val_data[:,0], val_data[:,1]], [val_data[:,2]]))
 
 
-    # Taken From CNN_ngrams
-    def train(self):
+        # Fitting if generator
+        # out_trained_models = '../trained_models'
+        #
+        # lr_callback = keras.callbacks.ReduceLROnPlateau(monitor="acc",
+        #                                                 factor=0.5,
+        #                                                 patience=0.5,
+        #                                                 verbose=0,
+        #                                                 cooldown=0,
+        #                                                 min_lr=0)
+        # stop_callback = keras.callbacks.EarlyStopping(monitor="acc",
+        #                                               min_delta=0.0001,
+        #                                               patience=11,
+        #                                               verbose=0,
+        #                                               mode="auto")
+        #
+        # tensorboard_callback = keras.callbacks.TensorBoard(log_dir=out_trained_models, histogram_freq=0, batch_size=1,
+        #                                                    write_graph=True,
+        #                                                    write_grads=False, embeddings_freq=0,
+        #                                                    embeddings_layer_names=None, embeddings_metadata=None)
+        #
+        # checkpoint_callback = keras.callbacks.ModelCheckpoint(
+        #     os.path.join(out_trained_models, 'cnn_ngrams/model.h5'),
+        #     monitor='val_loss', verbose=0, save_best_only=True,
+        #     save_weights_only=False, mode='auto', period=1)
+        #
+        # model.fit_generator(train_generator,
+        #                     steps_per_epoch=1871,
+        #                     verbose=2,
+        #                     epochs=n_epoch,
+        #                     callbacks=[lr_callback, stop_callback, tensorboard_callback, checkpoint_callback],
+        #                     validation_data=validation_generator,
+        #                     validation_steps=1871)
+        return None
+
+
+    def train(self, save_path):
         """Train the model.
-
         Args:
             epochs (int): default: 100 - epochs to train.
             steps (int): default: len(dataset) - batches per epoch to train.
@@ -149,58 +164,48 @@ class SiameseLSTM():
                                                            embeddings_layer_names=None, embeddings_metadata=None)
 
         checkpoint_callback = keras.callbacks.ModelCheckpoint(
-            os.path.join(out_trained_models, 'siameseLSTM/model.h5'),
+            os.path.join(save_path, 'model.h5'),
             monitor='val_loss', verbose=0, save_best_only=True,
             save_weights_only=False, mode='auto', period=1)
 
-        # TODO train generator + validation generator to be implemented once preprocessing is ready
+        self.model.fit(x=[self.train_dataA, self.train_dataB], y=self.train_y,
+                       epochs=n_epoch,
+                       validation_data=([self.val_dataA, self.val_dataB], self.val_y),
+                       steps_per_epoch=1871,
+                       verbose=2,
+                       shuffle=True,
+                       callbacks=[lr_callback, stop_callback, tensorboard_callback, checkpoint_callback],
+                       validation_steps=140)
 
-        # TODO Need self.train_generator as [X_train, Y_train], Ver_train
-        print("Length train_generator: {}".format(len(self.train_generator)))
-        print("Length val_generator: {}".format(len(self.validation_generator)))
+    def save(self, path):
+        """Save the model of the trained model.
 
-        training_start_time = time()
-        self.model.fit_generator(self.train_generator,
-                                 steps_per_epoch=88161,
-                                 verbose=2,
-                                 epochs=n_epoch,
-                                 callbacks=[lr_callback, stop_callback, tensorboard_callback,
-                                            checkpoint_callback],
-                                 validation_data=self.validation_generator,
-                                 validation_steps=1871)
-                                # TODO add batch size? (batch_size=batch_size)
+        Args:
+            path (path): path for the model file.
+        """
+        self.model.save(path)
+        print("Model saved to {}".format(path))
 
-        training_end_time = time()
-        print("Training time finished.\n%d epochs in %12.2f" % (n_epoch,
-                                                                training_end_time - training_start_time))
-
-        model.save('./data/SiameseLSTM.h5')
-
-
-    def exponent_neg_manhattan_distance(self, X, Y):
+    def exponent_neg_manhattan_distance(self, A, B):
         """
         Helper function used to estimate similarity between the LSTM outputs
         :param X:  output of LSTM with input X
         :param Y:  output of LSTM with input Y
         :return: Manhattan distance between input vectors
         """
-        return K.exp(-K.sum(K.abs(X - Y), axis=1, keepdims=True))
+        return K.exp(-K.sum(K.abs(A - B), axis=1, keepdims=True))
 
 
-    # TODO Verify (copied from cnn_ngrams)
+    def cosine_distance(self, vecs):
+        #I'm not sure about this function too
+        y_true, y_pred = vecs
+        y_true = K.l2_normalize(y_true, axis=-1)
+        y_pred = K.l2_normalize(y_pred, axis=-1)
+        return K.mean(1 - K.sum((y_true * y_pred), axis=-1))
 
-    def training(self):
-        '''
 
-        :return:
-        '''
-
-        for i in range(0, 3):
-            model.fit([X_train, Y_train], sol_train,
-                      batch_size=batch_size, epochs=n_epoch,
-                      validation_data=([X_validation, Y_validation], sol_validation))
-            malstm_trained = model.fit([X_train['left'], X_train['right']], y_train, batch_size=batch_size,
-                                       epochs=n_epoch,
-                                       validation_data=([X_val['left'], X_val['right']], y_val))
-            model.save_weights("model30_relu_epoch_{}.h5".format(i + 1))
+    def cosine_dist_output_shape(self, shapes):
+        shape1, shape2 = shapes
+        print((shape1[0], 1))
+        return (shape1[0], 1)
 

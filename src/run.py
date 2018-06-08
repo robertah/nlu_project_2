@@ -5,15 +5,19 @@ import sys
 import datetime
 import time
 import negative_endings as data_aug
+import numpy as np
+import tensorflow as tf
+import keras
 
-from models import cnn_ngrams, cnn_lstm_sent, SiameseLSTM, ffnn
+from models import cnn_ngrams, cnn_lstm_sent, siameseLSTM, ffnn
 
 from training_utils import *
 
 
 from sentiment import *
 from negative_endings import *
-from models.skip_thoughts import skipthoughts
+from preprocessing import full_sentence_story
+# from models.skip_thoughts import skipthoughts
 # Remove tensorflow CPU instruction information.
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
@@ -29,7 +33,7 @@ def _setup_argparser():
     parser = argparse.ArgumentParser(description="Control program to launch all actions related to this project.")
 
     parser.add_argument("-m", "--model", action="store",
-                        choices=["cnn_ngrams", "SiameseLSTM", "cnn_lstm", "ffnn", "ffnn_val", "ffnn_val_test"],
+                        choices=["cnn_ngrams", "siameseLSTM", "cnn_lstm", "ffnn", "ffnn_val", "ffnn_val_test"],
                         default="cnn_ngrams",
                         type=str,
                         help="the model to be used, defaults to cnn_ngrams")
@@ -186,36 +190,54 @@ if __name__ == "__main__":
             model = cnn_lstm_sent.Cnn_lstm_sentiment(train_generator = gen_val, validation_generator = gen_test)
             model.train(save_path = out_trained_models)
 
-        elif args.model == "SiameseLSTM":
+        elif args.model == "siameseLSTM":
 
-            print("Please put your procedure in here before running & remember to add the name of the model into the options of the parser!")
             print("You chose the Siamese LSTM model; Good for you!")
 
-            # Loading datasets (training and validation)
+            print('Tensorflow version: {}'.format(tf.__version__))
+            print('Keras version: {}'.format(keras.__version__))  # Make sure version of keras is 2.1.4
+
             print("Loading dataset..")
-            pos_train_begin_tog, pos_train_end_tog, pos_val_begin_tog, pos_val_end_tog = load_train_val_datasets_pos_tagged()
-            ver_val_set = generate_binary_verifiers()
+            pos_train_begin, pos_train_end, pos_val_begin, pos_val_end = load_train_val_datasets_pos_tagged(
+                together=False)
+
+            pos_train_begin_tog, pos_train_end_tog, pos_val_begin_tog, pos_val_end_tog = load_train_val_datasets_pos_tagged(
+                together=True)
+
             print("Initializing negative endings..")
             neg_end = initialize_negative_endings(contexts=pos_train_begin_tog, endings=pos_train_end_tog)
 
-            # Construct data generators
-            train_generator = train_utils.batch_iter_train_SiameseLSTM(contexts = pos_train_begin_tog,
-                                                               endings = pos_train_end_tog,
-                                                               neg_end_obj = neg_end,
-                                                               batch_size = 3,
-                                                               num_epochs = 500,
-                                                               shuffle=True)
-            validation_generator = train_utils.batch_iter_val_SiameseLSTM(contexts = pos_val_begin_tog,
-                                                                  endings = pos_val_end_tog,
-                                                                  binary_verifiers = ver_val_set,
-                                                                  neg_end_obj = neg_end,
-                                                                  batch_size = 2,
-                                                                  num_epochs = 500,
-                                                                  shuffle=True)
+            # Removing pos tags from train and validation datasets
+            train_context_notag = np.asarray(eliminate_tags_corpus(pos_train_begin_tog))
+            train_context_notag = train_context_notag.ravel()  # created a list
 
-            #Creating model
-            model = SiameseLSTM.SiameseLSTM(train_generator=train_generator, validation_generator = validation_generator)
-            model.train()
+            val_context_notag = np.array(eliminate_tags_corpus(pos_val_begin_tog))
+            val_context_notag = val_context_notag.ravel()
+            val_ending_notag = np.array(eliminate_tags_in_val_endings((pos_val_end_tog)))
+
+            ver_val_set = generate_binary_verifiers(val_set)
+
+            # Creating augmented endings (wrong endings for each story in the training set)
+            aug_data, ver_aug_data = batches_pos_neg_endings(neg_end_obj=neg_end,
+                                                             endings=pos_train_end,
+                                                             batch_size=n_endings)
+
+            train_structured_context, train_structured_ending, train_structured_verifier = pad_restructure_trainset(
+                aug_data, ver_aug_data, train_context_notag)
+            val_structured_context, val_structured_ending, val_structured_verifier = pad_restructure_valset(
+                val_context_notag, val_ending_notag, ver_val_set)
+
+            model = siameseLSTM.SiameseLSTM(seq_len=story_len,
+                                            n_epoch=n_epoch,
+                                            train_dataA=train_structured_context,
+                                            train_dataB=train_structured_ending,
+                                            train_y=train_structured_verifier,
+                                            val_dataA=val_structured_context,
+                                            val_dataB=val_structured_ending,
+                                            val_y=val_structured_verifier,
+                                            embedding_docs=full_sentence_story(train_set))
+
+            model.train(save_path = out_trained_models)
 
         elif args.model == "ffnn":
 
