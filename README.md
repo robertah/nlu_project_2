@@ -1,4 +1,4 @@
-# Story Cloze Test - NLU project 2
+# Story Cloze Test - NLU Project 2
 
 The goal of this project is to predict the right ending of a 4-sentence story 
 among two alternatives.
@@ -81,7 +81,7 @@ python run.py -m model-name -t
 where `model-name` refers to one of our models, namely `cnn_ngrams`, `siameseLSTM`, `cnn_lstm`, 
 `ffnn` `ffnn_val` `ffnn_val_test`.
 
-The models are saved after every epoch in `trained_models/model-name/date[hour]/model.h5`
+The models are saved after every epoch in `trained_models/model-name/date[hour]/model.h5`.
 
 To **evaluate** our trained models on the cloze test set, run:
 ```
