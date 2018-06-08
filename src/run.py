@@ -17,7 +17,7 @@ from training_utils import *
 from sentiment import *
 from negative_endings import *
 from preprocessing import full_sentence_story
-#from models.skip_thoughts import skipthoughts
+from models.skip_thoughts import skipthoughts
 # Remove tensorflow CPU instruction information.
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
@@ -412,11 +412,9 @@ if __name__ == "__main__":
 
     if args.evaluate:
 
-        """Path to the model to restore for predictions -> be sure you save the model as model.h5
-           In reality, what is saved is not just the weights but the entire model structure""" #TODO
+        """Evaluate the trained model on Story Cloze test set"""
+
         model_path = os.path.join(get_latest_model(), "model.h5")
-        """Submission file -> It will be in the same folder of the model restored to predict
-           e.g trained_model/27_05_2012.../submission_modelname...."""
         submission_path_filename = get_submission_filename()
 
         if args.model == "ffnn" or args.model == "ffnn_val" or args.model == "ffnn_val_test":
