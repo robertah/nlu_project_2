@@ -113,7 +113,7 @@ class CNN_ngrams():
 
 
 
-    def train(self, save_path):
+    def train(self, save_path, steps_train = 88161, steps_val = 1871):
         """Train the model.
 
         Args:
@@ -123,13 +123,13 @@ class CNN_ngrams():
 
         out_trained_models = '../trained_models'
 
-        cnn_grams_callback = keras.callbacks.ReduceLROnPlateau(monitor="acc",
+        cnn_grams_callback = keras.callbacks.ReduceLROnPlateau(monitor="val_acc",
                                                         factor=0.5,
                                                         patience=0.5,
                                                         verbose=0,
                                                         cooldown=0,
                                                         min_lr=0)
-        stop_callback = keras.callbacks.EarlyStopping(monitor="acc",
+        stop_callback = keras.callbacks.EarlyStopping(monitor="val_acc",
                                                       min_delta=0.0001,
                                                       patience=11,
                                                       verbose=0,
@@ -143,20 +143,20 @@ class CNN_ngrams():
 
         checkpoint_callback = keras.callbacks.ModelCheckpoint(
             os.path.join(save_path, 'model.h5'),
-            monitor='val_loss', verbose=0, save_best_only=True,
+            monitor='val_acc', verbose=0, save_best_only=True,
             save_weights_only=False, mode='auto', period=1)
         
         #TODO train generator + validation generator to be implemented once preprocessing is ready
         print(self.model.summary())
         self.model.fit_generator(self.train_generator,
-                                 steps_per_epoch=88161,
+                                 steps_per_epoch= steps_train,
                                  verbose=2,
                                  epochs=500,
                                  shuffle = True,
                                  callbacks=[cnn_grams_callback, stop_callback, tensorboard_callback,
                                             checkpoint_callback],
                                  validation_data=self.validation_generator,
-                                 validation_steps=1871)
+                                 validation_steps= steps_val)
 
     def save(self, path):
         """Save the model of the trained model.

@@ -178,16 +178,23 @@ if __name__ == "__main__":
             binary_verifiers_train = generate_binary_verifiers(dataset = train_set_sampled)
             binary_verifiers_val = generate_binary_verifiers(dataset = val_set)
             
+
+            total_steps_train = 50000
+            total_steps_val = len(contexts_val)
+            print("\nTOTAL POSSIBLE TRAIN STEP ARE: ", len(contexts_train_samp))
+            print("TOTAL STEPS/EPOCH FOR TRAIN CHOSEN TO BE: ",total_steps_train)
+            print("TOTAL STEPS/EPOCH FOR VALIDATION ARE: ",total_steps_val,"\n")
+
             #Limiting the dataset
-            contexts_train_samp = [0:20000]
-            endings_train_samp = [0:20000]
-            binary_verifiers_train = [0:20000]
-            
+            contexts_train_samp = contexts_train_samp[0:total_steps_train]
+            endings_train_samp = endings_train_samp[0:total_steps_train]
+            binary_verifiers_train = binary_verifiers_train[0:total_steps_train]
+
             gen_train = batch_iter_val_cnn_sentiment(contexts = contexts_train_samp, endings = endings_train_samp, binary_verifiers = binary_verifiers_train)
             gen_val = batch_iter_val_cnn_sentiment(contexts = contexts_val, endings = endings_val, binary_verifiers = binary_verifiers_val)
 
             model = cnn_lstm_sent.Cnn_lstm_sentiment(train_generator = gen_train, validation_generator = gen_val)
-            model.train(save_path = out_trained_models)
+            model.train(save_path = out_trained_models, steps_train = total_steps_train, steps_val = total_steps_val)
 
         elif args.model == "cnn_lstm_val":
             
@@ -215,13 +222,17 @@ if __name__ == "__main__":
             X_val_end = np.delete(endings_val, train_indexes, axis=0)
             Y_val = np.delete(binary_verifiers_val, train_indexes, axis=0)
             
+            total_steps_train = n_stories*0.9
+            total_steps_val = n_stories*0.1
 
+            print("TOTAL STEPS/EPOCH FOR TRAIN CHOSEN TO BE: ",total_steps_train)
+            print("TOTAL STEPS/EPOCH FOR VALIDATION ARE: ",total_steps_val)
 
             gen_train = batch_iter_val_cnn_sentiment(contexts = X_train_begin, endings = X_train_end, binary_verifiers = Y_train)
             gen_val = batch_iter_val_cnn_sentiment(contexts = X_val_begin, endings = X_val_end, binary_verifiers = Y_val)
 
             model = cnn_lstm_sent.Cnn_lstm_sentiment(train_generator = gen_train, validation_generator = gen_val)
-            model.train(save_path = out_trained_models)
+            model.train(save_path = out_trained_models, steps_train = total_steps_train, steps_val = total_steps_val)
 
         elif args.model == "SiameseLSTM":
 
