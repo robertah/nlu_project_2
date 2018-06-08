@@ -53,12 +53,12 @@ test_cloze_pos_end_tog = data_folder + '/test_nlu18_utf-8_pos_end_together.npy'
 word_embedding = data_folder + '/word_embedding'
 
 
-vocabulary_size = 25000  # None for not limited vocabulary size
+vocabulary_size = None # None for not limited vocabulary size
 sentence_len = 10  # None for not limited sentence length     max len 12 in train, 11 in val
 # story_len = 80  # in the train set the max story len is 74
-story_len = 70      #### 43
+story_len = 43      #### 43
 
-embedding_dim = 150
+
 num_steps = 10 #used for the lstm embedding layer (# of steps/words in each sample)
 hidden_size = 100
 
@@ -79,4 +79,6 @@ probs_tags_to_sample_from = [0.8, 0.8, 0.8, 0.8, 0.8, 0.8, #verbs
 n_hidden = 50
 gradient_clipping_norm = 1.25
 batch_size = 64
-n_epoch = 25
+n_epoch = 50
+n_endings = 3
+embedding_dim = 100
