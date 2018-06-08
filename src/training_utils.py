@@ -17,7 +17,6 @@ def aggregate_contexts(contexts):
         for sentence in context:
             context_aggregated = context_aggregated + sentence
 
-        #print("CHECK PERFORM context_aggregated is a list ",context_aggregated)
         contexts_aggregated.append(context_aggregated)
 
     return contexts_aggregated
@@ -29,12 +28,6 @@ def full_stories_together(contexts, endings, contexts_aggregated = True, validat
         contexts = aggregate_contexts(contexts)
 
     full_stories_batches = []
-    #print("ENDING")
-    #print(len(endings))
-    #print(len(endings[0]))
-    #print("CONTEXT")
-    #print(len(contexts[0]))
-
 
     idx_batch_endings = 0
 
@@ -43,25 +36,19 @@ def full_stories_together(contexts, endings, contexts_aggregated = True, validat
 
         full_story_batch = []
         for ending in story_endings:
-            #print("\n Ending is\n ",ending)
+
             if list_array:
                 original_context = deepcopy(context[0])
             else:
                 original_context = deepcopy(context)
-            #print("\n Original_context is\n ", original_context)
-            #print(len(ending))
+
             full_story = list(original_context) + list(ending)
-            #print("UNIQUE is ", full_story)
             lenght = len(full_story)
             if lenght > story_len:
-                #print("Found wrong len of story: ", lenght)
                 full_story = full_story[0:story_len]
-                #print("New story len is: ",len(full_story))
             else:
                 full_story = full_story
 
-
-            #print(original_context+ending)
             full_story_batch.append(full_story)
         
         full_stories_batches.append(full_story_batch)
@@ -118,10 +105,9 @@ def eliminate_tags_in_contexts(contexts_pos_tagged):
 
 
     contexts_no_tag = []
-    print("CHECK PERFORM: len contexts")
-    print(len(contexts_pos_tagged))
-    print(len(contexts_pos_tagged[0]))
-    print(len(contexts_pos_tagged[0][0]))
+    print("CHECKS: ")
+    print("LEN CONTEXTS AFTER ID ELIMINATION -> ",len(contexts_pos_tagged))
+    print("LEN CONTEXTS[0] AFTER ID ELIMINATION -> ",len(contexts_pos_tagged[0]))
 
     for context in contexts_pos_tagged:
         context_no_tag = []
@@ -140,7 +126,6 @@ def eliminate_tags_in_val_endings(endings_pos_tagged):
         for ending_pos_tagged in endings_batch_pos_tagged:
 
             batch_endings_no_tag.append([word_tag[0] for word_tag in ending_pos_tagged])
-        #print(batch_endings_no_tag)
         endings_no_tag.append(batch_endings_no_tag)
 
     return endings_no_tag
@@ -181,7 +166,7 @@ def batch_iter_train_cnn(contexts, endings, neg_end_obj, out_tagged_story = Fals
     if not out_tagged_story:
         contexts = eliminate_tags_in_contexts(contexts_pos_tagged= contexts)
     while True:
-    #for i in range(0,num_epochs):
+
         print("Augmenting with negative endings for the next epoch -> stochastic approach..")
         batch_endings, ver_batch_end= batches_pos_neg_endings(neg_end_obj = neg_end_obj, endings = endings,
                                                               batch_size = batch_size)
@@ -271,7 +256,7 @@ def batch_iter_backward_train_cnn(contexts, endings, neg_end_obj, out_tagged_sto
         contexts_no_tag = eliminate_tags_in_contexts(contexts_pos_tagged = contexts)
 
     while True:
-    #for i in range(0,num_epochs):
+
         print("Augmenting with negative endings for the next epoch -> stochastic approach..")
         batch_endings, ver_batch_end = batches_backwards_neg_endings(neg_end_obj = neg_end_obj, endings = endings,
                                                                      batch_size = batch_size, contexts = contexts)
@@ -320,31 +305,54 @@ def batch_iter_backward_train_Siamese(contexts, endings, neg_end_obj, out_tagged
 
 """***************************CNN LSTM sentiment********************"""
 
+def batches_unified(batches):
+    batches_unified = []
+    for batch in batches:
+        for item in batch:
+            batches_unified.append(item)
+    return batches_unified
 
-def batch_iter_val_cnn_sentiment(contexts, endings, binary_verifiers, test = False):
+def augment_batches(batch_size, batches, ver_batches):
+    new_batches = []
+    new_ver_batches = []
+    if batch_size%2 == 0:
+        batches_to_aggregate = batch_size/2
+        total_new_batches = len(batches)/batches_to_aggregate
+        for i_new_batch in range(total_new_batches):
+            start_batch = i_new_batch * batch_size
+            end_batch  = i_new_batch * batch_size + batch_size
+            new_batches.append(batches_unified(batches[start_batch:end_batch]))
+            new_ver_batches.append(ver_batches[start_batch:end_batch])
+        print(len(new_batches[0]))
+        return new_batches
+    return batches, ver_batches
+
+
+def batch_iter_val_cnn_sentiment(contexts, endings, binary_verifiers, test = False, batch_size = 2):
     """
     Generates a batch generator for the validation set.
     """
     contexts = eliminate_tags_in_contexts(contexts_pos_tagged = contexts)
     endings = eliminate_tags_in_val_endings(endings_pos_tagged = endings)
 
-    print("LEN ENDINGS ",len(endings))
-    print("LEN ENDINGS[0] ",len(endings[0]))
-    print("LEN ENDINGS[0][0] ",len(endings[0][0]))
+    print("CHECKS:")
+    print("LEN ENDINGS -> ",len(endings))
+    print("LEN ENDINGS[0] -> ",len(endings[0]))
+    print("LEN CONTEXTS -> ",len(contexts))
+    print("LEN CONTEXTS[0] -> ",len(contexts[0]))
 
-    #print("\n\nCONTEXT & ENDINGS\n\n")
-    #print(binary_verifiers)
-    #print(contexts[0])
-    #print(endings[0])
     context_sentiments = sentences_to_sentiments(contexts = contexts)
     endings_sentiments = endings_to_sentiments(endings = endings)
 
     while True:
 
         batches_full_stories = full_stories_together(contexts = context_sentiments, endings = endings_sentiments)#, list_array = True)
+        if batch_size > 2:
 
+            batches_full_stories.append([[19999]*story_len,[19999]*story_len])
+            binary_verifiers.append([1])
+            batches_full_stories, binary_verifiers = augment_batches(batch_size, batches, ver_batches)
         total_steps = len(batches_full_stories)
-
         for batch_idx in range(0, total_steps):
             #batch_size stories -> 1 positive endings + batch_size-1 negative endings ones
             stories_batch = batches_full_stories[batch_idx]

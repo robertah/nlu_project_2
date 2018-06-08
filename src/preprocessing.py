@@ -246,13 +246,13 @@ def sentences_to_sentiments(contexts):
         #print("FINAL UNIQUE ARRAY ", scores)
         context_n = context_n +1
         if context_n%1000 == 0:
-            print(context_n)
+            print("Contexts to sentiments ",context_n,"/",len(contexts))
         all_scores.append(scores)
     return all_scores
 
 def endings_to_sentiments(endings):
     all_scores = []
-    context_n = 0
+    ending_n = 0
     for batch_endings in endings:
         scores_ending = []
         for sentence in batch_endings:
@@ -260,9 +260,9 @@ def endings_to_sentiments(endings):
             scores_ending.append(np.around(sentence_sentiment(" ".join(word for word in sentence))*1000+1000))
         all_scores.append(scores_ending)
         #print("FINAL TWO UNIQUE ARRAY ", scores_ending)
-        context_n = context_n +1
-        if context_n%1000 == 0:
-            print(context_n)
+        ending_n = ending_n +1
+        if ending_n%1000 == 0:
+            print("Endings to sentiments ",ending_n,"/",len(endings))
     return np.asarray(all_scores)
 
 def train_verifier(train_dataset):

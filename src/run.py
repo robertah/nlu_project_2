@@ -88,6 +88,14 @@ def initialize_negative_endings(contexts, endings):
 
     return neg_end
 
+def get_verifiers_difference(Y_predict):
+    total_labels = len(Y_predict)
+    index = 0
+    diff_verifiers =[]
+    while index < total_labels:
+        diff_verifiers.append(Y_predict[index] - Y_predict[index+1])
+        index = index + 2
+    return diff_verifiers
 
 def get_predicted_labels(probabilities, submission_filename):
     labels = [1 if prob[0]>prob[1] else 2 for prob in probabilities]
@@ -127,7 +135,6 @@ if __name__ == "__main__":
         """Create a field with your model (see the default one to be customized) and put the procedure to follow to train it"""
         if args.model == "cnn_ngrams":
 
-            #TOGETHER THE DATASET
             print("CNN grams training invoked")
             print("Loading dataset..")
             pos_train_begin_tog, pos_train_end_tog, pos_val_begin_tog, pos_val_end_tog = load_train_val_datasets_pos_tagged(stop_words=False, lemm=True)
@@ -135,18 +142,7 @@ if __name__ == "__main__":
             print("Initializing negative endings..")
             neg_end = initialize_negative_endings(contexts = pos_train_begin_tog, endings = pos_train_end_tog)
             
-            #Construct data generators
             ver_val_set = generate_binary_verifiers(val_set)
-
-            print("\nEXAMPLES :\n")
-            print(len(pos_train_begin_tog[0][0]))
-            print(len(pos_train_end_tog[0][0]))
-            print(len(pos_train_begin_tog[1][0]))
-            print(len(pos_train_end_tog[1][0]))
-            print(len(pos_train_begin_tog[2][0]))
-            print(len(pos_train_end_tog[2][0]))
-            print(len(pos_train_begin_tog[3][0]))
-            print(len(pos_train_end_tog[3][0]))
 
             train_generator = train_utils.batch_iter_backward_train_cnn(contexts = pos_train_begin_tog, endings = pos_train_end_tog, neg_end_obj = neg_end,
                                                                batch_size = 2, num_epochs = 500, shuffle=True)
@@ -170,8 +166,7 @@ if __name__ == "__main__":
 
             contexts_test = np.load(test_cloze_pos_begin)
             endings_test = np.load(test_cloze_pos_end)
-            print("TEST SET BEGIN SIZE \n", contexts_test.shape)
-            print("TEST SET END SIZE \n", endings_test.shape)
+
 
             contexts_test = eliminate_id(dataset = contexts_test)
             endings_test = eliminate_id(dataset = endings_test)
@@ -324,12 +319,14 @@ if __name__ == "__main__":
             endings_test = eliminate_id(dataset = endings_test)
 
             test_generator = batch_iter_val_cnn_sentiment(contexts = contexts_test, endings = endings_test, binary_verifiers = [], test = True)
-            print(get_submission_filename())
             model_class = cnn_lstm_sent.Cnn_lstm_sentiment(train_generator = [], path=model_path)
             model = model_class.model
-            predictions = model.predict_generator(test_generator, steps=2343)
-            print(predictions)
-            print(predictions.shape)
+            Y_predict = model.predict_generator(test_generator, steps=2343)
+            verifiers_differences = get_verifiers_difference(Y_predict = Y_predict)
+            Y_labels = get_predicted_labels(verifiers_differences, submission_path_filename)
+
+            print(Y_labels)
+            print(Y_labels.shape)
 
         elif args.model == "ffnn":
 
