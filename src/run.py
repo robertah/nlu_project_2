@@ -241,7 +241,7 @@ if __name__ == "__main__":
 
         elif args.model == "ffnn":
 
-            print("Loading skip-thoughts_model for embedding...")
+            print("Loading skip-thoughts model for embedding...")
             skipthoughts_model = skipthoughts.load_model()
             encoder = skipthoughts.Encoder(skipthoughts_model)
 
@@ -254,8 +254,8 @@ if __name__ == "__main__":
             Y_val = generate_binary_verifiers(val_set)
 
             print("Defining batch data generators... ")
-            train_generator = ffnn.batch_iter_val(X_train, Y_train, batch_size=64)
-            validation_generator = ffnn.batch_iter_val(X_val, Y_val, batch_size=64)
+            train_generator = ffnn.batch_iter(X_train, Y_train, batch_size=64, shuffle=True)
+            validation_generator = ffnn.batch_iter(X_val, Y_val, batch_size=64, shuffle=True)
 
             print("Initializing feed-forward neural network...")
             model = ffnn.FFNN(train_generator=train_generator, validation_generator=validation_generator)
@@ -264,7 +264,7 @@ if __name__ == "__main__":
 
         elif args.model == "ffnn_val":
 
-            print("Loading skip-thoughts_model for embedding...")
+            print("Loading skip-thoughts model for embedding...")
             skipthoughts_model = skipthoughts.load_model()
             encoder = skipthoughts.Encoder(skipthoughts_model)
 
@@ -283,8 +283,8 @@ if __name__ == "__main__":
             Y_val = np.delete(Y, train_indexes, axis=0)
 
             print("Defining batch data generators... ")
-            train_generator = ffnn.batch_iter_val(X_train, Y_train, batch_size=64)
-            validation_generator = ffnn.batch_iter_val(X_val, Y_val, batch_size=64)
+            train_generator = ffnn.batch_iter(X_train, Y_train, batch_size=64, shuffle=True)
+            validation_generator = ffnn.batch_iter(X_val, Y_val, batch_size=64, shuffle=True)
 
             print("Initializing feed-forward neural network...")
             model = ffnn.FFNN(train_generator=train_generator, validation_generator=validation_generator)
@@ -293,7 +293,7 @@ if __name__ == "__main__":
 
         elif args.model == "ffnn_val_test":
 
-            print("Loading skip-thoughts_model for embedding...")
+            print("Loading skip-thoughts model for embedding...")
             skipthoughts_model = skipthoughts.load_model()
             encoder = skipthoughts.Encoder(skipthoughts_model)
 
@@ -306,8 +306,8 @@ if __name__ == "__main__":
             Y_val = generate_binary_verifiers(test_set_cloze)
 
             print("Defining batch data generators... ")
-            train_generator = ffnn.batch_iter_val(X_train, Y_train, batch_size=64)
-            validation_generator = ffnn.batch_iter_val(X_val, Y_val, batch_size=64)
+            train_generator = ffnn.batch_iter(X_train, Y_train, batch_size=64, shuffle=True)
+            validation_generator = ffnn.batch_iter(X_val, Y_val, batch_size=64, shuffle=True)
 
             print("Initializing feed-forward neural network...")
             model = ffnn.FFNN(train_generator=train_generator, validation_generator=validation_generator)
@@ -350,7 +350,7 @@ if __name__ == "__main__":
 
             model = load_model(model_path)
 
-            print("Loading skip-thoughts_model for embedding...")
+            print("Loading skip-thoughts model for embedding...")
 
             skipthoughts_model = skipthoughts.load_model()
             encoder = skipthoughts.Encoder(skipthoughts_model)
@@ -372,7 +372,7 @@ if __name__ == "__main__":
 
             model = load_model(model_path)
 
-            print("Loading skip-thoughts_model for embedding...")
+            print("Loading skip-thoughts model for embedding...")
 
             skipthoughts_model = skipthoughts.load_model()
             encoder = skipthoughts.Encoder(skipthoughts_model)
