@@ -204,7 +204,7 @@ def batch_iter_train_cnn(contexts, endings, neg_end_obj, out_tagged_story = Fals
 
 # --------- For Siamese LSTM --------
 
-def embedding(docs):
+def embedding(docs, embedding_dim):
     '''
     :param docs: array containing sentences
     :return:
