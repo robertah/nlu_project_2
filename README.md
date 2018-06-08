@@ -38,7 +38,7 @@ source activate nlu_project
 ```
 
 ### Preprocess data
-You can generate preprocessed data with pos tags by running:
+You can generate preprocessed data with pos tags (needed for some models) by running:
 
 ```
 python preprocessing.py
@@ -50,8 +50,9 @@ python negative_endings.py
 ```
 and it will create the file `nlu_project_2/data/train_set_sampled.csv`
 
-You can also download the preprocessed data at [link to somewhere TODOOOOOO]()
-and copy the files in `nlu_project_2/data/` to run the models directly.
+You can also download the preprocessed data from this [link](https://polybox.ethz.ch/index.php/s/PQ6bl6fPqKDn9vz) 
+(or alternatively, [here](https://drive.google.com/open?id=1wjolQtvZZHWZSd3MOfufIaPNsYZkxXxY)). 
+Then you need to copy the files in `nlu_project_2/data/` to run the models directly.
 
 
 ### Pre-trained skip-thought embeddings
@@ -70,7 +71,7 @@ wget http://www.cs.toronto.edu/~rkiros/models/bi_skip.npz.pkl
 ```
 and copy the files in `nlu_project_2/src/models/skip_thoughts/data`.
 
-Please note that we modified his code to make it work for our project.
+Please *note* that we modified his code to make it work for our project.
 
 
 ## Running
@@ -79,9 +80,16 @@ To **train** our models, run:
 python run.py -m model-name -t
 ```
 where `model-name` refers to one of our models, namely `cnn_ngrams`, `siameseLSTM`, `cnn_lstm`, 
-`ffnn` `ffnn_val` `ffnn_val_test`.
+`ffnn` `ffnn_val`.
 
-The models are saved after every epoch in `trained_models/model-name/date[hour]/model.h5`.
+The models are saved after every epoch in `nlu_project_2/trained_models/model-name/date[hour]/model.h5`.
+
+You can find the pretrained models and the prediction files for test set
+ in this [folder](https://polybox.ethz.ch/index.php/s/bRnpIz66EB7g1xD).
+ 
+Please *note* that for evaluation and prediction, it will retrieve the last trained model. If you
+would like to test on our pretrained models, we suggest you to do prediction first, and
+then do training / testing again to verify our model.
 
 To **evaluate** our trained models on the cloze test set, run:
 ```
@@ -93,5 +101,5 @@ To **predict** the endings for the given test set, run:
 python run.py -m model-name -p
 ```
 It will generate a csv file with the right ending labels in 
-`trained_models/model-name/date[hour]` for the last trained model.
+`nlu_project_2/trained_models/model-name/date[hour]` for the last trained model.
 
