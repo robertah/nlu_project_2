@@ -141,6 +141,7 @@ def batch_iter(features, labels, batch_size, shuffle=True):
     :param features: features array generated with transform()
     :param labels: labels for the endings
     :param batch_size: batch size for validation
+    :param shuffle: shuffle features rows
     :return: batches
     """
 
