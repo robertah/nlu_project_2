@@ -9,8 +9,8 @@ import numpy as np
 import tensorflow as tf
 import keras
 
-from models import cnn_ngrams, cnn_lstm_sent, siameseLSTM, ffnn
-
+#from models import cnn_ngrams, cnn_lstm_sent, siameseLSTM, ffnn
+from models import cnn_ngrams, cnn_lstm_sent, ffnn
 from training_utils import *
 
 
@@ -287,9 +287,11 @@ if __name__ == "__main__":
             # X_val = ffnn.transform(val_set, encoder)
             # Y_val = generate_binary_verifiers(val_set)
 
+            print("Generating features array for train data (grab a coffee, it might take a while)...")
             X_train = ffnn.transform(train_set_sampled, encoder)
             Y_train = generate_binary_verifiers(train_set_sampled)
 
+            print("Generating features array for validation data...")
             X_val = ffnn.transform(val_set, encoder)
             Y_val = generate_binary_verifiers(val_set)
 
@@ -314,9 +316,11 @@ if __name__ == "__main__":
             n_stories = len(X)
             train_indexes = np.random.choice(n_stories, int(n_stories*0.9), replace=False)
 
+            print("Generating features array for train data...")
             X_train = np.take(X, train_indexes, axis=0)
             Y_train = np.take(Y, train_indexes, axis=0)
 
+            print("Generating features array for validation data...")
             X_val = np.delete(X, train_indexes, axis=0)
             Y_val = np.delete(Y, train_indexes, axis=0)
 
@@ -335,9 +339,11 @@ if __name__ == "__main__":
             skipthoughts_model = skipthoughts.load_model()
             encoder = skipthoughts.Encoder(skipthoughts_model)
 
+            print("Generating features array for train data...")
             X_train = ffnn.transform(val_set, encoder)
             Y_train = generate_binary_verifiers(val_set)
 
+            print("Generating features array for validation data...")
             X_val = ffnn.transform(test_set_cloze, encoder)
             Y_val = generate_binary_verifiers(test_set_cloze)
 
@@ -382,11 +388,7 @@ if __name__ == "__main__":
             print(predictions)
             print(predictions.shape)
 
-        elif args.model == "ffnn":
-
-            print("bla bla")
-
-        elif args.model == "ffnn_val" or args.model == "ffnn_val_test":
+        elif args.model == "ffnn" or args.model == "ffnn_val" or args.model == "ffnn_val_test":
 
             model = load_model(model_path)
 
