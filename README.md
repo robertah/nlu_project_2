@@ -71,7 +71,7 @@ wget http://www.cs.toronto.edu/~rkiros/models/bi_skip.npz.pkl
 ```
 and copy the files in `nlu_project_2/src/models/skip_thoughts/data`.
 
-Please note that we modified his code to make it work for our project.
+Please *note* that we modified his code to make it work for our project.
 
 
 ## Running
@@ -84,10 +84,10 @@ where `model-name` refers to one of our models, namely `cnn_ngrams`, `siameseLST
 
 The models are saved after every epoch in `nlu_project_2/trained_models/model-name/date[hour]/model.h5`.
 
-You can find the pretrained models and the prediction file for test set
+You can find the pretrained models and the prediction files for test set
  in this [folder](https://polybox.ethz.ch/index.php/s/bRnpIz66EB7g1xD).
  
-Please note that for evaluation and prediction, it will retrieve the last trained model. If you
+Please *note* that for evaluation and prediction, it will retrieve the last trained model. If you
 would like to test on our pretrained models, we suggest you to do prediction first, and
 then do training / testing again to verify our model.
 
