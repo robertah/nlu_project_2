@@ -1,28 +1,15 @@
 import keras
-from keras.preprocessing import sequence
 from keras.models import Model, Sequential
 from keras.layers import LSTM, Embedding, Input, Merge, Dense
-from keras.optimizers import Adadelta,SGD
-from keras.callbacks import EarlyStopping, ModelCheckpoint
-from keras.callbacks import TensorBoard
 import keras.backend as K
-import numpy as np
 import sys
 sys.path.append("..")
 from config import *
 from data_utils import *
 from preprocessing import *
-from keras.preprocessing.text import Tokenizer
-from keras.preprocessing.sequence import pad_sequences
-from copy import deepcopy
 from negative_endings import *
-import pickle
 import training_utils as train_utils
 
-
-'''
-https://stackoverflow.com/questions/46466013/siamese-network-with-lstm-for-sentence-similarity-in-keras-gives-periodically-th
-'''
 
 class SiameseLSTM():
     '''
