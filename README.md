@@ -15,7 +15,6 @@ and they are located in `nlu_project_2/data/`.
 ## Our Models
 
 To predict the right endings, we experimented with the following models:
-- CNN ngrams: `cnn_ngrams`
 - CNN LSTM: `cnn_lstm`, `cnn_lstm_val`
 - Siamese LSTM: `siameseLSTM`
 - Feed-forward neural network: `ffnn`, `ffnn_val`
@@ -84,7 +83,7 @@ To **train** our models, run:
 ```
 python run.py -m model-name -t
 ```
-where `model-name` refers to one of our models, namely `cnn_ngrams`, `cnn_lstm`, `cnn_lstm_val`, `siameseLSTM`,
+where `model-name` refers to one of our models, namely `cnn_lstm`, `cnn_lstm_val`, `siameseLSTM`,
 `ffnn`, `ffnn_val`.
 
 The models are saved after every epoch in `nlu_project_2/trained_models/model-name/date[hour]/model.h5`.
