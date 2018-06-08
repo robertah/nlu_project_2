@@ -399,30 +399,6 @@ def pad_restructure_valset(val_context_notag, val_ending_notag, ver_val_set):
 
 """***************************CNN LSTM sentiment********************"""
 
-
-def batches_unified(batches):
-    batches_unified = []
-    for batch in batches:
-        for item in batch:
-            batches_unified.append(item)
-    return batches_unified
-
-def augment_batches(batch_size, batches, ver_batches):
-    new_batches = []
-    new_ver_batches = []
-    if batch_size%2 == 0:
-        batches_to_aggregate = batch_size/2
-        total_new_batches = len(batches)/batches_to_aggregate
-        for i_new_batch in range(total_new_batches):
-            start_batch = i_new_batch * batch_size
-            end_batch  = i_new_batch * batch_size + batch_size
-            new_batches.append(batches_unified(batches[start_batch:end_batch]))
-            new_ver_batches.append(ver_batches[start_batch:end_batch])
-        print(len(new_batches[0]))
-        return new_batches
-    return batches, ver_batches
-
-
 def batch_iter_val_cnn_sentiment(contexts, endings, binary_verifiers, test = False, batch_size = 2):
     """
     Generates a batch generator for the validation set.
@@ -435,6 +411,8 @@ def batch_iter_val_cnn_sentiment(contexts, endings, binary_verifiers, test = Fal
     print("LEN ENDINGS[0] -> ",len(endings[0]))
     print("LEN CONTEXTS -> ",len(contexts))
     print("LEN CONTEXTS[0] -> ",len(contexts[0]))
+    print("LEN BINARY VERIFIERS -> ",len(binary_verifiers))
+    print("LEN BINARY VERIFIER -> ",len(binary_verifiers[0]))
 
     context_sentiments = sentences_to_sentiments(contexts = contexts)
     endings_sentiments = endings_to_sentiments(endings = endings)
@@ -442,18 +420,15 @@ def batch_iter_val_cnn_sentiment(contexts, endings, binary_verifiers, test = Fal
     while True:
 
         batches_full_stories = full_stories_together(contexts = context_sentiments, endings = endings_sentiments)#, list_array = True)
-        if batch_size > 2:
 
-            batches_full_stories.append([[19999]*story_len,[19999]*story_len])
-            binary_verifiers.append([1])
-            batches_full_stories, binary_verifiers = augment_batches(batch_size, batches, ver_batches)
         total_steps = len(batches_full_stories)
         for batch_idx in range(0, total_steps):
             #batch_size stories -> 1 positive endings + batch_size-1 negative endings ones
             stories_batch = batches_full_stories[batch_idx]
             if not test:
+                print(binary_verifiers[batch_idx])
                 binary_batch_verifier = [[int(ver), 1-int(ver)] for ver in binary_verifiers[batch_idx]]
-                # print(np.asarray(stories_batch), np.asarray(binary_batch_verifier))
+                print(np.asarray(stories_batch), np.asarray(binary_batch_verifier))
                 yield (np.asarray(stories_batch), np.asarray(binary_batch_verifier))
             else:
                 yield np.asarray(stories_batch)

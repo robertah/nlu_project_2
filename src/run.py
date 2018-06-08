@@ -451,5 +451,5 @@ if __name__ == "__main__":
 
             gen_eval = batch_iter_val_cnn_sentiment(contexts = contexts_eval, endings = endings_eval, binary_verifiers = binary_verifiers_eval)
 
-            _, accuracy = model.evaluate_generator(gen_eval, steps=1871, max_queue_size=10, workers=1, use_multiprocessing=False)
+            _, accuracy = model.evaluate_generator(gen_eval, steps=1871)
             print("[INFO] accuracy: {:.4f}%".format(accuracy * 100))
