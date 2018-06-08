@@ -92,7 +92,7 @@ class FFNN():
 
 def transform(dataset, encoder):
     """
-    Transform validation and test data for batch generators
+    Transform train, validation and test data for batch generators
 
     :param dataset: validation or test dataset
     :param encoder: encoder for skip-thought embeddings

@@ -4,21 +4,26 @@ The goal of this project is to predict the right ending of a 4-sentence story
 among two alternatives.
 
 ## Data
+The following datasets were provided:
 - training set: containing 88161 five-sentence short stories that include only the correct ending
 - validation set: containing 1871 stories with positive and negative endings
 - test set: containing stories with two endings
 - cloze test set: additional test set with right ending labels
 
+and they are located in `nlu_project_2/data/`.
 
 ## Our Models
 
 To predict the right endings, we experimented with the following models:
-- CNN ngrams
-- CNN LSTM
-- Siamese LSTM
-- Feed-forward neural network
+- CNN ngrams: `cnn_ngrams`
+- CNN LSTM: `cnn_lstm`, `cnn_lstm_val`
+- Siamese LSTM: `siameseLSTM`
+- Feed-forward neural network: `ffnn`, `ffnn_val`
 
-For details, please refer to the report in `nlu_project_2/report`.
+Those with suffix `_val` are the corresponding models which train on validation data 
+(splitted into 90% for training and 10% for validation).
+
+For details related to models and methodology, please refer to the report in `nlu_project_2/report`.
 
 
 ## Getting Started
@@ -48,7 +53,7 @@ To get augmented training data with wrong endings randomly sampled from the cont
 ```
 python negative_endings.py
 ```
-and it will create the file `nlu_project_2/data/train_set_sampled.csv`
+and it will create a file `nlu_project_2/data/train_set_sampled.csv`
 
 You can also download the preprocessed data from this [link](https://polybox.ethz.ch/index.php/s/PQ6bl6fPqKDn9vz) 
 (or alternatively, [here](https://drive.google.com/open?id=1wjolQtvZZHWZSd3MOfufIaPNsYZkxXxY)). 
@@ -79,8 +84,8 @@ To **train** our models, run:
 ```
 python run.py -m model-name -t
 ```
-where `model-name` refers to one of our models, namely `cnn_ngrams`, `siameseLSTM`, `cnn_lstm`, 
-`ffnn` `ffnn_val`.
+where `model-name` refers to one of our models, namely `cnn_ngrams`, `cnn_lstm`, `cnn_lstm_val`, `siameseLSTM`,
+`ffnn`, `ffnn_val`.
 
 The models are saved after every epoch in `nlu_project_2/trained_models/model-name/date[hour]/model.h5`.
 
@@ -100,6 +105,6 @@ To **predict** the endings for the given test set, run:
 ```
 python run.py -m model-name -p
 ```
-It will generate a csv file with the right ending labels in 
+It will generate a csv file with the predicted right ending labels in 
 `nlu_project_2/trained_models/model-name/date[hour]` for the last trained model.
 
