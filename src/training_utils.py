@@ -20,7 +20,6 @@ def aggregate_contexts(contexts):
         for sentence in context:
             context_aggregated = context_aggregated + sentence
 
-        #print("CHECK PERFORM context_aggregated is a list ",context_aggregated)
         contexts_aggregated.append(context_aggregated)
 
     return contexts_aggregated
@@ -32,12 +31,6 @@ def full_stories_together(contexts, endings, contexts_aggregated = True, validat
         contexts = aggregate_contexts(contexts)
 
     full_stories_batches = []
-    #print("ENDING")
-    #print(len(endings))
-    #print(len(endings[0]))
-    #print("CONTEXT")
-    #print(len(contexts[0]))
-
 
     idx_batch_endings = 0
 
@@ -46,25 +39,19 @@ def full_stories_together(contexts, endings, contexts_aggregated = True, validat
 
         full_story_batch = []
         for ending in story_endings:
-            #print("\n Ending is\n ",ending)
+
             if list_array:
                 original_context = deepcopy(context[0])
             else:
                 original_context = deepcopy(context)
-            #print("\n Original_context is\n ", original_context)
-            #print(len(ending))
+
             full_story = list(original_context) + list(ending)
-            #print("UNIQUE is ", full_story)
             lenght = len(full_story)
             if lenght > story_len:
-                #print("Found wrong len of story: ", lenght)
                 full_story = full_story[0:story_len]
-                #print("New story len is: ",len(full_story))
             else:
                 full_story = full_story
 
-
-            #print(original_context+ending)
             full_story_batch.append(full_story)
 
         full_stories_batches.append(full_story_batch)
@@ -121,10 +108,9 @@ def eliminate_tags_in_contexts(contexts_pos_tagged):
 
 
     contexts_no_tag = []
-    print("CHECK PERFORM: len contexts")
-    print(len(contexts_pos_tagged))
-    print(len(contexts_pos_tagged[0]))
-    print(len(contexts_pos_tagged[0][0]))
+    print("CHECKS: ")
+    print("LEN CONTEXTS AFTER ID ELIMINATION -> ",len(contexts_pos_tagged))
+    print("LEN CONTEXTS[0] AFTER ID ELIMINATION -> ",len(contexts_pos_tagged[0]))
 
     for context in contexts_pos_tagged:
         context_no_tag = []
@@ -140,7 +126,6 @@ def eliminate_tags_in_val_endings(endings_pos_tagged):
         for ending_pos_tagged in endings_batch_pos_tagged:
 
             batch_endings_no_tag.append([word_tag[0] for word_tag in ending_pos_tagged])
-        #print(batch_endings_no_tag)
         endings_no_tag.append(batch_endings_no_tag)
 
     return endings_no_tag
@@ -198,7 +183,7 @@ def batch_iter_train_cnn(contexts, endings, neg_end_obj, out_tagged_story = Fals
     if not out_tagged_story:
         contexts = eliminate_tags_in_contexts(contexts_pos_tagged= contexts)
     while True:
-    #for i in range(0,num_epochs):
+
         print("Augmenting with negative endings for the next epoch -> stochastic approach..")
         batch_endings, ver_batch_end= batches_pos_neg_endings(neg_end_obj = neg_end_obj, endings = endings,
                                                               batch_size = batch_size)
@@ -272,6 +257,7 @@ def pad_restructure_trainset(aug_data, ver_aug_data, train_context_notag):
     train_structured_context = []
     train_structured_ending = []
     train_structured_verifier = []
+
     for story_ending in aug_data:
         for i in range(0, n_endings):
 
@@ -285,26 +271,41 @@ def pad_restructure_trainset(aug_data, ver_aug_data, train_context_notag):
 
             # to have verifier as size 1
             train_structured_verifier.append(ver_aug_data[count][i])
+            #print("\n\n\nIMPORTANT \n\n\n""",train_context_notag[count])
+            #print("\n\n\nIMPORTANT LEN\n\n\n""",len(train_context_notag[count]))
 
             while len(train_context_notag[count]) < story_len:
                 train_context_notag[count].append(pad_index)
-            train_context_notag[count] = np.asarray(train_context_notag[count])
-            train_structured_context.append(train_context_notag[count])
+            train_context_notag[count] = train_context_notag[count][0:story_len]
+            #print("\n\n\nIMPORTANT LEN AFTER\n\n\n""",len(train_context_notag[count]))
 
+            train_context_notag[count] = np.asarray(train_context_notag[count])
+            #print("\n\n\nIMPORTANT LEN AFTER np as aray\n\n\n""",len(train_context_notag[count]))
+            train_structured_context.append(train_context_notag[count])
+            #print("\n\n\nIMPORTANT train_structured_contextn\n\n""",train_structured_context[count])
+
+            #print("\n\n\nIMPORTANT LEN AFTER np as aray train_structured_context\n\n\n""",len(train_structured_context[count]))
+
+            """print("BEFORE \n\n\nLEN train_structured_context ",len(train_structured_context))
+            print("LEN train_structured_context[0] ", len(train_structured_context[0]))"""
+            
             story_ending_list = story_ending[i].tolist()
             while len(story_ending_list) < story_len:
                 story_ending_list.append(pad_index)
             story_ending_list = np.asarray(story_ending_list)
             train_structured_ending.append(story_ending_list)
 
-            if story_processed % 1000 == 0:
+            if story_processed % 20000 == 0:
                 print("Processed ", story_processed, "/", n_endings*len(train_context_notag))
             story_processed = story_processed + 1
 
         count = count + 1
-    train_structured_context = np.array(train_structured_context)
-    train_structured_ending = np.array(train_structured_ending)
-    train_structured_verifier = np.array(train_structured_verifier)
+
+    #print("AFTEEEERR\n\n\nCONTEXT  111111",len(train_structured_context[0]))
+
+    train_structured_context = np.asarray(train_structured_context)
+    train_structured_ending = np.asarray(train_structured_ending)
+    train_structured_verifier = np.asarray(train_structured_verifier)
 
     # Saving datasets
     path_begin = "../data/train_begin_siameselstm"
@@ -347,26 +348,34 @@ def pad_restructure_valset(val_context_notag, val_ending_notag, ver_val_set):
             # val_structured_verifier.append(verifier)
 
             # to have verifier as size 1
-            val_structured_verifier.append(ver_val_set[story_number][i])
+            #print("VALIDATION BEFORE ",val_context_notag[story_number] )
+            while len(val_context_notag[story_number]) < story_len:
+                val_context_notag[story_number].append(pad_index)
+            val_context_notag[count] = val_context_notag[story_number][0:story_len]
 
-            while len(val_context_notag[count]) < story_len:
-                val_context_notag[count].append(pad_index)
-            val_context_notag[count] = np.asarray(val_context_notag[count])
-            val_structured_context.append(val_context_notag[count])
+            val_context_notag[story_number] = np.asarray(val_context_notag[count])
+            val_structured_context.append(val_context_notag[story_number])
+            #print("VALIDATION AFTER ",val_structured_context[story_number] )
 
             while len(val_ending_notag[story_number][i]) < story_len:
                 val_ending_notag[story_number][i].append(pad_index)
+
             val_ending_notag[story_number][i] = np.asarray(val_ending_notag[story_number][i])
             val_structured_ending.append(val_ending_notag[story_number][i])
 
-            if story_processed % 1000 == 0:
+            if story_processed % 20000 == 0:
                 print("Processed ", story_processed, "/", 2*len(val_context_notag))
             story_processed = story_processed + 1
 
         count = count + 1
-    val_structured_context = np.array(val_structured_context)
-    val_structured_ending = np.array(val_structured_ending)
-    val_structured_verifier = np.array(val_structured_verifier).reshape(len(val_structured_verifier), 1)
+    
+    val_structured_verifier = np.asarray(ver_val_set)
+    val_structured_verifier = np.reshape(val_structured_verifier, (len(val_structured_verifier)*len(val_structured_verifier[0])))
+    print("VERIFER VAL SET ",val_structured_verifier)
+    val_structured_context = np.asarray(val_structured_context)
+
+    val_structured_ending = np.asarray(val_structured_ending)
+
 
     print('val_structured_context: {}'.format(val_structured_context.shape))
     print('val_structured_ending: {}'.format(val_structured_ending.shape))
@@ -474,35 +483,158 @@ def pad_restructure_valset(val_context_notag, val_ending_notag, ver_val_set):
 #             yield (np.asarray(stories_batch), np.asarray(verifier_batch))
 #
 #
+"""
+    if not out_tagged_story:
+        contexts = eliminate_tags_in_contexts(contexts_pos_tagged= contexts)
+    while True:
+    #for i in range(0,num_epochs):
+        print("Augmenting with negative endings for the next epoch -> stochastic approach..")
+        batch_endings, ver_batch_end= batches_pos_neg_endings(neg_end_obj = neg_end_obj, data = endings,
+                                                              batch_size = batch_size)
+        batches_full_stories = np.array([contexts, batch_endings])  #full_stories_together(contexts = contexts, endings = batch_endings)
+        print("Shape of batches_full_stories: {}".format(batches_full_stories).shape)
+        print("Shape should be {} times {}".format(len(context), 2))
 
+        print("Length context: {}".format(len(contexts)))
+        total_steps = len(contexts)
+        print("Train generator for the new epoch ready..")
+
+        for batch_idx in range(0, total_steps):
+            #batch_size stories -> 1 positive endings + batch_size-1 negative endings ones
+
+            stories_batch = batches_full_stories[batch_idx] # TODO Change batches_full_stories
+            verifier_batch = [[int(ver), 1-int(ver)] for ver in ver_batch_end[batch_idx]]
+            yield (np.asarray(stories_batch), np.asarray(verifier_batch))"""
+
+
+def batch_iter_val_SiameseLSTM(contexts, endings, neg_end_obj, binary_verifiers, out_tagged_story = False,
+                       batch_size = 2, num_epochs = 500, shuffle=True):
+    """
+    Generates a batch generator for the validation set.
+    """
+    if not out_tagged_story:
+        contexts = eliminate_tags_in_contexts(contexts_pos_tagged = contexts)
+        endings = eliminate_tags_in_val_endings(endings_pos_tagged = endings)
+
+    while True:
+
+        batches_full_stories = np.array([contexts, batch_endings])#full_stories_together(contexts = contexts, endings = endings, validation = True)
+
+        total_steps = len(batches_full_stories)
+
+        for batch_idx in range(0, total_steps):
+            #batch_size stories -> 1 positive endings + batch_size-1 negative endings ones
+            stories_batch = batches_full_stories[batch_idx]
+            binary_batch_verifier = [[int(ver), 1-int(ver)] for ver in binary_verifiers[batch_idx]]
+            yield (np.asarray(stories_batch), np.asarray(binary_batch_verifier))
+
+
+def batch_iter_backward_train_cnn(contexts, endings, neg_end_obj, out_tagged_story = False,
+                                  batch_size = 2, num_epochs = 500, shuffle=True):
+    """
+    Generates a batch generator for the train set.
+    """
+    if not out_tagged_story:
+        contexts_no_tag = eliminate_tags_in_contexts(contexts_pos_tagged = contexts)
+
+    while True:
+
+        print("Augmenting with negative endings for the next epoch -> stochastic approach..")
+        batch_endings, ver_batch_end = batches_backwards_neg_endings(neg_end_obj = neg_end_obj, endings = endings,
+                                                                     batch_size = batch_size, contexts = contexts)
+        batches_full_stories = full_stories_together(contexts = contexts_no_tag, endings = batch_endings, contexts_aggregated = False)
+        total_steps = len(batches_full_stories)
+        print("Train generator for the new epoch ready..")
+
+        for batch_idx in range(0, total_steps):
+            #batch_size stories -> 1 positive endings + batch_size-1 negative endings ones
+
+            stories_batch = batches_full_stories[batch_idx]
+            verifier_batch = [[int(ver), 1-int(ver)] for ver in ver_batch_end[batch_idx]]
+            
+            yield (np.asarray(stories_batch), np.asarray(verifier_batch))
+
+"""            for story_idx in range(len(stories_batch)):
+                yield (np.asarray(stories_batch[story_idx]), np.asarray(verifier_batch[story_idx])
+            
+"""
+
+
+def batch_iter_backward_train_Siamese(contexts, endings, neg_end_obj, out_tagged_story = False,
+                                      batch_size = 2, num_epochs = 500, shuffle=True):
+    """
+    Generates a batch generator for the train set.
+    """
+    if not out_tagged_story:
+        contexts_no_tag = eliminate_tags_in_contexts(contexts_pos_tagged = contexts)
+
+    while True:
+    #for i in range(0,num_epochs):
+        print("Augmenting with negative endings for the next epoch -> stochastic approach..")
+        batch_endings, ver_batch_end = batches_backwards_neg_endings(neg_end_obj = neg_end_obj, endings = endings,
+                                                                     batch_size = batch_size, contexts = contexts)
+        batches_full_stories = full_stories_together(contexts = contexts_no_tag, endings = batch_endings, contexts_aggregated = False)
+        total_steps = len(batches_full_stories)
+        print("Train generator for the new epoch ready..")
+
+        for batch_idx in range(0, total_steps):
+            #batch_size stories -> 1 positive endings + batch_size-1 negative endings ones
+
+            stories_batch = batches_full_stories[batch_idx]
+            verifier_batch = [[int(ver), 1-int(ver)] for ver in ver_batch_end[batch_idx]]
+            
+            yield (np.asarray(stories_batch), np.asarray(verifier_batch))
 
 """***************************CNN LSTM sentiment********************"""
 
+def batches_unified(batches):
+    batches_unified = []
+    for batch in batches:
+        for item in batch:
+            batches_unified.append(item)
+    return batches_unified
 
-def batch_iter_val_cnn_sentiment(contexts, endings, binary_verifiers, test = False):
+def augment_batches(batch_size, batches, ver_batches):
+    new_batches = []
+    new_ver_batches = []
+    if batch_size%2 == 0:
+        batches_to_aggregate = batch_size/2
+        total_new_batches = len(batches)/batches_to_aggregate
+        for i_new_batch in range(total_new_batches):
+            start_batch = i_new_batch * batch_size
+            end_batch  = i_new_batch * batch_size + batch_size
+            new_batches.append(batches_unified(batches[start_batch:end_batch]))
+            new_ver_batches.append(ver_batches[start_batch:end_batch])
+        print(len(new_batches[0]))
+        return new_batches
+    return batches, ver_batches
+
+
+def batch_iter_val_cnn_sentiment(contexts, endings, binary_verifiers, test = False, batch_size = 2):
     """
     Generates a batch generator for the validation set.
     """
     contexts = eliminate_tags_in_contexts(contexts_pos_tagged = contexts)
     endings = eliminate_tags_in_val_endings(endings_pos_tagged = endings)
 
-    print("LEN ENDINGS ",len(endings))
-    print("LEN ENDINGS[0] ",len(endings[0]))
-    print("LEN ENDINGS[0][0] ",len(endings[0][0]))
+    print("CHECKS:")
+    print("LEN ENDINGS -> ",len(endings))
+    print("LEN ENDINGS[0] -> ",len(endings[0]))
+    print("LEN CONTEXTS -> ",len(contexts))
+    print("LEN CONTEXTS[0] -> ",len(contexts[0]))
 
-    #print("\n\nCONTEXT & ENDINGS\n\n")
-    #print(binary_verifiers)
-    #print(contexts[0])
-    #print(endings[0])
     context_sentiments = sentences_to_sentiments(contexts = contexts)
     endings_sentiments = endings_to_sentiments(endings = endings)
 
     while True:
 
         batches_full_stories = full_stories_together(contexts = context_sentiments, endings = endings_sentiments)#, list_array = True)
+        if batch_size > 2:
 
+            batches_full_stories.append([[19999]*story_len,[19999]*story_len])
+            binary_verifiers.append([1])
+            batches_full_stories, binary_verifiers = augment_batches(batch_size, batches, ver_batches)
         total_steps = len(batches_full_stories)
-
         for batch_idx in range(0, total_steps):
             #batch_size stories -> 1 positive endings + batch_size-1 negative endings ones
             stories_batch = batches_full_stories[batch_idx]

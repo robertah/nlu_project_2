@@ -149,14 +149,14 @@ class CNN_ngrams():
         #TODO train generator + validation generator to be implemented once preprocessing is ready
         print(self.model.summary())
         self.model.fit_generator(self.train_generator,
-                                 steps_per_epoch=1000, #88161
+                                 steps_per_epoch=88161,
                                  verbose=2,
                                  epochs=500,
                                  shuffle = True,
                                  callbacks=[cnn_grams_callback, stop_callback, tensorboard_callback,
                                             checkpoint_callback],
                                  validation_data=self.validation_generator,
-                                 validation_steps=2) #1871
+                                 validation_steps=1871)
 
     def save(self, path):
         """Save the model of the trained model.

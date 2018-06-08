@@ -9,7 +9,8 @@ from data_utils import *
 from preprocessing import *
 from negative_endings import *
 import training_utils as train_utils
-
+import numpy as np
+from copy import deepcopy
 
 class SiameseLSTM():
     '''
@@ -154,7 +155,28 @@ class SiameseLSTM():
             os.path.join(save_path, 'model.h5'),
             monitor='val_loss', verbose=0, save_best_only=True,
             save_weights_only=False, mode='auto', period=1)
+        
 
+        """new_trainA = []
+        for sample in self.train_dataA:
+            #print(len(sample))
+            new_trainA.append([sample])
+        new_trainB = []
+        for sample in self.train_dataB:
+            #print(len(sample))
+            new_trainB.append([sample])
+        new_trainA = np.asarray(new_trainA)
+        new_trainB = np.asarray(new_trainB)"""
+
+        print("\nTRAINING DETAILS:")
+        print(self.train_dataA.shape)    
+        print(self.train_dataB.shape)
+        print("\nVALIDATION DETAILS:")
+        print(self.val_dataA.shape)    
+        print(self.val_dataB.shape)
+        print("\n")
+        
+        #self.model.fit(x=[new_trainA, new_trainB], y=self.train_y,
         self.model.fit(x=[self.train_dataA, self.train_dataB], y=self.train_y,
                        epochs=n_epoch,
                        validation_data=([self.val_dataA, self.val_dataB], self.val_y),

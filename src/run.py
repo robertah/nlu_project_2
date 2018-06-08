@@ -9,8 +9,8 @@ import numpy as np
 import tensorflow as tf
 import keras
 
-#from models import cnn_ngrams, cnn_lstm_sent, siameseLSTM, ffnn
-from models import cnn_ngrams, cnn_lstm_sent, ffnn
+from models import cnn_ngrams, cnn_lstm_sent, SiameseLSTM, ffnn
+
 from training_utils import *
 
 
@@ -92,6 +92,14 @@ def initialize_negative_endings(contexts, endings):
 
     return neg_end
 
+def get_verifiers_difference(Y_predict):
+    total_labels = len(Y_predict)
+    index = 0
+    diff_verifiers =[]
+    while index < total_labels:
+        diff_verifiers.append(Y_predict[index] - Y_predict[index+1])
+        index = index + 2
+    return diff_verifiers
 
 def get_predicted_labels(probabilities, submission_filename):
     labels = [1 if prob[0]>prob[1] else 2 for prob in probabilities]
@@ -131,7 +139,6 @@ if __name__ == "__main__":
         """Create a field with your model (see the default one to be customized) and put the procedure to follow to train it"""
         if args.model == "cnn_ngrams":
 
-            #TOGETHER THE DATASET
             print("CNN grams training invoked")
             print("Loading dataset..")
             pos_train_begin_tog, pos_train_end_tog, pos_val_begin_tog, pos_val_end_tog = load_train_val_datasets_pos_tagged(stop_words=False, lemm=True)
@@ -139,18 +146,7 @@ if __name__ == "__main__":
             print("Initializing negative endings..")
             neg_end = initialize_negative_endings(contexts = pos_train_begin_tog, endings = pos_train_end_tog)
             
-            #Construct data generators
             ver_val_set = generate_binary_verifiers(val_set)
-
-            print("\nEXAMPLES :\n")
-            print(len(pos_train_begin_tog[0][0]))
-            print(len(pos_train_end_tog[0][0]))
-            print(len(pos_train_begin_tog[1][0]))
-            print(len(pos_train_end_tog[1][0]))
-            print(len(pos_train_begin_tog[2][0]))
-            print(len(pos_train_end_tog[2][0]))
-            print(len(pos_train_begin_tog[3][0]))
-            print(len(pos_train_end_tog[3][0]))
 
             train_generator = train_utils.batch_iter_backward_train_cnn(contexts = pos_train_begin_tog, endings = pos_train_end_tog, neg_end_obj = neg_end,
                                                                batch_size = 2, num_epochs = 500, shuffle=True)
@@ -174,8 +170,7 @@ if __name__ == "__main__":
 
             contexts_test = np.load(test_cloze_pos_begin)
             endings_test = np.load(test_cloze_pos_end)
-            print("TEST SET BEGIN SIZE \n", contexts_test.shape)
-            print("TEST SET END SIZE \n", endings_test.shape)
+
 
             contexts_test = eliminate_id(dataset = contexts_test)
             endings_test = eliminate_id(dataset = endings_test)
@@ -224,10 +219,17 @@ if __name__ == "__main__":
 
             train_structured_context, train_structured_ending, train_structured_verifier = pad_restructure_trainset(
                 aug_data, ver_aug_data, train_context_notag)
+
             val_structured_context, val_structured_ending, val_structured_verifier = pad_restructure_valset(
                 val_context_notag, val_ending_notag, ver_val_set)
 
-            model = siameseLSTM.SiameseLSTM(seq_len=story_len,
+
+            print("ENDINGS SHAPE ",train_structured_ending.shape)
+            print("TRAIN SHAPE ",train_structured_context.shape)
+
+
+
+            model = SiameseLSTM.SiameseLSTM(seq_len=story_len,
                                             n_epoch=n_epoch,
                                             train_dataA=train_structured_context,
                                             train_dataB=train_structured_ending,
@@ -339,12 +341,14 @@ if __name__ == "__main__":
             endings_test = eliminate_id(dataset = endings_test)
 
             test_generator = batch_iter_val_cnn_sentiment(contexts = contexts_test, endings = endings_test, binary_verifiers = [], test = True)
-            print(get_submission_filename())
             model_class = cnn_lstm_sent.Cnn_lstm_sentiment(train_generator = [], path=model_path)
             model = model_class.model
-            predictions = model.predict_generator(test_generator, steps=2343)
-            print(predictions)
-            print(predictions.shape)
+            Y_predict = model.predict_generator(test_generator, steps=2343)
+            verifiers_differences = get_verifiers_difference(Y_predict = Y_predict)
+            Y_labels = get_predicted_labels(verifiers_differences, submission_path_filename)
+
+            print(Y_labels)
+            print(Y_labels.shape)
 
         elif args.model == "ffnn" or args.model == "ffnn_val" or args.model == "ffnn_val_test":
 
@@ -380,6 +384,29 @@ if __name__ == "__main__":
             X_test = ffnn.transform(test_set_cloze, encoder)
             Y_test = generate_binary_verifiers(test_set_cloze)
             Y_test = np.asarray(Y_test)
+<<<<<<< HEAD
+            (loss, accuracy) = model.evaluate(X_test, Y_test, batch_size=64, verbose=1)
+            print("[INFO] loss={:.4f}, accuracy: {:.4f}%".format(loss, accuracy * 100))
+        
+        elif args.model == "cnn_lstm":
+=======
             _, accuracy = model.evaluate(X_test, Y_test, batch_size=64, verbose=1)
             print("[INFO] accuracy: {:.4f}%".format(accuracy * 100))
+>>>>>>> a44b558bb9d9ebcf1f6f0b1daa18eedbf19b9659
 
+            model = load_model(model_path)
+
+            print("Loaded cnn_lstm model for evaluation..")
+            
+            contexts_val = np.load(val_pos_begin)
+            endings_val = np.load(val_pos_end)
+
+            contexts_val = eliminate_id(dataset = contexts_val)
+            endings_val = eliminate_id(dataset = endings_val)
+
+            binary_verifiers_val = generate_binary_verifiers(dataset = val_set)
+
+            gen_val = batch_iter_val_cnn_sentiment(contexts = contexts_val, endings = endings_val, binary_verifiers = binary_verifiers_val)
+
+            (loss, accuracy) = model.evaluate_generator(gen_val, steps=1871, max_queue_size=10, workers=1, use_multiprocessing=False)
+            print("[INFO] loss={:.4f}, accuracy: {:.4f}%".format(loss, accuracy * 100))

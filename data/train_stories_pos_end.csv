@@ -1,0 +1,11 @@
+id,sen5
+8eb647c6-cdfa-416a-b4a2-09b24f44dcc5,"[('Kelly', 'NNP'), ('successfully', 'RB'), ('made', 'VBD'), ('a', 'DT'), ('pizza', 'NN'), ('from', 'IN'), ('her', 'PRP$'), ('grandmother', 'NN'), (""'s"", 'POS'), ('recipe', 'NN'), ('.', '.')]"
+e0cab669-993a-41be-978f-97795be07197,"[('His', 'PRP$'), ('dog', 'NN'), ('leaped', 'VBD'), ('and', 'CC'), ('caught', 'VBD'), ('it', 'PRP'), (',', ','), ('and', 'CC'), ('he', 'PRP'), ('quickly', 'RB'), ('ran', 'VBD'), ('home', 'NN'), ('.', '.')]"
+ad2236b7-de48-45a2-838b-25f166bdee90,"[('He', 'PRP'), ('quit', 'VB'), ('his', 'PRP$'), ('day', 'NN'), ('job', 'NN'), ('and', 'CC'), ('spent', 'NN'), ('all', 'DT'), ('his', 'PRP$'), ('time', 'NN'), ('grilling', 'NN'), ('.', '.')]"
+500fe4a4-f7c4-4f46-96ee-e010467b069f,"[('Tom', 'NNP'), ('and', 'CC'), ('Beth', 'NNP'), ('grew', 'VBD'), ('closer', 'RBR'), ('during', 'IN'), ('their', 'PRP$'), ('ice', 'NN'), ('skating', 'VBG'), ('date', 'NN'), ('.', '.')]"
+522f2bc3-3bb1-4f68-8e99-5b2abd016854,"[('She', 'PRP'), ('got', 'VBD'), ('kicked', 'VBN'), ('out', 'RP'), ('in', 'IN'), ('two', 'CD'), ('weeks', 'NNS'), ('.', '.')]"
+03508cbb-1f30-4fce-9788-3523a5a8568b,"[('Their', 'PRP$'), ('relationship', 'NN'), ('got', 'VBD'), ('bad', 'JJ'), ('and', 'CC'), ('they', 'PRP'), ('no', 'RB'), ('longer', 'RBR'), ('talked', 'VBD'), ('.', '.')]"
+07126538-bbde-413f-b8ca-c8327bf4ea4e,"[('Tom', 'NNP'), ('was', 'VBD'), ('paralyzed', 'VBN'), ('from', 'IN'), ('the', 'DT'), ('neck', 'NN'), ('down', 'RP'), ('.', '.')]"
+63a1ed11-4eb9-4ae8-ad7b-8928f30a36c9,"[('She', 'PRP'), ('ate', 'VBD'), ('them', 'PRP'), ('for', 'IN'), ('every', 'DT'), ('meal', 'NN'), ('that', 'DT'), ('day', 'NN'), ('.', '.')]"
+c36e3440-6c49-4338-8283-74ab8da127fc,"[('Jared', 'VBN'), ('discovered', 'VBD'), ('his', 'PRP$'), ('dad', 'NN'), (""'s"", 'POS'), ('companionship', 'NN'), ('was', 'VBD'), ('most', 'RBS'), ('important', 'JJ'), ('.', '.')]"
+4835f5c1-cfd7-4559-aa37-36793502f828,"[('She', 'PRP'), ('was', 'VBD'), ('so', 'RB'), ('embarrassed', 'JJ'), ('.', '.')]"
