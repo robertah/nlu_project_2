@@ -77,10 +77,12 @@ class SiameseLSTM():
 
         self.distance = keras.layers.Lambda(self.cosine_distance, output_shape=self.cosine_dist_output_shape)([self.processed_a, self.processed_b])
         self.model = Model([self.input_a, self.input_b], self.distance)
-        self.adam_optimizer = keras.optimizers.Adam(lr=0.0001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
+
+
+        #self.adam_optimizer = keras.optimizers.Adam(lr=0.0001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
+        self.adam_optimizer = keras.optimizers.Adam()
 
         self.model.compile(loss='mean_squared_error', optimizer=self.adam_optimizer, metrics=['accuracy'])
-        self.model.summary()
         print(self.model.summary())
 
         # Fitting if not generator
@@ -122,7 +124,6 @@ class SiameseLSTM():
         #                     callbacks=[lr_callback, stop_callback, tensorboard_callback, checkpoint_callback],
         #                     validation_data=validation_generator,
         #                     validation_steps=1871)
-        return None
 
 
     def train(self, save_path):
@@ -157,35 +158,23 @@ class SiameseLSTM():
             save_weights_only=False, mode='auto', period=1)
         
 
-        """new_trainA = []
-        for sample in self.train_dataA:
-            #print(len(sample))
-            new_trainA.append([sample])
-        new_trainB = []
-        for sample in self.train_dataB:
-            #print(len(sample))
-            new_trainB.append([sample])
-        new_trainA = np.asarray(new_trainA)
-        new_trainB = np.asarray(new_trainB)"""
-
-        print("\nTRAINING DETAILS:")
-        print(self.train_dataA.shape)    
-        print(self.train_dataB.shape)
-        print("\nVALIDATION DETAILS:")
-        print(self.val_dataA.shape)    
-        print(self.val_dataB.shape)
-        print("\n")
-        
-        #self.model.fit(x=[new_trainA, new_trainB], y=self.train_y,
-        self.model.fit(x=[self.train_dataA, self.train_dataB], y=self.train_y,
+        self.model.fit(x=[self.train_dataA[0:5000], self.train_dataB[0:5000]], y=self.train_y[0:5000],
                        epochs=n_epoch,
                        validation_data=([self.val_dataA, self.val_dataB], self.val_y),
                        steps_per_epoch=1871,
-                       verbose=2,
+                       verbose=1,
                        shuffle=True,
                        callbacks=[lr_callback, stop_callback, tensorboard_callback, checkpoint_callback],
                        validation_steps=140)
-
+        """self.model.fit_generator((self.train_dataA),
+                                 steps_per_epoch=2000,
+                                 verbose=2,
+                                 epochs=500,
+                                 shuffle=True,
+                                 callbacks=[lr_callback, stop_callback, tensorboard_callback,
+                                            checkpoint_callback],
+                                 validation_data=(self.val_dataA),
+                                 validation_steps=140)"""
     def save(self, path):
         """Save the model of the trained model.
 

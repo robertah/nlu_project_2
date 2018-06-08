@@ -17,7 +17,7 @@ from training_utils import *
 from sentiment import *
 from negative_endings import *
 from preprocessing import full_sentence_story
-from models.skip_thoughts import skipthoughts
+#from models.skip_thoughts import skipthoughts
 # Remove tensorflow CPU instruction information.
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
@@ -33,7 +33,7 @@ def _setup_argparser():
     parser = argparse.ArgumentParser(description="Control program to launch all actions related to this project.")
 
     parser.add_argument("-m", "--model", action="store",
-                        choices=["cnn_ngrams", "siameseLSTM", "cnn_lstm", "ffnn", "ffnn_val", "ffnn_val_test"],
+                        choices=["cnn_ngrams", "siameseLSTM", "cnn_lstm", "cnn_lstm_val", "ffnn", "ffnn_val", "ffnn_val_test"],
                         default="cnn_ngrams",
                         type=str,
                         help="the model to be used, defaults to cnn_ngrams")
@@ -163,31 +163,69 @@ if __name__ == "__main__":
             
             print("CNN LSTM training invoked")
 
+            contexts_train_samp = np.load(train_set_sampled_pos_beg)
+            endings_train_samp = np.load(train_set_sampled_pos_end)
+
+            contexts_train_samp = eliminate_id(dataset = contexts_train_samp)
+            endings_train_samp = eliminate_id(dataset = endings_train_samp)
+
             contexts_val = np.load(val_pos_begin)
             endings_val = np.load(val_pos_end)
 
             contexts_val = eliminate_id(dataset = contexts_val)
             endings_val = eliminate_id(dataset = endings_val)
 
-            contexts_test = np.load(test_cloze_pos_begin)
-            endings_test = np.load(test_cloze_pos_end)
+            binary_verifiers_train = generate_binary_verifiers(dataset = train_set_sampled)
+            binary_verifiers_val = generate_binary_verifiers(dataset = val_set)
+            
+            #Limiting the dataset
+            contexts_train_samp = [0:20000]
+            endings_train_samp = [0:20000]
+            binary_verifiers_train = [0:20000]
+            
+            gen_train = batch_iter_val_cnn_sentiment(contexts = contexts_train_samp, endings = endings_train_samp, binary_verifiers = binary_verifiers_train)
+            gen_val = batch_iter_val_cnn_sentiment(contexts = contexts_val, endings = endings_val, binary_verifiers = binary_verifiers_val)
 
+            model = cnn_lstm_sent.Cnn_lstm_sentiment(train_generator = gen_train, validation_generator = gen_val)
+            model.train(save_path = out_trained_models)
 
-            contexts_test = eliminate_id(dataset = contexts_test)
-            endings_test = eliminate_id(dataset = endings_test)
+        elif args.model == "cnn_lstm_val":
+            
+            print("CNN LSTM val training invoked")
+
+            contexts_val = np.load(val_pos_begin)
+            endings_val = np.load(val_pos_end)
+
+            contexts_val = eliminate_id(dataset = contexts_val)
+            endings_val = eliminate_id(dataset = endings_val)
+
 
             binary_verifiers_val = generate_binary_verifiers(dataset = val_set)
-            binary_verifiers_test = [[1,0]]*len(contexts_test)
+            
+            n_stories = len(contexts_val)
+            train_indexes = np.random.choice(n_stories, int(n_stories*0.9), replace=False)
 
-            gen_val = batch_iter_val_cnn_sentiment(contexts = contexts_val, endings = endings_val, binary_verifiers = binary_verifiers_val)
-            gen_test = batch_iter_val_cnn_sentiment(contexts = contexts_test, endings = endings_test, binary_verifiers = binary_verifiers_test)
+            print("Generating features array for train data...")
+            X_train_begin = np.take(contexts_val, train_indexes, axis=0)
+            X_train_end = np.take(endings_val, train_indexes, axis=0)
+            Y_train = np.take(binary_verifiers_val, train_indexes, axis=0)
 
-            model = cnn_lstm_sent.Cnn_lstm_sentiment(train_generator = gen_val, validation_generator = gen_test)
+            print("Generating features array for validation data...")
+            X_val_begin = np.delete(contexts_val, train_indexes, axis=0)
+            X_val_end = np.delete(endings_val, train_indexes, axis=0)
+            Y_val = np.delete(binary_verifiers_val, train_indexes, axis=0)
+            
+
+
+            gen_train = batch_iter_val_cnn_sentiment(contexts = X_train_begin, endings = X_train_end, binary_verifiers = Y_train)
+            gen_val = batch_iter_val_cnn_sentiment(contexts = X_val_begin, endings = X_val_end, binary_verifiers = Y_val)
+
+            model = cnn_lstm_sent.Cnn_lstm_sentiment(train_generator = gen_train, validation_generator = gen_val)
             model.train(save_path = out_trained_models)
 
         elif args.model == "siameseLSTM":
 
-            print("You chose the Siamese LSTM model; Good for you!")
+            print("You chose the Siamese LSTM model")
 
             print('Tensorflow version: {}'.format(tf.__version__))
             print('Keras version: {}'.format(keras.__version__))  # Make sure version of keras is 2.1.4
@@ -222,12 +260,6 @@ if __name__ == "__main__":
 
             val_structured_context, val_structured_ending, val_structured_verifier = pad_restructure_valset(
                 val_context_notag, val_ending_notag, ver_val_set)
-
-
-            print("ENDINGS SHAPE ",train_structured_ending.shape)
-            print("TRAIN SHAPE ",train_structured_context.shape)
-
-
 
             model = SiameseLSTM.SiameseLSTM(seq_len=story_len,
                                             n_epoch=n_epoch,
@@ -330,8 +362,11 @@ if __name__ == "__main__":
             
             print("This prediction branch has not been implemented")
 
+        if args.model == "siameseLSTM":
+            
+            print("This prediction branch has not been implemented")
 
-        elif args.model == "cnn_lstm":
+        elif args.model == "cnn_lstm" or args.model == "cnn_lstm_val":
 
             print("Predicting with CNN_LSTM sentiment based..")
             contexts_test = np.load(test_cloze_pos_begin)
@@ -341,8 +376,9 @@ if __name__ == "__main__":
             endings_test = eliminate_id(dataset = endings_test)
 
             test_generator = batch_iter_val_cnn_sentiment(contexts = contexts_test, endings = endings_test, binary_verifiers = [], test = True)
-            model_class = cnn_lstm_sent.Cnn_lstm_sentiment(train_generator = [], path=model_path)
-            model = model_class.model
+            #model_class = cnn_lstm_sent.Cnn_lstm_sentiment(train_generator = [], path=model_path)
+            #model = model_class.model
+            model = load_model(model_path)
             Y_predict = model.predict_generator(test_generator, steps=2343)
             verifiers_differences = get_verifiers_difference(Y_predict = Y_predict)
             Y_labels = get_predicted_labels(verifiers_differences, submission_path_filename)
@@ -388,21 +424,21 @@ if __name__ == "__main__":
             _, accuracy = model.evaluate(X_test, Y_test, batch_size=64, verbose=1)
             print("[INFO] accuracy: {:.4f}%".format(accuracy * 100))
         
-        elif args.model == "cnn_lstm":
+        elif args.model == "cnn_lstm" or args.model == "cnn_lstm_val":
 
             model = load_model(model_path)
 
             print("Loaded cnn_lstm model for evaluation..")
             
-            contexts_val = np.load(val_pos_begin)
-            endings_val = np.load(val_pos_end)
+            contexts_eval = np.load(eval_pos_begin)
+            endings_eval = np.load(eval_pos_end)
 
-            contexts_val = eliminate_id(dataset = contexts_val)
-            endings_val = eliminate_id(dataset = endings_val)
+            contexts_eval = eliminate_id(dataset = contexts_eval)
+            endings_eval = eliminate_id(dataset = endings_eval)
 
-            binary_verifiers_val = generate_binary_verifiers(dataset = val_set)
+            binary_verifiers_eval = generate_binary_verifiers(dataset = test_set_cloze)
 
-            gen_val = batch_iter_val_cnn_sentiment(contexts = contexts_val, endings = endings_val, binary_verifiers = binary_verifiers_val)
+            gen_eval = batch_iter_val_cnn_sentiment(contexts = contexts_eval, endings = endings_eval, binary_verifiers = binary_verifiers_eval)
 
-            _, accuracy = model.evaluate_generator(gen_val, steps=1871, max_queue_size=10, workers=1, use_multiprocessing=False)
+            _, accuracy = model.evaluate_generator(gen_eval, steps=1871, max_queue_size=10, workers=1, use_multiprocessing=False)
             print("[INFO] accuracy: {:.4f}%".format(accuracy * 100))
