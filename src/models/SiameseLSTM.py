@@ -19,6 +19,7 @@ class SiameseLSTM():
 
     def __init__(self, seq_len, n_epoch, train_dataA, train_dataB, train_y, val_dataA, val_dataB, val_y,  embedding_docs):
 
+        EMBEDDING_DIM = 100
 
         self.seq_len = seq_len
         self.m_epoch = n_epoch
@@ -31,12 +32,11 @@ class SiameseLSTM():
         self.val_dataB = val_dataB
         self.val_y = val_y
 
-        # From config file
-        self.embedding_dim = embedding_dim
+        self.embedding_dim = EMBEDDING_DIM
 
         # If no base_network
         # prepare embedding
-        self.embeddings = train_utils.embedding(embedding_docs)
+        self.embeddings = train_utils.embedding(self.embedding_docs, self.embedding_dim)
         print(self.embeddings.shape)
 
         # define model
@@ -59,27 +59,9 @@ class SiameseLSTM():
         self.processed_a = self.model(self.input_a)
         self.processed_b = self.model(self.input_b)
 
-
-        # If using base_network
-        # base_network = create_base_network(feature_dim, seq_len)
-
-        # model = Sequential()
-        # model.add(Embedding(inpu_dim=vocabulary_size, output_dim=embedding_dim, weights=[embedding_matrix],
-        #                     input_length=story_len, trainable=False))
-        # model.add(Embedding(input_dim = vocabulary_size, output_dim = embedding_dim, input_length = story_len))
-        # model.add(LSTM(100, batch_input_shape=(None, seq_len, feature_dim), return_sequences=True))
-        # print(model.summary())
-
-        # input_a = Input(shape=(seq_len, ), dtype='int32')
-        # input_b = Input(shape=(seq_len, ), dtype='int32')
-        # processed_a = base_network(input_a)
-        # processed_b = base_network(input_b)
-
         self.distance = keras.layers.Lambda(self.cosine_distance, output_shape=self.cosine_dist_output_shape)([self.processed_a, self.processed_b])
         self.model = Model([self.input_a, self.input_b], self.distance)
 
-
-        #self.adam_optimizer = keras.optimizers.Adam(lr=0.0001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
         self.adam_optimizer = keras.optimizers.Adam()
 
         self.model.compile(loss='mean_squared_error', optimizer=self.adam_optimizer, metrics=['accuracy'])
@@ -124,7 +106,6 @@ class SiameseLSTM():
         #                     callbacks=[lr_callback, stop_callback, tensorboard_callback, checkpoint_callback],
         #                     validation_data=validation_generator,
         #                     validation_steps=1871)
-
 
     def train(self, save_path):
         """Train the model.
@@ -175,6 +156,7 @@ class SiameseLSTM():
                                             checkpoint_callback],
                                  validation_data=(self.val_dataA),
                                  validation_steps=140)"""
+
     def save(self, path):
         """Save the model of the trained model.
 
@@ -193,14 +175,12 @@ class SiameseLSTM():
         """
         return K.exp(-K.sum(K.abs(A - B), axis=1, keepdims=True))
 
-
     def cosine_distance(self, vecs):
         #I'm not sure about this function too
         y_true, y_pred = vecs
         y_true = K.l2_normalize(y_true, axis=-1)
         y_pred = K.l2_normalize(y_pred, axis=-1)
         return K.mean(1 - K.sum((y_true * y_pred), axis=-1))
-
 
     def cosine_dist_output_shape(self, shapes):
         shape1, shape2 = shapes
