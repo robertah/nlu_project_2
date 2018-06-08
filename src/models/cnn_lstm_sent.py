@@ -77,7 +77,7 @@ class Cnn_lstm_sentiment():
 
 
 
-    def train(self, save_path):
+    def train(self, save_path, steps_train, steps_val ):
         """Train the model.
 
         Args:
@@ -92,7 +92,7 @@ class Cnn_lstm_sentiment():
                                                         verbose=0,
                                                         cooldown=0,
                                                         min_lr=0)
-        stop_callback = keras.callbacks.EarlyStopping(monitor="acc",
+        stop_callback = keras.callbacks.EarlyStopping(monitor="val_acc",
                                                       min_delta=0.0001,
                                                       patience=11,
                                                       verbose=0,
@@ -106,19 +106,19 @@ class Cnn_lstm_sentiment():
 
         checkpoint_callback = keras.callbacks.ModelCheckpoint(
             os.path.join(save_path, 'model.h5'),
-            monitor='val_loss', verbose=0, save_best_only=True,
+            monitor='val_acc', verbose=0, save_best_only=True,
             save_weights_only=False, mode='auto', period=1)
         
         #TODO train generator + validation generator to be implemented once preprocessing is ready
         self.model.fit_generator(self.train_generator,
-                                 steps_per_epoch=1871,
+                                 steps_per_epoch=steps_train,
                                  verbose=2,
                                  epochs=500,
                                  shuffle=True,
                                  callbacks=[lr_callback, stop_callback, tensorboard_callback,
                                             checkpoint_callback],
                                  validation_data=self.validation_generator,
-                                 validation_steps=140)
+                                 validation_steps=steps_val)
 
     def save(self, path):
         """Save the model of the trained model.
