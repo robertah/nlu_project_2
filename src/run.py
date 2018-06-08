@@ -17,7 +17,7 @@ from training_utils import *
 from sentiment import *
 from negative_endings import *
 from preprocessing import full_sentence_story
-# from models.skip_thoughts import skipthoughts
+from models.skip_thoughts import skipthoughts
 # Remove tensorflow CPU instruction information.
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
@@ -241,37 +241,66 @@ if __name__ == "__main__":
 
         elif args.model == "ffnn":
 
-            print("Loading dataset...")
-            # get train data
-            train_data = load_data(train_set)
-            sens = [col for col in train_data if col.startswith('sen')]
-            train_data = train_data[sens].values
-
-            print("Initializing negative endings...")
-            _, pos_train_end, _, _ = load_train_val_datasets_pos_tagged(together=False, stop_words=False, lemm=True)
-            pos_train_begin_tog, pos_train_end_tog, _, _ = load_train_val_datasets_pos_tagged(stop_words=False, lemm=True)
-
-            neg_end = initialize_negative_endings(contexts=pos_train_begin_tog, endings=pos_train_end_tog)
-
-            print("Sentiment analysis...")
-            sentiment_train = sentiment_analysis(train_set).values
+            # print("Loading dataset...")
+            # # get train data
+            # train_data = load_data(train_set)
+            # sens = [col for col in train_data if col.startswith('sen')]
+            # train_data = train_data[sens].values
+            #
+            # print("Initializing negative endings...")
+            # _, pos_train_end, _, _ = load_train_val_datasets_pos_tagged(together=False, stop_words=False, lemm=True)
+            # pos_train_begin_tog, pos_train_end_tog, _, _ = load_train_val_datasets_pos_tagged(stop_words=False, lemm=True)
+            #
+            # neg_end = initialize_negative_endings(contexts=pos_train_begin_tog, endings=pos_train_end_tog)
+            #
+            # print("Sentiment analysis...")
+            # sentiment_train = sentiment_analysis(train_set).values
+            #
+            # print("Loading skip-thoughts_model for embedding...")
+            # skipthoughts_model = skipthoughts.load_model()
+            # encoder = skipthoughts.Encoder(skipthoughts_model)
+            #
+            # print("Defining batch data generators... ")
+            # # train_generator = ffnn.batch_iter(train_data, pos_train_end, neg_end, sentiment_train, encoder, 128)
+            # # validation_generator = ffnn.batch_iter_val(val_data, sentiment_val, encoder, ver_val_set, 128)
+            # train_generator = ffnn.batch_iter(train_data, pos_train_end, neg_end, sentiment_train, encoder, 64)
+            # # validation_generator = ffnn.batch_iter_val(val_data, sentiment_val, encoder, ver_val_set, 64)
+            # validation_generator = ffnn.batch_iter_val(val_set, encoder, batch_size=64)
+            #
+            # train_size, val_size = len(train_data), 1871
+            #
+            # print("Initializing feed-forward neural network...")
+            # model = ffnn.FFNN(train_generator=train_generator, validation_generator=validation_generator)
+            # model.train(train_size, val_size, out_trained_models)
 
             print("Loading skip-thoughts_model for embedding...")
             skipthoughts_model = skipthoughts.load_model()
             encoder = skipthoughts.Encoder(skipthoughts_model)
 
-            print("Defining batch data generators... ")
-            # train_generator = ffnn.batch_iter(train_data, pos_train_end, neg_end, sentiment_train, encoder, 128)
-            # validation_generator = ffnn.batch_iter_val(val_data, sentiment_val, encoder, ver_val_set, 128)
-            train_generator = ffnn.batch_iter(train_data, pos_train_end, neg_end, sentiment_train, encoder, 64)
-            # validation_generator = ffnn.batch_iter_val(val_data, sentiment_val, encoder, ver_val_set, 64)
-            validation_generator = ffnn.batch_iter_val(val_set, encoder, batch_size=64)
+            # sentences = load_data(train_set)
+            # sens = [col for col in sentences if col.startswith('sen')]
+            # sentences = sentences[sens].values
+            #
+            # X_train, Y_train = data_aug.random_negative_endings(sentences)
+            #
+            #
+            # X_val = ffnn.transform(val_set, encoder)
+            # Y_val = generate_binary_verifiers(val_set)
 
-            train_size, val_size = len(train_data), 1871
+            X_train = ffnn.transform(train_set_sampled, encoder)
+            Y_train = generate_binary_verifiers(train_set_sampled)
+
+            X_val = ffnn.transform(val_set, encoder)
+            Y_val = generate_binary_verifiers(val_set)
+
+            print("Defining batch data generators... ")
+            train_generator = ffnn.batch_iter_val(X_train, Y_train, batch_size=64)
+            validation_generator = ffnn.batch_iter_val(X_val, Y_val, batch_size=64)
 
             print("Initializing feed-forward neural network...")
             model = ffnn.FFNN(train_generator=train_generator, validation_generator=validation_generator)
-            model.train(train_size, val_size, out_trained_models)
+            model.train(len(X_train), len(X_val), out_trained_models)
+
 
         elif args.model == "ffnn_val":
 

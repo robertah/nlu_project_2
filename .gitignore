@@ -106,7 +106,8 @@ venv.bak/
 .idea/
 
 # data
-data/
+data/*.pkl
+data/*.npy
 Data2/
 
 # pickle files

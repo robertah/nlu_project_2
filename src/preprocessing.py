@@ -305,6 +305,15 @@ if __name__ == '__main__':
     # context, end,  preprocess(train_set, pad=None)
 
 
+    dataset = test_set
+    pos_begin, pos_end = pos_tag_dataset(dataset, separate=False)
+    print(pos_begin, pos_end)
+    #pos_begin = np.load(data_folder + '/train_stories_pos_begin.npy')  # (88161, 2)
+    # # pos_end = np.load(data_folder + '/train_stories_pos_end.npy')  # (88161, 2)
+    pos_begin_processed, pos_end_processed = preprocess(pos_begin, pos_end, test=True, pad='ending', punct=True,
+                                                         stop_words=False, lemm=True)
+    
+    print(len(pos_begin_processed))
     # dataset = test_set
     # pos_begin, pos_end = pos_tag_dataset(dataset, separate=False)
     # #pos_begin = np.load(data_folder + '/train_stories_pos_begin.npy')  # (88161, 2)

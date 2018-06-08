@@ -23,7 +23,7 @@ def load_data(dataset):
     :return: dataframe corresponding to the dataset
     """
 
-    assert dataset == train_set or dataset == val_set or dataset == test_set
+    assert dataset == train_set or dataset == val_set or dataset == test_set or dataset == train_set_sampled
 
     if dataset == train_set:
         names = ['id', 'storytitle', 'sen1', 'sen2', 'sen3', 'sen4', 'sen5']
