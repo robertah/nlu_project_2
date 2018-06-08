@@ -196,33 +196,6 @@ class Negative_endings:
         return batch_aug_endings, ver_aug_stories
 
 
-def random_negative_endings(train_data):
-    n_stories = len(train_data)
-    context = train_data[:, :4]
-
-    context_ravel = np.ravel(context)
-    negative_endings = np.random.choice(context_ravel, n_stories, replace=False)
-
-    stories = np.empty((n_stories, 7), dtype=object)
-    stories[:, :5] = train_data
-    stories[:, 5] = negative_endings
-
-    labels = np.empty(n_stories, dtype=int)
-
-    for i in range(n_stories):
-        if random.choice([1, 2]) == 1:
-            labels[i] = 1
-        else:
-            labels[i] = 2
-            stories[i, 4], stories[i, 5] = stories[i, 5], stories[i, 4]
-
-    stories[:, 6] = labels
-
-    df = pd.DataFrame(stories, columns=['sen1', 'sen2', 'sen3', 'sen4', 'sen5_1', 'sen5_2', 'ans'])
-
-    with open(train_set_sampled, "w+") as f:
-        df.to_csv(train_set_sampled, sep=',', encoding='utf-8')
-
     """******************************END USER FUNCTIONS**************************"""
 
     def display_sentences(self, endings, verifier, tagged_story):
@@ -499,6 +472,34 @@ def random_negative_endings(train_data):
         all_stories_endings_pos_tagged = self.delete_id_from_corpus(corpus=all_stories_endings_pos_tagged, endings=True)
 
         return all_stories_context_pos_tagged, all_stories_endings_pos_tagged
+
+
+def random_negative_endings(train_data):
+    n_stories = len(train_data)
+    context = train_data[:, :4]
+
+    context_ravel = np.ravel(context)
+    negative_endings = np.random.choice(context_ravel, n_stories, replace=False)
+
+    stories = np.empty((n_stories, 7), dtype=object)
+    stories[:, :5] = train_data
+    stories[:, 5] = negative_endings
+
+    labels = np.empty(n_stories, dtype=int)
+
+    for i in range(n_stories):
+        if random.choice([1, 2]) == 1:
+            labels[i] = 1
+        else:
+            labels[i] = 2
+            stories[i, 4], stories[i, 5] = stories[i, 5], stories[i, 4]
+
+    stories[:, 6] = labels
+
+    df = pd.DataFrame(stories, columns=['sen1', 'sen2', 'sen3', 'sen4', 'sen5_1', 'sen5_2', 'ans'])
+
+    with open(train_set_sampled, "w+") as f:
+        df.to_csv(train_set_sampled, sep=',', encoding='utf-8')
 
 
 if __name__ == "__main__":

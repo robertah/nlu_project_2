@@ -47,17 +47,29 @@ def pos_tag_dataset(dataset, separate=False):
     if separate:
         pos_begin = pd.DataFrame(columns=['id', 'sen1', 'sen2', 'sen3', 'sen4'])
         for index, row in data_original.iterrows():
-            pos_begin.loc[index] = [index,
-                                    np.asarray(pos_tagging_text(row.iloc[0]), object),
-                                    np.asarray(pos_tagging_text(row.iloc[1]), object),
-                                    np.asarray(pos_tagging_text(row.iloc[2]), object),
-                                    np.asarray(pos_tagging_text(row.iloc[3]), object)
-                                    ]
+            if dataset == train_set_sampled:
+                pos_begin.loc[index] = [index,
+                                        np.asarray(pos_tagging_text(row.iloc[1]), object),
+                                        np.asarray(pos_tagging_text(row.iloc[2]), object),
+                                        np.asarray(pos_tagging_text(row.iloc[3]), object),
+                                        np.asarray(pos_tagging_text(row.iloc[4]), object)
+                                        ]
+            else:
+                pos_begin.loc[index] = [index,
+                                        np.asarray(pos_tagging_text(row.iloc[0]), object),
+                                        np.asarray(pos_tagging_text(row.iloc[1]), object),
+                                        np.asarray(pos_tagging_text(row.iloc[2]), object),
+                                        np.asarray(pos_tagging_text(row.iloc[3]), object)
+                                        ]
+
             if dataset == train_set:
                 pos_end.loc[index] = [index, np.asarray(pos_tagging_text(row.iloc[4]))]
+            elif dataset == train_set_sampled:
+                pos_end.loc[index] = [index, np.asarray(pos_tagging_text(row.iloc[5])),
+                                      np.asarray(pos_tagging_text(row.iloc[6]))]
             else:
                 pos_end.loc[index] = [index, np.asarray(pos_tagging_text(row.iloc[4])),
-                                      np.asarray(pos_tagging_text(row.iloc[5]))]
+                                          np.asarray(pos_tagging_text(row.iloc[5]))]
 
             story_number = story_number + 1
 
@@ -297,11 +309,12 @@ def full_sentence_story(dataset, ending_separate=False):
 
 # just trying if works
 if __name__ == '__main__':
-    pos_tag_dataset(train_set, separate=False)
-    pos_tag_dataset(val_set, separate=False)
-    pos_tag_dataset(test_set_cloze, separate=False)
-    pos_tag_dataset(test_set, separate=False)
-    pos_tag_dataset(train_set, separate=True)
-    pos_tag_dataset(val_set, separate=True)
-    pos_tag_dataset(test_set_cloze, separate=True)
-    pos_tag_dataset(test_set, separate=True)
+    # pos_tag_dataset(train_set, separate=False)
+    # pos_tag_dataset(val_set, separate=False)
+    # pos_tag_dataset(test_set_cloze, separate=False)
+    # pos_tag_dataset(test_set, separate=False)
+    # pos_tag_dataset(train_set, separate=True)
+    # pos_tag_dataset(val_set, separate=True)
+    # pos_tag_dataset(test_set_cloze, separate=True)
+    # pos_tag_dataset(test_set, separate=True)
+    pos_tag_dataset(train_set_sampled, separate=True)
