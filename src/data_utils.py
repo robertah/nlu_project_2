@@ -503,12 +503,3 @@ def merge_vocab(vocab1, vocab2):
         print("Full vocabulary saved as pkl")
 
     return data1
-
-# if __name__ == '__main__':
-
-# generate_vocab_pos(train_pos_begin)
-# merge_vocab(vocabulary_pkl, pos_vocabulary_pkl)
-#
-# with open(full_vocabulary_pkl, 'rb') as f:
-#     data = pickle.load(f)
-# print(data)
