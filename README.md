@@ -82,7 +82,7 @@ python run.py -m model-name -t
 where `model-name` refers to one of our models, namely `cnn_ngrams`, `siameseLSTM`, `cnn_lstm`, 
 `ffnn` `ffnn_val`.
 
-The models are saved after every epoch in `trained_models/model-name/date[hour]/model.h5`.
+The models are saved after every epoch in `nlu_project_2/trained_models/model-name/date[hour]/model.h5`.
 
 You can find the pretrained models and the prediction file for test set
  in this [folder](https://polybox.ethz.ch/index.php/s/bRnpIz66EB7g1xD).
@@ -101,5 +101,5 @@ To **predict** the endings for the given test set, run:
 python run.py -m model-name -p
 ```
 It will generate a csv file with the right ending labels in 
-`trained_models/model-name/date[hour]` for the last trained model.
+`nlu_project_2/trained_models/model-name/date[hour]` for the last trained model.
 
