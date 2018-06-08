@@ -40,11 +40,20 @@ sentiment_train_pkl = data_folder + '/sentiment_train.pkl'
 sentiment_val_pkl = data_folder + '/sentiment_val.pkl'
 train_pos_begin = data_folder + '/train_stories_pos_begin.npy'
 train_pos_end = data_folder + '/train_stories_pos_end.npy'
+
+#VALIDATION (1871 samples)
 val_pos_begin = data_folder + '/cloze_test_val__spring2016 - cloze_test_ALL_val_pos_begin.npy'
 val_pos_end = data_folder + '/cloze_test_val__spring2016 - cloze_test_ALL_val_pos_end.npy'
 
+#EVALUATION (1871 samples)
+eval_pos_begin = data_folder + '/cloze_test_spring2016-test_pos_begin.npy'
+eval_pos_end = data_folder + '/cloze_test_spring2016-test_pos_end.npy'
+
+
 test_pos_begin = data_folder + '/test_set_pos_begin.npy'
 test_pos_end = data_folder + '/test_set_pos_end.npy'
+
+#PREDICTION (2343 samples)
 test_cloze_pos_begin = data_folder + '/test_nlu18_utf-8_pos_begin.npy'
 test_cloze_pos_end = data_folder + '/test_nlu18_utf-8_pos_end.npy'
 test_cloze_pos_begin_tog = data_folder + '/test_nlu18_utf-8_pos_begin_together.npy'
@@ -85,3 +94,5 @@ embedding_dim = 100
 n_epoch = 25
 
 train_set_sampled = data_folder + "/train_set_sampled.csv"
+train_set_sampled_pos_beg = data_folder + "/train_set_sampled_pos_begin"
+train_set_sampled_pos_end = data_folder + "/train_set_sampled_pos_end"

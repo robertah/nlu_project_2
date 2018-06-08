@@ -394,6 +394,17 @@ def pad_restructure_valset(val_context_notag, val_ending_notag, ver_val_set):
 
     return val_structured_context, val_structured_ending, val_structured_verifier
 
+def batch_iter_train_SiameseLSTM(data_setA, data_setB, verifiers):
+    total_samples = len(train_set)
+    #start = 0
+    #end = 0
+    #The batch here is = 1
+    while True:
+        for batch_idx in range(total_samples):
+            yield (train_setA[batch_idx], train_setB[batch_idx], verifiers[batch_idx])
+    
+    #for batch_idx in range(total_samples):
+
 
 
 
