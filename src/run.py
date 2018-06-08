@@ -17,7 +17,7 @@ from training_utils import *
 from sentiment import *
 from negative_endings import *
 from preprocessing import full_sentence_story
-# from models.skip_thoughts import skipthoughts
+from models.skip_thoughts import skipthoughts
 # Remove tensorflow CPU instruction information.
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
@@ -243,37 +243,26 @@ if __name__ == "__main__":
 
         elif args.model == "ffnn":
 
-            print("Loading dataset...")
-            # get train data
-            train_data = load_data(train_set)
-            sens = [col for col in train_data if col.startswith('sen')]
-            train_data = train_data[sens].values
-
-            print("Initializing negative endings...")
-            _, pos_train_end, _, _ = load_train_val_datasets_pos_tagged(together=False, stop_words=False, lemm=True)
-            pos_train_begin_tog, pos_train_end_tog, _, _ = load_train_val_datasets_pos_tagged(stop_words=False, lemm=True)
-
-            neg_end = initialize_negative_endings(contexts=pos_train_begin_tog, endings=pos_train_end_tog)
-
-            print("Sentiment analysis...")
-            sentiment_train = sentiment_analysis(train_set).values
-
             print("Loading skip-thoughts_model for embedding...")
             skipthoughts_model = skipthoughts.load_model()
             encoder = skipthoughts.Encoder(skipthoughts_model)
 
-            print("Defining batch data generators... ")
-            # train_generator = ffnn.batch_iter(train_data, pos_train_end, neg_end, sentiment_train, encoder, 128)
-            # validation_generator = ffnn.batch_iter_val(val_data, sentiment_val, encoder, ver_val_set, 128)
-            train_generator = ffnn.batch_iter(train_data, pos_train_end, neg_end, sentiment_train, encoder, 64)
-            # validation_generator = ffnn.batch_iter_val(val_data, sentiment_val, encoder, ver_val_set, 64)
-            validation_generator = ffnn.batch_iter_val(val_set, encoder, batch_size=64)
+            print("Generating features array for train data (grab a coffee, it might take a while)...")
+            X_train = ffnn.transform(train_set_sampled, encoder)
+            Y_train = generate_binary_verifiers(train_set_sampled)
 
-            train_size, val_size = len(train_data), 1871
+            print("Generating features array for validation data...")
+            X_val = ffnn.transform(val_set, encoder)
+            Y_val = generate_binary_verifiers(val_set)
+
+            print("Defining batch data generators... ")
+            train_generator = ffnn.batch_iter_val(X_train, Y_train, batch_size=64)
+            validation_generator = ffnn.batch_iter_val(X_val, Y_val, batch_size=64)
 
             print("Initializing feed-forward neural network...")
             model = ffnn.FFNN(train_generator=train_generator, validation_generator=validation_generator)
-            model.train(train_size, val_size, out_trained_models)
+            model.train(len(X_train), len(X_val), out_trained_models)
+
 
         elif args.model == "ffnn_val":
 
@@ -287,9 +276,11 @@ if __name__ == "__main__":
             n_stories = len(X)
             train_indexes = np.random.choice(n_stories, int(n_stories*0.9), replace=False)
 
+            print("Generating features array for train data...")
             X_train = np.take(X, train_indexes, axis=0)
             Y_train = np.take(Y, train_indexes, axis=0)
 
+            print("Generating features array for validation data...")
             X_val = np.delete(X, train_indexes, axis=0)
             Y_val = np.delete(Y, train_indexes, axis=0)
 
@@ -308,9 +299,11 @@ if __name__ == "__main__":
             skipthoughts_model = skipthoughts.load_model()
             encoder = skipthoughts.Encoder(skipthoughts_model)
 
+            print("Generating features array for train data...")
             X_train = ffnn.transform(val_set, encoder)
             Y_train = generate_binary_verifiers(val_set)
 
+            print("Generating features array for validation data...")
             X_val = ffnn.transform(test_set_cloze, encoder)
             Y_val = generate_binary_verifiers(test_set_cloze)
 
@@ -357,11 +350,7 @@ if __name__ == "__main__":
             print(Y_labels)
             print(Y_labels.shape)
 
-        elif args.model == "ffnn":
-
-            print("bla bla")
-
-        elif args.model == "ffnn_val" or args.model == "ffnn_val_test":
+        elif args.model == "ffnn" or args.model == "ffnn_val" or args.model == "ffnn_val_test":
 
             model = load_model(model_path)
 
@@ -383,7 +372,7 @@ if __name__ == "__main__":
            e.g trained_model/27_05_2012.../submission_modelname...."""
         submission_path_filename = get_submission_filename()
 
-        if args.model == "ffnn_val" or args.model == "ffnn_val_test":
+        if args.model == "ffnn" or args.model == "ffnn_val" or args.model == "ffnn_val_test":
 
             model = load_model(model_path)
 
@@ -395,10 +384,15 @@ if __name__ == "__main__":
             X_test = ffnn.transform(test_set_cloze, encoder)
             Y_test = generate_binary_verifiers(test_set_cloze)
             Y_test = np.asarray(Y_test)
+<<<<<<< HEAD
             (loss, accuracy) = model.evaluate(X_test, Y_test, batch_size=64, verbose=1)
             print("[INFO] loss={:.4f}, accuracy: {:.4f}%".format(loss, accuracy * 100))
         
         elif args.model == "cnn_lstm":
+=======
+            _, accuracy = model.evaluate(X_test, Y_test, batch_size=64, verbose=1)
+            print("[INFO] accuracy: {:.4f}%".format(accuracy * 100))
+>>>>>>> a44b558bb9d9ebcf1f6f0b1daa18eedbf19b9659
 
             model = load_model(model_path)
 

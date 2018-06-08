@@ -23,15 +23,17 @@ def load_data(dataset):
     :return: dataframe corresponding to the dataset
     """
 
-    assert dataset == train_set or dataset == val_set or dataset == test_set
+    assert dataset == train_set or dataset == val_set or dataset == test_set or dataset == test_set_cloze or dataset == train_set_sampled
 
     if dataset == train_set:
         names = ['id', 'storytitle', 'sen1', 'sen2', 'sen3', 'sen4', 'sen5']
+    elif dataset == test_set:
+        names = ['sen1', 'sen2', 'sen3', 'sen4', 'sen5_1', 'sen5_2']
     else:
         names = ['id', 'sen1', 'sen2', 'sen3', 'sen4', 'sen5_1', 'sen5_2', 'ans']
 
-    #return pd.read_csv(dataset, index_col='id', names=names, skiprows=1, sep = ';')
-    #For sentiment uncomment the following return
+    # return pd.read_csv(dataset, index_col='id', names=names, skiprows=1, sep = ';')
+    # For sentiment uncomment the following return
     if dataset == test_set:
         return pd.read_csv(dataset, names=names)
 
@@ -46,7 +48,7 @@ def get_answers(dataset):
     :return: answers array
     """
 
-    assert dataset == val_set or dataset == test_set
+    assert dataset == val_set or dataset == test_set_cloze or dataset == train_set_sampled
 
     df = load_data(dataset)
 
@@ -229,9 +231,9 @@ def load_pos_vocabulary():
         tagdict = load('help/tagsets/upenn_tagset.pickle').keys()
 
         # create dictionary
-        pos_vocabulary = dict([(list(tagdict)[i], -(i+1)) for i in range(len(tagdict))])
+        pos_vocabulary = dict([(list(tagdict)[i], -(i + 1)) for i in range(len(tagdict))])
 
-        with open(pos_vocabulary_pkl , 'wb') as output:
+        with open(pos_vocabulary_pkl, 'wb') as output:
             pickle.dump(pos_vocabulary, output, pickle.HIGHEST_PROTOCOL)
             print("Pos vocabulary saved as pkl")
 
@@ -271,7 +273,6 @@ def get_words_from_indexes(indexes, vocabulary, pos_vocabulary):
     vocabulary_reverse = {v: k for k, v in vocabulary.items()}
     pos_vocabulary_reverse = {v: k for k, v in pos_vocabulary.items()}
 
-
     # retrieve words corresponding to indexes
     if isinstance(indexes, list):
         if isinstance(indexes[0], tuple):
@@ -284,6 +285,7 @@ def get_words_from_indexes(indexes, vocabulary, pos_vocabulary):
         else:
             words = vocabulary_reverse[indexes]
     return words
+
 
 def get_index_from_tag(tag):
     '''
@@ -343,7 +345,7 @@ def pad_endings(beginnings, endings):
 
         # trim the ending if the story is too long
         if len_beginnings[i[0]] + len(ending) > story_len:
-            padded_endings[i] = ending[:story_len-len_beginnings[i[0]]]
+            padded_endings[i] = ending[:story_len - len_beginnings[i[0]]]
 
         # pad the ending if the story is too short
         else:
@@ -430,7 +432,7 @@ def get_context_sentence(contexts, i):
     """
     assert i in range(1, 5)
 
-    return contexts[:, i-1]
+    return contexts[:, i - 1]
 
 
 def generate_vocab_pos(pos_data):
@@ -452,13 +454,13 @@ def generate_vocab_pos(pos_data):
             list_pos = list_pos + sentence[:, 1].tolist()
     # print(list(set(list_pos)))
 
-    #creating dictionary with pos_tags, using negative numbers
+    # creating dictionary with pos_tags, using negative numbers
     pos_dic = dict(enumerate(list(set(list_pos))))
-    pos_dictionary = {v: -(k+1) for k, v in pos_dic.items()}
+    pos_dictionary = {v: -(k + 1) for k, v in pos_dic.items()}
 
     print(pos_dictionary)
 
-    with open(pos_vocabulary_pkl , 'wb') as output:
+    with open(pos_vocabulary_pkl, 'wb') as output:
         pickle.dump(pos_dictionary, output, pickle.HIGHEST_PROTOCOL)
         print("Pos vocabulary saved as pkl")
 
@@ -466,14 +468,13 @@ def generate_vocab_pos(pos_data):
 
 
 def generate_vocab_pos_upenn():
-
     # Getting tags from upenn_tagset
     nltk.download('tagsets', quiet=True)
     tagdict = load('help/tagsets/upenn_tagset.pickle')
 
-    #creating dictionary with pos_tags, using negative numbers
+    # creating dictionary with pos_tags, using negative numbers
     pos_dic = dict(enumerate(list(set(tagdict.keys()))))
-    pos_dictionary = {v: -(k+1) for k, v in pos_dic.items()}
+    pos_dictionary = {v: -(k + 1) for k, v in pos_dic.items()}
 
     # with open(pos_vocabulary_pkl , 'wb') as output:
     #     pickle.dump(pos_dictionary, output, pickle.HIGHEST_PROTOCOL)
@@ -497,18 +498,17 @@ def merge_vocab(vocab1, vocab2):
 
     data1.update(data2)
 
-    with open(full_vocabulary_pkl , 'wb') as output:
+    with open(full_vocabulary_pkl, 'wb') as output:
         pickle.dump(data1, output, pickle.HIGHEST_PROTOCOL)
         print("Full vocabulary saved as pkl")
 
     return data1
 
-
 # if __name__ == '__main__':
 
-    # generate_vocab_pos(train_pos_begin)
-    # merge_vocab(vocabulary_pkl, pos_vocabulary_pkl)
-    #
-    # with open(full_vocabulary_pkl, 'rb') as f:
-    #     data = pickle.load(f)
-    # print(data)
+# generate_vocab_pos(train_pos_begin)
+# merge_vocab(vocabulary_pkl, pos_vocabulary_pkl)
+#
+# with open(full_vocabulary_pkl, 'rb') as f:
+#     data = pickle.load(f)
+# print(data)
