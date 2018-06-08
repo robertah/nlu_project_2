@@ -33,7 +33,7 @@ def _setup_argparser():
     parser = argparse.ArgumentParser(description="Control program to launch all actions related to this project.")
 
     parser.add_argument("-m", "--model", action="store",
-                        choices=["cnn_ngrams", "siameseLSTM", "cnn_lstm", "cnn_lstm_val", "ffnn", "ffnn_val", "ffnn_val_test"],
+                        choices=["cnn_ngrams", "SiameseLSTM", "cnn_lstm", "cnn_lstm_val", "ffnn", "ffnn_val", "ffnn_val_test"],
                         default="cnn_ngrams",
                         type=str,
                         help="the model to be used, defaults to cnn_ngrams")
@@ -234,7 +234,7 @@ if __name__ == "__main__":
             model = cnn_lstm_sent.Cnn_lstm_sentiment(train_generator = gen_train, validation_generator = gen_val)
             model.train(save_path = out_trained_models, steps_train = total_steps_train, steps_val = total_steps_val)
 
-        elif args.model == "siameseLSTM":
+        elif args.model == "SiameseLSTM":
 
             print("You chose the Siamese LSTM model")
 
@@ -373,7 +373,7 @@ if __name__ == "__main__":
             
             print("This prediction branch has not been implemented")
 
-        if args.model == "siameseLSTM":
+        if args.model == "SiameseLSTM":
             
             print("This prediction branch has not been implemented")
 

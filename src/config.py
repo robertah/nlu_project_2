@@ -19,27 +19,25 @@ test_set_cloze = data_folder + '/cloze_test_spring2016-test.csv'
 #Ready to be used for preprocessing -> do not touch
 train_pos_context_tog = data_folder + '/train_stories_pos_begin_together.npy'
 train_pos_end_tog = data_folder + '/train_stories_pos_end_together.npy'
+train_pos_begin = data_folder + '/train_stories_pos_begin.npy'
+train_pos_end = data_folder + '/train_stories_pos_end.npy'
 val_pos_context_tog = data_folder + '/cloze_test_val__spring2016 - cloze_test_ALL_val_pos_begin_together.npy'
 val_pos_end_tog = data_folder +  '/cloze_test_val__spring2016 - cloze_test_ALL_val_pos_end_together.npy'
 test_pos_begin_tog = data_folder + '/test_set_pos_begin_together.npy'
 test_pos_end_tog = data_folder + '/test_set_pos_end_together.npy'
 test_cloze_pos_begin_tog = data_folder + '/test_set_cloze_pos_begin_together.npy'
 test_cloze_pos_end_tog = data_folder + '/test_set_cloze_pos_end_together.npy'
-# token used for the language model
-# bos = '<bos>'  # begin of sentence token
-# eos = '<eos>'  # end of sentence token
 pad = '<pad>'  # padding token
 unk = '<unk>'  # unknown token
 
-# TODO to be specified
+# Paths to pkl files generated during preprocessing
 vocabulary_pkl = data_folder + '/vocabulary.pkl'
 pos_vocabulary_pkl = data_folder + '/pos_vocabulary.pkl'
 full_vocabulary_pkl = data_folder + '/full_vocabulary.pkl'
 sentiment_pkl = data_folder + '/sentiment.pkl'
 sentiment_train_pkl = data_folder + '/sentiment_train.pkl'
 sentiment_val_pkl = data_folder + '/sentiment_val.pkl'
-train_pos_begin = data_folder + '/train_stories_pos_begin.npy'
-train_pos_end = data_folder + '/train_stories_pos_end.npy'
+
 
 #VALIDATION (1871 samples)
 val_pos_begin = data_folder + '/cloze_test_val__spring2016 - cloze_test_ALL_val_pos_begin.npy'
@@ -64,11 +62,10 @@ word_embedding = data_folder + '/word_embedding'
 
 vocabulary_size = 25000  # None for not limited vocabulary size
 sentence_len = 10  # None for not limited sentence length     max len 12 in train, 11 in val
-# story_len = 80  # in the train set the max story len is 74
 story_len = 70      #### 70
 
 embedding_dim = 150
-num_steps = 10 #used for the lstm embedding layer (# of steps/words in each sample)
+num_steps = 10  #used for the lstm embedding layer (# of steps/words in each sample)
 hidden_size = 100
 
 #Add other tags if you want negative endings to probabilistically sample from them
@@ -90,8 +87,6 @@ gradient_clipping_norm = 1.25
 batch_size = 64
 n_epoch = 50
 n_endings = 3
-embedding_dim = 100
-n_epoch = 25
 
 train_set_sampled = data_folder + "/train_set_sampled.csv"
 train_set_sampled_pos_beg = data_folder + "/train_set_sampled_pos_begin.npy"
