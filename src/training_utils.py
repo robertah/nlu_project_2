@@ -483,6 +483,11 @@ def pad_restructure_valset(val_context_notag, val_ending_notag, ver_val_set):
 
     return val_structured_context, val_structured_ending, val_structured_verifier
 
+
+
+
+
+
 # def batch_iter_train_SiameseLSTM(contexts, endings, neg_end_obj, out_tagged_story = False,
 #                          batch_size = 2, num_epochs = 500, shuffle=True):
 #     '''
@@ -567,9 +572,12 @@ def pad_restructure_valset(val_context_notag, val_ending_notag, ver_val_set):
 #             yield (np.asarray(stories_batch), np.asarray(verifier_batch))
 #
 #
+>>>>>>> Stashed changes
 
+            stories_batch = batches_full_stories[batch_idx]
+            verifier_batch = [[int(ver), 1-int(ver)] for ver in ver_batch_end[batch_idx]]
 
-
+            yield (np.asarray(stories_batch), np.asarray(verifier_batch))
 
 """***************************CNN LSTM sentiment********************"""
 
