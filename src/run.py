@@ -380,6 +380,6 @@ if __name__ == "__main__":
             X_test = ffnn.transform(test_set_cloze, encoder)
             Y_test = generate_binary_verifiers(test_set_cloze)
             Y_test = np.asarray(Y_test)
-            (loss, accuracy) = model.evaluate(X_test, Y_test, batch_size=64, verbose=1)
-            print("[INFO] loss={:.4f}, accuracy: {:.4f}%".format(loss, accuracy * 100))
+            _, accuracy = model.evaluate(X_test, Y_test, batch_size=64, verbose=1)
+            print("[INFO] accuracy: {:.4f}%".format(accuracy * 100))
 
