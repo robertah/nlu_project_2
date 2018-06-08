@@ -134,7 +134,7 @@ def transform(dataset, encoder):
     return features
 
 
-def batch_iter_val(features, labels, batch_size):
+def batch_iter(features, labels, batch_size, shuffle=True):
     """
     Create batch generator for validation and test data
 
@@ -150,9 +150,13 @@ def batch_iter_val(features, labels, batch_size):
     # reshape labels
     labels = np.reshape(labels, (n_stories, 2))
 
+    if shuffle:
+        indexes = np.random.permutation(n_stories)
+        features = features[indexes]
+        labels = labels[indexes]
+
     while True:
-        for i in range(n_stories - batch_size):
-            index = np.random.choice(n_stories - batch_size, 1)[0]
-            X = features[index:index + batch_size]
-            Y = labels[index:index + batch_size]
+        for i in range(0, n_stories, batch_size):
+            X = features[i:i + batch_size]
+            Y = labels[i:i + batch_size]
             yield X, Y
