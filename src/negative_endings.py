@@ -432,46 +432,6 @@ class Negative_endings:
 
         return story_sentences
 
-    def dataset_into_character_sentences(self, dataset):
-
-        all_stories = []
-        # story_number = 0
-        for story in dataset:
-            all_stories.append(self.story_into_character_sentences(story_vocab_indices=story))
-            # story_number = story_number+1
-            # print(story_number)
-
-        print("Done -> Dataset into character sentences")
-        self.all_stories = all_stories
-        # print(all_stories)
-
-    def delete_id_from_corpus(self, corpus, endings=False):
-
-        story_number = 0
-        all_stories_no_id = []
-        sentence_in_stories = len(corpus[0])
-
-        for story in corpus:
-            new_story = corpus[story_number][1:sentence_in_stories]  # delete ids stories
-            story_number = story_number + 1
-            all_stories_no_id.append(new_story)
-        if not endings:
-            self.all_stories_context_pos_tagged = all_stories_no_id
-        else:
-            self.all_stories_endings_pos_tagged = all_stories_no_id
-
-        return all_stories_no_id
-
-    def load_corpus_no_ids(self):
-
-        all_stories_context_pos_tagged = np.load(train_pos_begin)
-        all_stories_endings_pos_tagged = np.load(train_pos_end)
-
-        all_stories_context_pos_tagged = self.delete_id_from_corpus(corpus=all_stories_context_pos_tagged,
-                                                                    endings=False)
-        all_stories_endings_pos_tagged = self.delete_id_from_corpus(corpus=all_stories_endings_pos_tagged, endings=True)
-
-        return all_stories_context_pos_tagged, all_stories_endings_pos_tagged
 
 
 def random_negative_endings(train_data):
