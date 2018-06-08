@@ -7,12 +7,14 @@ import os
 import pickle
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
+
 def sentence_sentiment(sentence):
     sid = SentimentIntensityAnalyzer()
     scores = sid.polarity_scores(sentence)
     scores_array = np.asarray(list(scores.values()))
     #print("SCORES ARE ", np.asarray(list(scores.values())))
     return scores_array
+
 
 def sentiment_analysis(dataset):
 
@@ -58,14 +60,10 @@ def sentiment_analysis(dataset):
 
     return sentiment_score
 
+
 def load_sentiment(pkl):
     with open(pkl, 'rb') as handle:
         sentiment = pickle.load(handle)
     return sentiment
 
-if __name__ == '__main__':
-    #Value of sentiment to non negative integer
-    #a = np.rint(1000+000*np.asarray(sentiment_analysis(train_set)))#[:,1:3])
-    print(sentiment_analysis(train_set))
-    #print(np.amax(a))
-    #print(np.amin(a))
+

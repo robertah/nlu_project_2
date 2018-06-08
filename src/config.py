@@ -88,6 +88,7 @@ batch_size = 64
 n_epoch = 50
 n_endings = 3
 
+# augmented training dataset
 train_set_sampled = data_folder + "/train_set_sampled.csv"
 train_set_sampled_pos_beg = data_folder + "/train_set_sampled_pos_begin.npy"
 train_set_sampled_pos_end = data_folder + "/train_set_sampled_pos_end.npy"

@@ -3,7 +3,6 @@ import pandas as pd
 import numpy as np
 import pickle
 import nltk
-from nltk.data import load
 from collections import Counter
 from nltk.corpus import stopwords, wordnet
 from nltk.stem import WordNetLemmatizer

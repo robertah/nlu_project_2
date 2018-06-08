@@ -1,5 +1,3 @@
-import nltk
-import os
 from data_utils import *
 from sentiment import *
 

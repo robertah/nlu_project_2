@@ -1,28 +1,22 @@
 #!/usr/bin/env python3 -W ignore::DeprecationWarning
-
 import argparse
 import sys
 import datetime
 import time
 import negative_endings as data_aug
-import numpy as np
 import tensorflow as tf
 import keras
-
 from models import cnn_ngrams, cnn_lstm_sent, SiameseLSTM, ffnn
-
 from training_utils import *
-
-
 from sentiment import *
 from negative_endings import *
 from preprocessing import full_sentence_story
 from models.skip_thoughts import skipthoughts
+
 # Remove tensorflow CPU instruction information.
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 from keras.models import load_model
-import csv
 
 def _setup_argparser():
     """Sets up the argument parser and returns the arguments.

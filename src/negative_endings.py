@@ -3,7 +3,7 @@ import random
 import pickle
 from collections import Counter
 import numpy as np
-from random import randint, shuffle, choices
+from random import randint, shuffle
 import data_utils as data_utils
 from copy import deepcopy
 import pandas as pd
@@ -431,7 +431,6 @@ class Negative_endings:
             story_sentences.append(self.get_sentences_from_indices(sentence_vocab_indices=sentence_vocab_indices))
 
         return story_sentences
-
 
 
 def random_negative_endings(train_data):
