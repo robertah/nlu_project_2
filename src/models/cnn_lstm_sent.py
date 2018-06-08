@@ -44,7 +44,7 @@ class Cnn_lstm_sentiment():
         """Embedding layer"""        
         #self.model.add(Embedding(input_dim = vocabulary_size, output_dim = self.embedding_dimensions_words, input_length = story_len))
         
-        self.model.add(keras.layers.Convolution1D(input_shape = [story_len],
+        self.model.add(keras.layers.Convolution1D(input_shape = story_len,
                                                   filters=50,
                                                   strides=kernel_size,
                                                   kernel_size=3,

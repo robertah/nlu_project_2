@@ -116,3 +116,4 @@ src/*.pkl
 src/models/skip_thoughts/data/*
 
 trained_models/*
+src/glove.6B/*

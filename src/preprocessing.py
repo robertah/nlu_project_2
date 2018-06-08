@@ -273,20 +273,49 @@ def train_verifier(train_dataset):
     return np.asarray(ver_array)
 
 
+
+def full_sentence_story(dataset, ending_separate=False):
+    '''
+    creates an array that merges columns containing sentences into one column
+    :return: 1-d array containing entire story - shape(#stories, 1)
+    '''
+    data_original = load_data(dataset)
+    fullstory_df = pd.DataFrame(index=None, columns=["full_story"])
+    endingstory_df = pd.DataFrame(index=None, columns=["ending_story"])
+    if ending_separate==False:
+        if dataset==train_set:
+            fullstory_df["full_story"] = data_original["sen1"].map(str) + ' ' + data_original["sen2"].map(str) + ' ' + \
+                                         data_original["sen3"].map(str) + ' ' + data_original["sen4"].map(str) + ' ' + \
+                                         data_original["sen5"].map(str)
+        return fullstory_df.values.ravel()
+    else:
+        if dataset==train_set:
+            fullstory_df["full_story"] = data_original["sen1"].map(str) + ' ' + data_original["sen2"].map(str) + ' ' + \
+                                         data_original["sen3"].map(str) + ' ' + data_original["sen4"].map(str)
+            endingstory_df["ending_story"] = data_original["sen5"].map(str)
+        return fullstory_df.values.ravel(), endingstory_df.ravel()
+
 # just trying if works
 if __name__ == '__main__':
+
+    dataset=train_set
+    print(full_sentence_story(dataset).shape)
+
+
     # context, end,  preprocess(train_set, pad=None)
 
 
-    dataset = test_set
-    pos_begin, pos_end = pos_tag_dataset(dataset, separate=False)
-    print(pos_begin, pos_end)
-    #pos_begin = np.load(data_folder + '/train_stories_pos_begin.npy')  # (88161, 2)
-    # # pos_end = np.load(data_folder + '/train_stories_pos_end.npy')  # (88161, 2)
-    pos_begin_processed, pos_end_processed = preprocess(pos_begin, pos_end, test=True, pad='ending', punct=True,
-                                                         stop_words=False, lemm=True)
-    
-    print(len(pos_begin_processed))
+    # dataset = test_set
+    # pos_begin, pos_end = pos_tag_dataset(dataset, separate=False)
+    # #pos_begin = np.load(data_folder + '/train_stories_pos_begin.npy')  # (88161, 2)
+    # # # pos_end = np.load(data_folder + '/train_stories_pos_end.npy')  # (88161, 2)
+    # pos_begin_processed, pos_end_processed = preprocess(pos_begin, pos_end, test=True, pad='ending', punct=True,
+    #                                                      stop_words=True, lemm=True)
+    #
+    # print(len(pos_begin_processed))
+
+
+
     # # print(pos_end_processed)
     # dataset = val_set
     # pos_begin, pos_end = pos_tag_dataset(dataset, separate=True)
@@ -382,12 +411,12 @@ if __name__ == '__main__':
     # print(pos_begin[0][1])
     # print(pos_end[0])
 
-    # pos_train_begin, pos_train_end, pos_val_begin, pos_val_end= load_train_val_datasets_pos_tagged(pos_begin_train = train_pos_begin, pos_end_train = train_pos_end,
-    #                                    pos_begin_val = val_pos_begin, pos_end_val=val_pos_begin)
-    # print("Pos_train_begin: {}".format(pos_train_begin))
-    # print("pos_train_begin[0]: {}".format(pos_train_begin[0]))
-    # print("pos_train_begin[0][0]: {}".format(pos_train_begin[0][0]))
-    #
-    # pos_train_begin[:,][0] = pos_train_begin[:,]
-    # print("Pos_train_begin: {}".format(pos_train_begin))
-    # print("pos_train_begin[0]: {}".format(pos_train_begin[0]))
+    pos_train_begin, pos_train_end, pos_val_begin, pos_val_end= load_train_val_datasets_pos_tagged(pos_begin_train = train_pos_begin, pos_end_train = train_pos_end,
+                                       pos_begin_val = val_pos_begin, pos_end_val=val_pos_begin)
+    print("Pos_train_begin: {}".format(pos_train_begin))
+    print("pos_train_begin[0]: {}".format(pos_train_begin[0]))
+    print("pos_train_begin[0][0]: {}".format(pos_train_begin[0][0]))
+
+    pos_train_begin[:,][0] = pos_train_begin[:,]
+    print("Pos_train_begin: {}".format(pos_train_begin))
+    print("pos_train_begin[0]: {}".format(pos_train_begin[0]))
